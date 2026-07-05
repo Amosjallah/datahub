@@ -28,7 +28,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       <nav className="navbar">
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <Logo size={28} colorMode="dark" />
+            <Logo size={36} colorMode="dark" />
+            <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: '#FFF', lineHeight: '1' }}>FA Digital</span>
           </Link>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             {navLinks.map((link) => (
@@ -63,7 +64,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           <div className="footer-grid">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <Logo size={28} colorMode="dark" />
+                <Logo size={36} colorMode="dark" />
+                <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: '#FFF', lineHeight: '1' }}>FA Digital</span>
               </div>
               <p style={{ fontSize: '0.85rem', lineHeight: '1.5' }}>
                 We provide reliable digital solutions that make everyday transactions simple, fast and secure. Your trusted partner for digital services and innovation.

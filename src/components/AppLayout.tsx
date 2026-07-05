@@ -191,10 +191,10 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
             marginBottom: '1.25rem' 
           }}
         >
-          <Logo size={28} colorMode="dark" />
+          <Logo size={36} colorMode="dark" />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#FFF', lineHeight: '1.2' }}>FA Digital</span>
-            <span style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)', lineHeight: '1' }}>{tagline}</span>
+            <span style={{ fontWeight: 800, fontSize: '1.18rem', letterSpacing: '-0.02em', color: '#FFF', lineHeight: '1.2' }}>FA Digital</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: '1', marginTop: '0.15rem' }}>{tagline}</span>
           </div>
         </div>
 
