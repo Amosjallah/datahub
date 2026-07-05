@@ -143,7 +143,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Grid Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.62fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="dashboard-grid">
           
           {/* Left Column (Revenue Overview, Recent Transactions, Recently Joined Users) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

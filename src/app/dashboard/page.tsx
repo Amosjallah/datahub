@@ -136,7 +136,7 @@ export default function Dashboard() {
         </div>
 
         {/* Two-Column Main Content Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="dashboard-grid">
           
           {/* Left Column: Quick Buy & Recent Transactions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -173,7 +173,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: '0.875rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div className="quick-buy-fields">
                   {/* Network Buttons Selector */}
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label">Network</label>

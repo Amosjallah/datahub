@@ -160,7 +160,7 @@ export default function AgentDashboard() {
         </div>
 
         {/* Main Columns Grid Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="dashboard-grid">
           
           {/* Left Column (Sales overview, Bulk purchase, Recent sales) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -208,10 +208,10 @@ export default function AgentDashboard() {
               <div className="card-body">
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Bulk purchase</h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: '1.5rem', alignItems: 'stretch' }}>
+                <div className="bulk-purchase-grid">
                   
                   {/* Left: CSV Upload Card */}
-                  <div style={{ borderRight: '1px solid var(--color-border)', paddingRight: '1.5rem' }}>
+                  <div className="bulk-upload-section">
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>Upload CSV (bulk)</div>
                     <div style={{
                       border: '1.5px dashed var(--color-border-strong)',
