@@ -1,23 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, Loader2, ArrowLeft, Eye, EyeOff, Zap, ShieldCheck, Globe } from 'lucide-react';
+import { Lock, Mail, Loader2, ArrowLeft, Eye, EyeOff, Zap, ShieldCheck, Globe, ShieldAlert } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 export default function Login() {
+  const [step, setStep] = useState<'login' | 'otp'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // OTP digits state
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [resendTimer, setResendTimer] = useState(59);
+
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Countdown timer for OTP resend simulation
+  useEffect(() => {
+    let interval: any;
+    if (step === 'otp' && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate login delay
+    // Simulate validation and trigger OTP step
+    setTimeout(() => {
+      setLoading(false);
+      setStep('otp');
+      setResendTimer(59);
+    }, 800);
+  };
+
+  const handleOtpChange = (val: string, idx: number) => {
+    if (isNaN(Number(val))) return;
+    const newOtp = [...otp];
+    newOtp[idx] = val.substring(val.length - 1);
+    setOtp(newOtp);
+
+    // Shift focus to the next input if value is typed
+    if (val && idx < 5) {
+      otpRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
+      otpRefs.current[idx - 1]?.focus();
+    }
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Simulate OTP verification and route to dashboards
     setTimeout(() => {
       setLoading(false);
       const emailLower = email.toLowerCase();
@@ -29,6 +77,13 @@ export default function Login() {
         router.push('/dashboard');
       }
     }, 800);
+  };
+
+  const handleResendCode = () => {
+    if (resendTimer > 0) return;
+    setResendTimer(59);
+    // Mock code send toast or trigger
+    alert('A new 6-digit verification code has been dispatched to ' + email);
   };
 
   return (
@@ -105,9 +160,19 @@ export default function Login() {
       <main className="split-main">
         {/* Header link & mobile logo */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 2rem' }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
-            <ArrowLeft size={16} /> Back to home
-          </Link>
+          {step === 'login' ? (
+            <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+              <ArrowLeft size={16} /> Back to home
+            </Link>
+          ) : (
+            <button 
+              type="button" 
+              onClick={() => setStep('login')} 
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.875rem', fontWeight: 600, padding: 0 }}
+            >
+              <ArrowLeft size={16} /> Back to login
+            </button>
+          )}
           <div className="lg:hidden" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Logo size={28} colorMode="light" />
             <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>FA Digital</span>
@@ -118,78 +183,172 @@ export default function Login() {
         <div className="split-form-container">
           <div style={{ width: '100%', maxWidth: '380px' }}>
             
-            <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>Welcome back</h2>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Sign in to your account to continue</p>
-            </div>
-
-            <form onSubmit={handleLogin} className="card" style={{ padding: '1.25rem', border: '1px solid var(--color-border)', background: '#FFFFFF', borderRadius: '12px' }}>
-              
-              <div className="form-group">
-                <label className="form-label" htmlFor="email">Email or Phone Number</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    id="email"
-                    className="form-input"
-                    placeholder="Enter email or phone number"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{ paddingLeft: '2.5rem', fontSize: '0.875rem', height: '48px', borderRadius: '10px' }}
-                    required
-                  />
-                  <Mail size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+            {step === 'login' ? (
+              // Phase 1: Login Form
+              <>
+                <div style={{ marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>Welcome back</h2>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Sign in to your account to continue</p>
                 </div>
-              </div>
 
-              <div className="form-group" style={{ marginBottom: '1.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                  <label className="form-label" htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
-                  <a href="#" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600 }}>Forgot password?</a>
+                <form onSubmit={handleLoginSubmit} className="card" style={{ padding: '1.25rem', border: '1px solid var(--color-border)', background: '#FFFFFF', borderRadius: '12px' }}>
+                  
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="email">Email or Phone Number</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        id="email"
+                        className="form-input"
+                        placeholder="Enter email or phone number"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{ paddingLeft: '2.5rem', fontSize: '0.875rem', height: '48px', borderRadius: '10px' }}
+                        required
+                      />
+                      <Mail size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                      <label className="form-label" htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+                      <a href="#" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600 }}>Forgot password?</a>
+                    </div>
+                    
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        className="form-input"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', fontSize: '0.875rem', height: '48px', borderRadius: '10px' }}
+                        required
+                      />
+                      <Lock size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', padding: 0 }}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ height: '48px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 700, backgroundColor: 'var(--color-brand-primary)', color: '#FFF', border: 'none' }}>
+                    {loading ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                        <Loader2 className="animate-spin" size={16} />
+                        Signing In...
+                      </span>
+                    ) : (
+                      'Sign In'
+                    )}
+                  </button>
+
+                </form>
+
+                <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                  Don't have an account?{' '}
+                  <Link href="/register" style={{ color: 'var(--color-brand-primary)', fontWeight: 700, textDecoration: 'none' }}>
+                    Create one →
+                  </Link>
                 </div>
-                
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    className="form-input"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', fontSize: '0.875rem', height: '48px', borderRadius: '10px' }}
-                    required
-                  />
-                  <Lock size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', padding: 0 }}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+              </>
+            ) : (
+              // Phase 2: Two-Step Verification Form (OTP)
+              <>
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(0, 102, 255, 0.08)', color: 'var(--color-brand-primary)', marginBottom: '1rem' }}>
+                    <ShieldAlert size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>Two-step verification</h2>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginTop: '0.4rem', lineHeight: '1.4' }}>
+                    We sent a 6-digit verification code to <strong style={{ color: 'var(--color-text-secondary)' }}>{email || 'your device'}</strong>.
+                  </p>
+                </div>
+
+                <form onSubmit={handleOtpSubmit} className="card" style={{ padding: '1.5rem', border: '1px solid var(--color-border)', background: '#FFFFFF', borderRadius: '12px' }}>
+                  
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label className="form-label" style={{ display: 'block', textAlign: 'center', marginBottom: '1rem' }}>Enter 6-Digit Code</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      {otp.map((digit, idx) => (
+                        <input
+                          key={idx}
+                          type="text"
+                          maxLength={1}
+                          value={digit}
+                          ref={(el) => { otpRefs.current[idx] = el; }}
+                          onChange={(e) => handleOtpChange(e.target.value, idx)}
+                          onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                          style={{
+                            width: '46px',
+                            height: '48px',
+                            borderRadius: '10px',
+                            border: '1.5px solid var(--color-border)',
+                            backgroundColor: '#F8FAFC',
+                            textAlign: 'center',
+                            fontSize: '1.25rem',
+                            fontWeight: 700,
+                            fontFamily: 'monospace',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            transition: 'border-color var(--transition-fast)'
+                          }}
+                          required
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ height: '48px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 700, backgroundColor: 'var(--color-brand-primary)', color: '#FFF', border: 'none' }}>
+                    {loading ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                        <Loader2 className="animate-spin" size={16} />
+                        Verifying...
+                      </span>
+                    ) : (
+                      'Verify & Continue'
+                    )}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendTimer > 0}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: resendTimer > 0 ? 'var(--color-text-muted)' : 'var(--color-brand-primary)',
+                        cursor: resendTimer > 0 ? 'default' : 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        padding: 0
+                      }}
+                    >
+                      {resendTimer > 0 ? `Resend code in ${resendTimer}s` : 'Resend verification code'}
+                    </button>
+                  </div>
+
+                </form>
+
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setStep('login')}
+                    style={{ background: 'none', border: 'none', color: 'var(--color-brand-primary)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', padding: 0 }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    ← Use a different account
                   </button>
                 </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ height: '48px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 700, backgroundColor: 'var(--color-brand-primary)', color: '#FFF', border: 'none' }}>
-                {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                    <Loader2 className="animate-spin" size={16} />
-                    Signing In...
-                  </span>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
-
-            </form>
-
-            <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-              Don't have an account?{' '}
-              <Link href="/register" style={{ color: 'var(--color-brand-primary)', fontWeight: 700, textDecoration: 'none' }}>
-                Create one →
-              </Link>
-            </div>
+              </>
+            )}
 
           </div>
         </div>
