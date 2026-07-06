@@ -522,6 +522,23 @@ a:hover { color: var(--color-brand-light); }
     }
 }
 
+.services-grid-3x2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+    .services-grid-3x2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    .services-grid-3x2 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .hero-grid {
     display: grid;
     grid-template-columns: 1fr;

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import PublicLayout from '@/components/PublicLayout';
 import { 
   BarChart2, PhoneCall, Receipt, GraduationCap, 
-  Zap, ShieldCheck, Headphones, Contact, ArrowRight 
+  Zap, ShieldCheck, Headphones, Contact, ArrowRight,
+  Tv, Award
 } from 'lucide-react';
 
 export default function Home() {
@@ -72,6 +73,24 @@ export default function Home() {
       icon: GraduationCap,
       color: '#8B5CF6',
       bgColor: 'rgba(139, 92, 246, 0.08)'
+    },
+    { 
+      title: 'TV Subscriptions', 
+      desc: 'Renew DStv, GOtv, and StarTimes packages.', 
+      link: '/register', 
+      linkLabel: 'Renew TV',
+      icon: Tv,
+      color: '#EF4444',
+      bgColor: 'rgba(239, 68, 68, 0.08)'
+    },
+    { 
+      title: 'Reseller program', 
+      desc: 'Earn daily profits on wholesale VTU sales.', 
+      link: '/become-agent', 
+      linkLabel: 'Become agent',
+      icon: Award,
+      color: '#D97706',
+      bgColor: 'rgba(217, 119, 6, 0.08)'
     }
   ];
 
@@ -428,7 +447,7 @@ export default function Home() {
           </div>
 
           {/* Grid of 4 services */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+          <div className="services-grid-3x2">
             {services.map((s, idx) => {
               const Icon = s.icon;
               return (
