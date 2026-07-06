@@ -94,13 +94,13 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
   }
 
   return (
-    <div>
+    <div style={{ backgroundColor: 'var(--color-bg-base)', minHeight: '100vh', color: 'var(--color-text-primary)' }}>
       {/* Top Header Navbar */}
       <header 
         style={{
           position: 'fixed', top: 0, right: 0, left: 'var(--sidebar-width)',
           height: 'var(--topbar-height)',
-          background: '#020813',
+          background: 'var(--color-bg-surface)',
           borderBottom: '1px solid var(--color-border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 2.5rem', zIndex: 90
@@ -109,7 +109,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
       >
         {/* Left Side: Mobile Menu Button (Hamburger) */}
         <button 
-          style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'none', padding: '0.5rem' }} 
+          style={{ background: 'none', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'none', padding: '0.5rem' }} 
           className="mobile-menu-btn"
           onClick={() => alert('Mobile menu toggle')}
         >
@@ -123,16 +123,16 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
           <div 
             style={{
               display: 'flex', alignItems: 'center', gap: '0.75rem',
-              background: '#060f26', border: '1px solid var(--color-border)',
+              background: '#FFFFFF', border: '1px solid var(--color-border)',
               padding: '0.35rem 0.5rem 0.35rem 0.875rem', borderRadius: 'var(--radius-md)'
             }}
           >
             <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Wallet balance:</span>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace' }}>{walletBalanceText}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>{walletBalanceText}</span>
             <Link 
               href={walletButtonLink} 
               className="btn btn-primary btn-sm" 
-              style={{ padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', boxShadow: 'none' }}
+              style={{ padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', boxShadow: 'none', backgroundColor: 'var(--color-brand-primary)', color: '#FFF' }}
             >
               {walletButtonLabel}
             </Link>
@@ -164,9 +164,9 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
             <div 
               style={{
                 width: '36px', height: '36px', borderRadius: '50%',
-                background: '#152B58', border: '1.5px solid var(--color-brand-primary)',
+                background: 'var(--color-brand-subtle)', border: '1.5px solid var(--color-brand-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: '0.825rem', color: '#fff'
+                fontWeight: 700, fontSize: '0.825rem', color: 'var(--color-brand-primary)'
               }}
             >
               AA
@@ -181,7 +181,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
       </header>
 
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className="sidebar" style={{ background: 'var(--color-bg-surface)', borderRight: '1px solid var(--color-border)' }}>
         {/* Vector SVG Logo Component */}
         <div 
           className="sidebar-logo" 
@@ -191,9 +191,9 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
             marginBottom: '1.25rem' 
           }}
         >
-          <Logo size={36} colorMode="dark" />
+          <Logo size={32} colorMode="light" />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 800, fontSize: '1.18rem', letterSpacing: '-0.02em', color: '#FFF', lineHeight: '1.2' }}>FA Digital</span>
+            <span style={{ fontWeight: 800, fontSize: '1.18rem', letterSpacing: '-0.02em', color: 'var(--color-text-primary)', lineHeight: '1.2' }}>FA Digital</span>
             <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: '1', marginTop: '0.15rem' }}>{tagline}</span>
           </div>
         </div>
@@ -216,18 +216,19 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
         <div style={{ padding: '0 0.75rem', marginTop: 'auto', marginBottom: '1.25rem' }}>
           <div 
             style={{
-              background: 'linear-gradient(135deg, #09122c 0%, #060f26 100%)',
-              border: '1.5px solid rgba(59, 130, 246, 0.15)',
+              background: '#FFFFFF',
+              border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-lg)',
               padding: '1.1rem 1rem',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
               <div>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{promoTitle}</div>
-                {promoSubtitle && <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>{promoSubtitle}</div>}
+                {promoSubtitle && <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>{promoSubtitle}</div>}
                 
                 {isSystemPromo && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}>
@@ -257,6 +258,8 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
                 fontSize: '0.75rem', 
                 borderRadius: '6px', 
                 boxShadow: 'none',
+                backgroundColor: 'var(--color-brand-primary)',
+                color: '#FFF',
                 marginTop: isSystemPromo ? '0.75rem' : '0' 
               }}
             >

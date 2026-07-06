@@ -6,27 +6,27 @@
 
 :root {
     --color-brand-primary:   #0066FF; /* Electric Blue */
-    --color-brand-secondary: #0A0D14; /* Deep black/navy */
+    --color-brand-secondary: #0F172A; /* Deep slate/navy text */
     --color-brand-light:     #3B82F6; /* Lighter Blue */
-    --color-brand-glow:      rgba(0,102,255,0.25);
-    --color-brand-subtle:    rgba(0,102,255,0.08);
-    --color-brand-muted:     rgba(0,102,255,0.15);
+    --color-brand-glow:      rgba(0,102,255,0.12);
+    --color-brand-subtle:    rgba(0,102,255,0.05);
+    --color-brand-muted:     rgba(0,102,255,0.08);
 
-    --color-bg-base:         #020813; /* Very dark blue-black */
-    --color-bg-surface:      #010409; /* Sidebar background (almost black) */
-    --color-bg-elevated:     #0A1122;
-    --color-bg-card:         #060f26; /* Card background from screenshot */
-    --color-bg-hover:        #0C1935;
-    --color-bg-active:       #152B58;
+    --color-bg-base:         #F8FAFC; /* Slate 50 clean light background */
+    --color-bg-surface:      #FFFFFF; /* White */
+    --color-bg-elevated:     #F1F5F9; /* Slate 100 */
+    --color-bg-card:         #FFFFFF; /* White for cards */
+    --color-bg-hover:        #F8FAFC;
+    --color-bg-active:       #E2E8F0;
 
-    --color-text-primary:    #FFFFFF; /* White */
-    --color-text-secondary:  #CBD5E1;
-    --color-text-muted:      #64748B;
-    --color-text-subtle:     #334155;
+    --color-text-primary:    #0F172A; /* Slate 900 */
+    --color-text-secondary:  #475569; /* Slate 600 */
+    --color-text-muted:      #64748B; /* Slate 500 */
+    --color-text-subtle:     #94A3B8; /* Slate 400 */
 
-    --color-border:          rgba(59, 130, 246, 0.12);
-    --color-border-strong:   rgba(59, 130, 246, 0.28);
-    --color-border-subtle:   rgba(255, 255, 255, 0.05);
+    --color-border:          #E2E8F0; /* Slate 200 light border */
+    --color-border-strong:   #CBD5E1; /* Slate 300 strong border */
+    --color-border-subtle:   #F1F5F9; /* Slate 100 subtle border */
 
     --color-success:         #10B981;
     --color-success-bg:      rgba(16,185,129,0.1);
@@ -167,10 +167,11 @@ a:hover { color: var(--color-brand-light); }
 .navbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     height: var(--topbar-height);
-    background: rgba(4, 8, 15, 0.8);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-border);
     display: flex; align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 .navbar-logo-icon {
     width: 32px; height: 32px;
@@ -479,5 +480,24 @@ a:hover { color: var(--color-brand-light); }
         gap: 0.75rem;
         text-align: center;
     }
+}
+
+/* Live Transaction Marquee */
+.marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.marquee-content {
+    display: inline-flex;
+    animation: marquee 30s linear infinite;
+    gap: 3rem;
+    padding-left: 2rem;
+}
+@keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
 }
 

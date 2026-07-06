@@ -71,7 +71,7 @@ export default function Dashboard() {
                   {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
                 </button>
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 {showBalance ? 'GH₵25,680.50' : '••••••'}
               </div>
               <Link href="/wallet/fund" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -89,7 +89,7 @@ export default function Dashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Monthly spend
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 GH₵18,850.00
               </div>
               <div style={{ fontSize: '0.72rem', color: '#F87171', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -107,7 +107,7 @@ export default function Dashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Transactions
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 32
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -125,7 +125,7 @@ export default function Dashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Referral earnings
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 GH₵5,430.00
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -269,7 +269,7 @@ export default function Dashboard() {
                             <div style={{ fontWeight: 600 }}>{tx.detail}</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontFamily: 'monospace', marginTop: '0.1rem' }}>{tx.phone}</div>
                           </td>
-                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: '#fff' }}>{tx.amount}</td>
+                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>{tx.amount}</td>
                           <td style={{ padding: '0.875rem 0.5rem' }}>
                             <span className={`badge ${
                               tx.status === 'success' ? 'badge-success' : 
@@ -313,15 +313,15 @@ export default function Dashboard() {
                     value={referralCode} 
                     readOnly 
                     style={{ 
-                      flex: 1, background: '#020813', border: '1.5px solid var(--color-border)', 
-                      borderRadius: '8px', padding: '0.625rem 0.875rem', color: '#fff', 
+                      flex: 1, background: 'var(--color-bg-base)', border: '1.5px solid var(--color-border)', 
+                      borderRadius: '8px', padding: '0.625rem 0.875rem', color: 'var(--color-text-primary)', 
                       fontFamily: 'monospace', fontSize: '0.95rem', fontWeight: 600 
                     }} 
                   />
                   <button 
                     onClick={copyReferral} 
                     className="btn btn-secondary" 
-                    style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.8rem' }}
+                    style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.8rem', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}
                   >
                     {copied ? 'Copied' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Copy size={14} /> Copy</span>}
                   </button>
@@ -330,14 +330,14 @@ export default function Dashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Friends joined</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0' }}>24</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0' }}>24</div>
                     <div style={{ fontSize: '0.68rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
                       <TrendingUp size={10} /> 18 this month
                     </div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Earnings</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>GH₵5,430.00</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>GH₵5,430.00</div>
                     <div style={{ fontSize: '0.68rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
                       <TrendingUp size={10} /> 15% this month
                     </div>
@@ -363,15 +363,15 @@ export default function Dashboard() {
                         {b.initial}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontFamily: 'monospace', marginTop: '0.1rem' }}>{b.phone}</div>
                       </div>
                       {/* Action buttons */}
                       <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                        <Link href={`/buy/data?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid #1e293b' }}>
+                        <Link href={`/buy/data?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}>
                           📶 Buy
                         </Link>
-                        <Link href={`/buy/bills?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid #1e293b' }}>
+                        <Link href={`/buy/bills?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}>
                           💵 Pay
                         </Link>
                         <button style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>
@@ -407,7 +407,7 @@ export default function Dashboard() {
                         <ProviderIcon provider={n.type} size={16} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', lineHeight: '1.3' }}>{n.text}</div>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: '1.3' }}>{n.text}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>{n.sub}</div>
                       </div>
                       <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{n.time}</div>
