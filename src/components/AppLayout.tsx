@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -18,6 +18,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, userRole = 'customer', userName = 'Kwame' }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isAgent = userRole === 'agent';
   const isAdmin = ['admin', 'super_admin'].includes(userRole);
@@ -111,7 +112,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
         <button 
           style={{ background: 'none', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer', display: 'none', padding: '0.5rem' }} 
           className="mobile-menu-btn"
-          onClick={() => alert('Mobile menu toggle')}
+          onClick={() => setSidebarOpen(true)}
         >
           <Menu size={22} />
         </button>
@@ -180,8 +181,14 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
         </div>
       </header>
 
+      {/* Sidebar mobile overlay backdrop */}
+      <div 
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} 
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* Sidebar */}
-      <aside className="sidebar" style={{ background: 'var(--color-bg-surface)', borderRight: '1px solid var(--color-border)' }}>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ background: 'var(--color-bg-surface)', borderRight: '1px solid var(--color-border)' }}>
         {/* Vector SVG Logo Component */}
         <div 
           className="sidebar-logo" 
@@ -204,7 +211,12 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
             const Icon = link.icon;
             const isActive = pathname === link.href;
             return (
-              <Link key={link.href} href={link.href} className={`sidebar-link ${isActive ? 'active' : ''}`}>
+              <Link 
+                key={link.href} 
+                href={link.href} 
+                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+              >
                 <Icon size={18} />
                 {link.label}
               </Link>

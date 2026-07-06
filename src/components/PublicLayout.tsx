@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 import Logo from './Logo';
 
 interface PublicLayoutProps {
@@ -11,6 +12,7 @@ interface PublicLayoutProps {
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
     { href: '/about', label: 'About' },
@@ -34,7 +36,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               <span style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', fontWeight: 500, marginTop: '0.1rem' }}>Top up. Pay bills. Stay connected.</span>
             </div>
           </Link>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="nav-links-desktop">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -51,7 +53,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               </Link>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div className="nav-auth-desktop">
             <Link href="/login" className="btn btn-secondary btn-sm" style={{ padding: '0.5rem 1.2rem', borderRadius: '8px', color: 'var(--color-text-primary)', fontWeight: 600, border: '1px solid var(--color-border)', backgroundColor: '#FFF' }}>
               Log in
             </Link>
@@ -59,8 +61,46 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               Create account
             </Link>
           </div>
+          
+          <button 
+            type="button" 
+            className="nav-toggle-mobile" 
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </nav>
+
+      {/* Collapsible Mobile Navigation Menu */}
+      <div className={`mobile-nav-menu ${menuOpen ? 'open' : ''}`}>
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={() => setMenuOpen(false)}
+            style={{
+              color: pathname === link.href ? 'var(--color-brand-primary)' : 'var(--color-text-secondary)',
+              fontWeight: pathname === link.href ? '700' : '500',
+              padding: '0.5rem 0',
+              fontSize: '0.95rem',
+              borderBottom: '1px solid var(--color-border-subtle)',
+              textDecoration: 'none'
+            }}
+          >
+            {link.label}
+          </Link>
+        ))}
+        <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column', marginTop: '0.5rem' }}>
+          <Link href="/login" onClick={() => setMenuOpen(false)} className="btn btn-secondary btn-sm" style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', color: 'var(--color-text-primary)', fontWeight: 600, border: '1px solid var(--color-border)', backgroundColor: '#FFF', textAlign: 'center' }}>
+            Log in
+          </Link>
+          <Link href="/register" onClick={() => setMenuOpen(false)} className="btn btn-primary btn-sm" style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', backgroundColor: 'var(--color-brand-primary)', color: '#FFF', fontWeight: 600, textAlign: 'center' }}>
+            Create account
+          </Link>
+        </div>
+      </div>
+
 
       {/* Main content slot */}
       <main style={{ minHeight: 'calc(100vh - 400px)', paddingTop: 'var(--topbar-height)' }}>
@@ -70,7 +110,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       {/* Footer */}
       <footer className="footer" style={{ background: '#FFFFFF', borderTop: '1px solid var(--color-border)', padding: '4rem 0 2rem' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1.5fr', gap: '2rem', marginBottom: '3rem' }}>
+          <div className="footer-cols-grid">
             {/* Column 1: Info */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>

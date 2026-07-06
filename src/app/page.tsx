@@ -112,7 +112,7 @@ export default function Home() {
     <PublicLayout>
       {/* Hero Section */}
       <section style={{ padding: '5rem 0 4rem', background: 'radial-gradient(50% 50% at 50% 50%, rgba(0, 102, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%)' }}>
-        <div className="container" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4rem', alignItems: 'center' }}>
+        <div className="container hero-grid">
           
           {/* Left Column: Hero Text */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -492,16 +492,13 @@ export default function Home() {
       <section style={{ padding: '4rem 0 6rem', background: 'var(--color-bg-base)' }}>
         <div className="container">
           <div 
+            className="agent-banner-flex"
             style={{ 
               background: 'linear-gradient(135deg, #051026 0%, #0B1E40 100%)', 
               borderRadius: '24px', 
-              padding: '3rem 3.5rem', 
               color: '#FFFFFF',
               position: 'relative',
               overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
               boxShadow: '0 12px 40px rgba(11,30,64,0.15)'
             }}
           >
@@ -513,7 +510,7 @@ export default function Home() {
               <div style={{ width: '12px', height: '120px', backgroundColor: '#FFF', borderRadius: '4px 4px 0 0' }}></div>
             </div>
 
-            <div style={{ maxWidth: '60%', position: 'relative', zIndex: 1 }}>
+            <div className="agent-banner-content">
               <span style={{ color: '#F59E0B', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', display: 'block', marginBottom: '0.5rem' }}>Earn More</span>
               <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1rem', lineHeight: '1.2' }}>Join thousands of agents earning daily</h2>
               <p style={{ fontSize: '0.95rem', color: '#94A3B8', lineHeight: '1.5', marginBottom: '2.5rem' }}>
@@ -521,7 +518,7 @@ export default function Home() {
               </p>
 
               {/* Three items in row */}
-              <div style={{ display: 'flex', gap: '2rem' }}>
+              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399', fontSize: '0.8rem' }}>💰</div>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#E2E8F0' }}>High commissions</span>
