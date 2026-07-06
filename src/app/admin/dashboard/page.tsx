@@ -77,7 +77,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Total users
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 24,568
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Active agents
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 1,245
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Revenue today
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 GH₵1,568,900.00
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Failed transactions
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 102
               </div>
               <div style={{ fontSize: '0.72rem', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                               <span>{tx.type}</span>
                             </div>
                           </td>
-                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: '#fff' }}>{tx.amount}</td>
+                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>{tx.amount}</td>
                           <td style={{ padding: '0.875rem 0.5rem' }}>
                             <span className={`badge ${
                               tx.status === 'success' ? 'badge-success' : 
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
                               <span style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>{p.status}</span>
                             </div>
                           </td>
-                          <td style={{ padding: '0.625rem 0.35rem', fontFamily: 'monospace', fontWeight: 600, color: '#fff' }}>{p.success}</td>
+                          <td style={{ padding: '0.625rem 0.35rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-primary)' }}>{p.success}</td>
                           <td style={{ padding: '0.625rem 0', fontWeight: 600, color: 'var(--color-text-muted)', textAlign: 'right', fontFamily: 'monospace' }}>{p.latency}</td>
                         </tr>
                       ))}

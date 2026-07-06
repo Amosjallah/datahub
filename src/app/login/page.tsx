@@ -19,7 +19,14 @@ export default function Login() {
     // Simulate login delay
     setTimeout(() => {
       setLoading(false);
-      router.push('/dashboard');
+      const emailLower = email.toLowerCase();
+      if (emailLower.includes('admin')) {
+        router.push('/admin/dashboard');
+      } else if (emailLower.includes('agent')) {
+        router.push('/agent/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     }, 800);
   };
 

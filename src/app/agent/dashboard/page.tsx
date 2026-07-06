@@ -94,7 +94,7 @@ export default function AgentDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Sales this month
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 GH₵1,245,680.00
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -112,7 +112,7 @@ export default function AgentDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Commission earned
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 GH₵124,568.00
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -130,7 +130,7 @@ export default function AgentDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Orders processed
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 482
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -148,7 +148,7 @@ export default function AgentDashboard() {
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Active referrals
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', margin: '0.15rem 0', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 32
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
@@ -302,8 +302,8 @@ export default function AgentDashboard() {
                         + Add another row
                       </button>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Total items: <strong style={{ color: '#fff' }}>{manualRows.length}</strong></span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Total amount: <strong style={{ color: '#fff', fontFamily: 'monospace' }}>GH₵7,700.00</strong></span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Total items: <strong style={{ color: 'var(--color-text-primary)' }}>{manualRows.length}</strong></span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Total amount: <strong style={{ color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>GH₵7,700.00</strong></span>
                         <button className="btn btn-primary btn-sm" style={{ padding: '0.45rem 1rem', borderRadius: '6px', fontSize: '0.75rem' }}>
                           Review & purchase
                         </button>
@@ -350,7 +350,7 @@ export default function AgentDashboard() {
                               <span>{sale.service}</span>
                             </div>
                           </td>
-                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: '#fff' }}>{sale.amount}</td>
+                          <td style={{ padding: '0.875rem 0.5rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>{sale.amount}</td>
                           <td style={{ padding: '0.875rem 0.5rem' }}>
                             <span className={`badge ${
                               sale.status === 'success' ? 'badge-success' : 
@@ -402,7 +402,7 @@ export default function AgentDashboard() {
                             </div>
                           </td>
                           <td style={{ padding: '0.625rem 0.35rem', fontFamily: 'monospace' }}>{p.retail}</td>
-                          <td style={{ padding: '0.625rem 0.35rem', fontFamily: 'monospace', fontWeight: 600, color: '#fff' }}>{p.agent}</td>
+                          <td style={{ padding: '0.625rem 0.35rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-primary)' }}>{p.agent}</td>
                           <td style={{ padding: '0.625rem 0', fontWeight: 700, color: '#34D399', textAlign: 'right', fontFamily: 'monospace' }}>{p.margin}</td>
                         </tr>
                       ))}
@@ -421,7 +421,7 @@ export default function AgentDashboard() {
                     <div style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg, var(--color-brand-primary) 0%, #3B82F6 100%)', borderRadius: '99px' }}></div>
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', lineHeight: '1.3' }}>
-                    <strong style={{ color: '#fff' }}>GH₵374,320.00</strong> more in sales to unlock Super Agent benefits
+                    <strong style={{ color: 'var(--color-text-primary)' }}>GH₵374,320.00</strong> more in sales to unlock Super Agent benefits
                   </div>
                 </div>
 
