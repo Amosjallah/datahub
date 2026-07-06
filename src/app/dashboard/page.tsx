@@ -6,12 +6,16 @@ import AppLayout from '@/components/AppLayout';
 import ProviderIcon from '@/components/ProviderIcon';
 import { 
   Wallet, TrendingDown, TrendingUp, FileText, Copy, MoreVertical, 
-  Contact, Eye, EyeOff, ChevronDown, History, Users 
+  Contact, Eye, EyeOff, ChevronDown, History, Users,
+  Tv, Zap, Wifi, Phone as PhoneIcon
 } from 'lucide-react';
 
 export default function Dashboard() {
   const [showBalance, setShowBalance] = useState(true);
-  const [activeTab, setActiveTab] = useState<'data' | 'airtime'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'airtime' | 'tv' | 'bills'>('data');
+  const [tvProvider, setTvProvider] = useState('DStv');
+  const [tvIuc, setTvIuc] = useState('');
+  const [tvPlan, setTvPlan] = useState('Compact Plus - GH₵120');
   const [selectedNetwork, setSelectedNetwork] = useState('MTN');
   const [copied, setCopied] = useState(false);
 
@@ -140,94 +144,223 @@ export default function Dashboard() {
           
           {/* Left Column: Quick Buy & Recent Transactions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
+
+            {/* Quick Service Shortcut Tiles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+              {[
+                { label: 'Buy Data', icon: <Wifi size={20} />, color: '#0066FF', bg: 'rgba(0,102,255,0.08)', tab: 'data' as const },
+                { label: 'Buy Airtime', icon: <PhoneIcon size={20} />, color: '#10B981', bg: 'rgba(16,185,129,0.08)', tab: 'airtime' as const },
+                { label: 'TV Sub', icon: <Tv size={20} />, color: '#EF4444', bg: 'rgba(239,68,68,0.08)', tab: 'tv' as const },
+                { label: 'Pay Bills', icon: <Zap size={20} />, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', tab: 'bills' as const },
+              ].map((s) => (
+                <button
+                  key={s.tab}
+                  type="button"
+                  onClick={() => setActiveTab(s.tab)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
+                    padding: '1rem 0.5rem', borderRadius: '12px', cursor: 'pointer',
+                    border: activeTab === s.tab ? `1.5px solid ${s.color}` : '1.5px solid var(--color-border)',
+                    background: activeTab === s.tab ? s.bg : '#FFFFFF',
+                    color: activeTab === s.tab ? s.color : 'var(--color-text-muted)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', lineHeight: '1.2' }}>{s.label}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Quick Buy Card */}
             <div className="card" style={{ background: 'var(--color-bg-card)' }}>
               <div className="card-body">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
                   <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Quick buy</h3>
-                  {/* Tabs: Data & Airtime */}
-                  <div style={{ display: 'flex', gap: '1.25rem' }}>
-                    <button 
-                      onClick={() => setActiveTab('data')}
-                      style={{ 
-                        background: 'none', border: 'none', color: activeTab === 'data' ? 'var(--color-brand-primary)' : 'var(--color-text-muted)',
-                        fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', paddingBottom: '0.5rem',
-                        borderBottom: activeTab === 'data' ? '2.5px solid var(--color-brand-primary)' : 'none',
-                        transition: 'all var(--transition-fast)'
-                      }}
-                    >
-                      Data
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('airtime')}
-                      style={{ 
-                        background: 'none', border: 'none', color: activeTab === 'airtime' ? 'var(--color-brand-primary)' : 'var(--color-text-muted)',
-                        fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', paddingBottom: '0.5rem',
-                        borderBottom: activeTab === 'airtime' ? '2.5px solid var(--color-brand-primary)' : 'none',
-                        transition: 'all var(--transition-fast)'
-                      }}
-                    >
-                      Airtime
-                    </button>
+                  {/* Tabs: Data, Airtime, TV, Bills */}
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {(['data', 'airtime', 'tv', 'bills'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{ 
+                          background: 'none', border: 'none',
+                          color: activeTab === tab ? 'var(--color-brand-primary)' : 'var(--color-text-muted)',
+                          fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', paddingBottom: '0.5rem',
+                          borderBottom: activeTab === tab ? '2.5px solid var(--color-brand-primary)' : '2.5px solid transparent',
+                          textTransform: 'capitalize', transition: 'all var(--transition-fast)'
+                        }}
+                      >
+                        {tab === 'tv' ? 'TV Sub' : tab === 'bills' ? 'Bills' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="quick-buy-fields">
-                  {/* Network Buttons Selector */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Network</label>
-                    <div style={{ display: 'flex', gap: '0.35rem' }}>
-                      {['MTN', 'Telecel', 'AirtelTigo'].map((net) => {
-                        const isSel = selectedNetwork === net;
-                        return (
-                          <button 
-                            key={net}
+                {/* DATA TAB */}
+                {(activeTab === 'data' || activeTab === 'airtime') && (
+                  <div className="quick-buy-fields">
+                    {/* Network Buttons Selector */}
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Network</label>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        {['MTN', 'Telecel', 'AirtelTigo'].map((net) => {
+                          const isSel = selectedNetwork === net;
+                          return (
+                            <button 
+                              key={net}
+                              type="button"
+                              onClick={() => setSelectedNetwork(net)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                padding: '0.55rem 0.65rem', borderRadius: '8px',
+                                background: isSel ? 'rgba(0,102,255,0.1)' : 'var(--color-bg-elevated)',
+                                border: isSel ? '1.5px solid var(--color-brand-primary)' : '1.5px solid var(--color-border)',
+                                color: isSel ? 'var(--color-brand-primary)' : 'var(--color-text-muted)',
+                                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                                transition: 'all var(--transition-fast)', flex: 1, justifyContent: 'center'
+                              }}
+                            >
+                              <ProviderIcon provider={net} size={14} />
+                              <span style={{ fontSize: '0.7rem' }}>{net === 'AirtelTigo' ? 'AT' : net}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Phone number */}
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Phone number</label>
+                      <div style={{ position: 'relative' }}>
+                        <input type="tel" className="form-input" defaultValue="0803 123 4567" style={{ paddingRight: '2.25rem', fontSize: '0.875rem', fontFamily: 'monospace' }} />
+                        <Contact size={16} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', cursor: 'pointer' }} />
+                      </div>
+                    </div>
+
+                    {/* Bundle or Amount */}
+                    {activeTab === 'data' ? (
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Bundle</label>
+                        <div style={{ position: 'relative' }}>
+                          <select className="form-input" style={{ appearance: 'none', paddingRight: '2rem', fontSize: '0.875rem' }}>
+                            <option>10GB – GH₵4,500</option>
+                            <option>20GB – GH₵8,000</option>
+                            <option>5GB – GH₵2,500</option>
+                          </select>
+                          <ChevronDown size={14} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Amount (GH₵)</label>
+                        <input type="number" className="form-input" placeholder="e.g. 20.00" min="1" style={{ fontSize: '0.875rem' }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TV SUBSCRIPTION TAB */}
+                {activeTab === 'tv' && (
+                  <div className="quick-buy-fields">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">TV Provider</label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {[{name:'DStv',icon:'📺'},{name:'GOtv',icon:'📡'},{name:'StarTimes',icon:'🎬'}].map((p) => (
+                          <button
+                            key={p.name}
                             type="button"
-                            onClick={() => setSelectedNetwork(net)}
+                            onClick={() => { setTvProvider(p.name); setTvPlan(p.name === 'DStv' ? 'Compact Plus - GH₵120' : p.name === 'GOtv' ? 'Supa Plus - GH₵55' : 'Nova - GH₵12'); }}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '0.3rem',
-                              padding: '0.55rem 0.65rem', borderRadius: '8px',
-                              background: isSel ? 'rgba(0,102,255,0.1)' : 'var(--color-bg-elevated)',
-                              border: isSel ? '1.5px solid var(--color-brand-primary)' : '1.5px solid var(--color-border)',
-                              color: isSel ? 'var(--color-brand-primary)' : 'var(--color-text-muted)',
-                              fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                              transition: 'all var(--transition-fast)', flex: 1, justifyContent: 'center'
+                              flex: 1, padding: '0.6rem 0.25rem', borderRadius: '8px', cursor: 'pointer',
+                              border: tvProvider === p.name ? '1.5px solid #EF4444' : '1.5px solid var(--color-border)',
+                              background: tvProvider === p.name ? 'rgba(239,68,68,0.08)' : 'var(--color-bg-elevated)',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
+                              fontSize: '0.7rem', fontWeight: 700,
+                              color: tvProvider === p.name ? '#EF4444' : 'var(--color-text-muted)',
                             }}
                           >
-                            <ProviderIcon provider={net} size={14} />
-                            <span style={{ fontSize: '0.7rem' }}>{net === 'AirtelTigo' ? 'AT' : net}</span>
+                            <span style={{ fontSize: '1.1rem' }}>{p.icon}</span>
+                            {p.name}
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Phone number */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Phone number</label>
-                    <div style={{ position: 'relative' }}>
-                      <input type="tel" className="form-input" defaultValue="0803 123 4567" style={{ paddingRight: '2.25rem', fontSize: '0.875rem', fontFamily: 'monospace' }} />
-                      <Contact size={16} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', cursor: 'pointer' }} />
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Smart Card / IUC Number</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter smart card number"
+                        value={tvIuc}
+                        onChange={(e) => setTvIuc(e.target.value)}
+                        style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                      />
                     </div>
-                  </div>
 
-                  {/* Bundle */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Bundle</label>
-                    <div style={{ position: 'relative' }}>
-                      <select className="form-input" style={{ appearance: 'none', paddingRight: '2rem', fontSize: '0.875rem' }}>
-                        <option>10GB – GH₵4,500</option>
-                        <option>20GB – GH₵8,000</option>
-                        <option>5GB – GH₵2,500</option>
-                      </select>
-                      <ChevronDown size={14} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Package</label>
+                      <div style={{ position: 'relative' }}>
+                        <select
+                          className="form-input"
+                          value={tvPlan}
+                          onChange={(e) => setTvPlan(e.target.value)}
+                          style={{ appearance: 'none', paddingRight: '2rem', fontSize: '0.875rem' }}
+                        >
+                          {tvProvider === 'DStv' && <>
+                            <option>Compact Plus - GH₵120</option>
+                            <option>Compact - GH₵79</option>
+                            <option>Access - GH₵38</option>
+                          </>}
+                          {tvProvider === 'GOtv' && <>
+                            <option>Supa Plus - GH₵55</option>
+                            <option>Supa - GH₵38</option>
+                            <option>Max - GH₵29</option>
+                            <option>Jolli - GH₵22</option>
+                          </>}
+                          {tvProvider === 'StarTimes' && <>
+                            <option>Nova - GH₵12</option>
+                            <option>Basic - GH₵25</option>
+                            <option>Smart - GH₵35</option>
+                            <option>Classic - GH₵50</option>
+                          </>}
+                        </select>
+                        <ChevronDown size={14} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-                
+                )}
+
+                {/* BILLS TAB */}
+                {activeTab === 'bills' && (
+                  <div className="quick-buy-fields">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Bill Type</label>
+                      <div style={{ position: 'relative' }}>
+                        <select className="form-input" style={{ appearance: 'none', paddingRight: '2rem', fontSize: '0.875rem' }}>
+                          <option>⚡ ECG Prepaid Token</option>
+                          <option>⚡ ECG Postpaid Bill</option>
+                          <option>💧 Ghana Water (GWCL)</option>
+                        </select>
+                        <ChevronDown size={14} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Meter / Account Number</label>
+                      <input type="text" className="form-input" placeholder="Enter meter or account number" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Amount (GH₵)</label>
+                      <input type="number" className="form-input" placeholder="e.g. 100.00" min="1" style={{ fontSize: '0.875rem' }} />
+                    </div>
+                  </div>
+                )}
+
                 <button className="btn btn-primary btn-full" style={{ marginTop: '1.25rem', padding: '0.75rem', borderRadius: '8px' }}>
-                  Buy now
+                  {activeTab === 'tv' ? '📺 Subscribe Now' : activeTab === 'bills' ? '💵 Pay Bill' : '🚀 Buy Now'}
                 </button>
               </div>
             </div>
