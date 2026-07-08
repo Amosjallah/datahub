@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Globe, FileText, History, Users, User, LifeBuoy, TrendingUp, Menu, Bell, Wallet,
-  UserCheck, MessageSquare, FileCode, Settings, ChevronDown
+  UserCheck, MessageSquare, FileCode, Settings, ChevronDown, Database
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -59,6 +59,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
     { href: '/admin/tickets', label: 'Support tickets', icon: MessageSquare },
     { href: '/admin/reports', label: 'Reports & analytics', icon: TrendingUp },
     { href: '/admin/logs', label: 'Audit logs', icon: FileCode },
+    { href: '/admin/backup', label: 'Backup & Restore', icon: Database },
     { href: '/admin/settings', label: 'System settings', icon: Settings },
   ];
 
