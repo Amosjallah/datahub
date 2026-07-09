@@ -157,7 +157,7 @@ export default function Home() {
               <span>⭐</span> Ghana's #1 Automated VTU Gateway
             </div>
             
-            <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.6rem)', fontWeight: 900, color: 'var(--color-text-primary)', lineHeight: '1.15', marginBottom: '1.5rem', letterSpacing: '-0.03em' }}>
+            <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.6rem)', fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: '1.15', marginBottom: '1.5rem', letterSpacing: '-0.03em' }}>
               Instant Data Topups.<br />
               <span className="text-gradient">Fast & Secure.</span>
             </h1>
@@ -179,21 +179,21 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', width: '100%', maxWidth: '520px', borderTop: '1px solid var(--color-border)', paddingTop: '2rem' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-brand-primary)' }}>2.4M+</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-brand-primary)' }}>2.4M+</span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Transactions</div>
               </div>
               
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10B981' }}>99.9%</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10B981' }}>99.9%</span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Uptime rate</div>
               </div>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#8B5CF6' }}>18K+</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8B5CF6' }}>18K+</span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Agent network</div>
               </div>
@@ -389,7 +389,7 @@ export default function Home() {
               {/* Price Row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem', marginBottom: '1.5rem' }}>
                 <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>You pay</span>
-                <span style={{ fontSize: '1.95rem', fontWeight: 900, color: 'var(--color-brand-primary)', fontFamily: 'monospace' }}>GH₵ {getPriceNum()}</span>
+                <span style={{ fontSize: '1.95rem', fontWeight: 800, color: 'var(--color-brand-primary)', fontFamily: 'Space Grotesk, monospace' }}>GH₵ {getPriceNum()}</span>
               </div>
 
               {/* Buy Now Button */}
@@ -460,7 +460,7 @@ export default function Home() {
           {/* Section Header */}
           <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
             <span style={{ color: 'var(--color-brand-primary)', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.75rem' }}>Our utilities</span>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>Instant transactions at wholesale rates</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>Instant transactions at wholesale rates</h2>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '1.05rem', marginTop: '0.5rem', maxWidth: '600px', margin: '0.75rem auto 0' }}>Settle bills and acquire data bundles instantly using our fully automated network gateways.</p>
           </div>
 
@@ -502,7 +502,7 @@ export default function Home() {
           
           <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
             <span style={{ color: 'var(--color-brand-primary)', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.75rem' }}>Why Choose FA Digital</span>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>Engineered for absolute reliability</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>Engineered for absolute reliability</h2>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem' }}>
@@ -550,7 +550,7 @@ export default function Home() {
 
             <div className="agent-banner-content">
               <span style={{ color: '#FBBF24', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.75rem' }}>Earning opportunity</span>
-              <h2 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#FFFFFF', marginBottom: '1rem', lineHeight: '1.25', letterSpacing: '-0.02em' }}>Join thousands of reseller agents earning daily</h2>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1rem', lineHeight: '1.25', letterSpacing: '-0.02em' }}>Join thousands of reseller agents earning daily</h2>
               <p style={{ fontSize: '0.98rem', color: '#94A3B8', lineHeight: '1.65', marginBottom: '2.5rem', maxWidth: '560px' }}>
                 Launch your virtual top-up business with zero setup fees. Purchase VTU products at heavily discounted rates and pocket instant margins.
               </p>
