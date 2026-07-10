@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import SupportFloat from '@/components/SupportFloat'
 
 export const metadata: Metadata = {
   title: 'FA DIGITAL SERVICES LTD. — Ghana\'s #1 VTU & Digital Solutions Platform',
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <SupportFloat />
+      </body>
     </html>
   )
 }
