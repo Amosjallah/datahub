@@ -1,34 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
-
-/* ============================================================
-   FA DIGITAL SERVICES LTD. — Design System
-   ============================================================ */
-
 :root {
-    --color-brand-primary:   #2563EB; /* Premium Cobalt Blue */
-    --color-brand-secondary: #0F172A; /* Rich Slate Navy */
-    --color-brand-light:     #3B82F6; /* Lighter Blue */
+    --color-brand-primary:   #FACC15; /* Bright Amber/Yellow */
+    --color-brand-secondary: #0F172A; /* Slate Navy */
+    --color-brand-light:     #FDE047; /* Light Amber/Yellow */
     --color-brand-cyan:      #06B6D4; /* Modern Cyan */
     --color-brand-emerald:   #10B981; /* Vibrant Green */
-    --color-brand-glow:      rgba(37, 99, 235, 0.12);
-    --color-brand-subtle:    rgba(37, 99, 235, 0.04);
-    --color-brand-muted:     rgba(37, 99, 235, 0.08);
+    --color-brand-glow:      rgba(250, 204, 21, 0.15);
+    --color-brand-subtle:    rgba(250, 204, 21, 0.04);
+    --color-brand-muted:     rgba(250, 204, 21, 0.08);
 
-    --color-bg-base:         #F8FAFC; /* Slate 50 clean light background */
-    --color-bg-surface:      #FFFFFF; /* White */
-    --color-bg-elevated:     #F1F5F9; /* Slate 100 */
-    --color-bg-card:         #FFFFFF; /* White for cards */
-    --color-bg-hover:        #F8FAFC;
-    --color-bg-active:       #E2E8F0;
+    --color-bg-base:         #030712; /* Deep Dark Gray-950 background */
+    --color-bg-surface:      #0F172A; /* Slate-900 surface */
+    --color-bg-elevated:     #1E293B; /* Slate-800 elevated */
+    --color-bg-card:         #0B0F19; /* Dark Elev card */
+    --color-bg-hover:        #1E293B;
+    --color-bg-active:       #334155;
 
-    --color-text-primary:    #0F172A; /* Slate 900 */
-    --color-text-secondary:  #334155; /* Slate 700 */
-    --color-text-muted:      #475569; /* Soft Slate 600 */
-    --color-text-subtle:     #94A3B8; /* Slate 400 */
+    --color-text-primary:    #F9FAFB; /* Slate 50 */
+    --color-text-secondary:  #E5E7EB; /* Slate 200 */
+    --color-text-muted:      #9CA3AF; /* Slate 400 */
+    --color-text-subtle:     #6B7280; /* Slate 500 */
 
-    --color-border:          rgba(15, 23, 42, 0.08); /* 8% Slate border */
-    --color-border-strong:   rgba(15, 23, 42, 0.15); /* 15% Slate border */
-    --color-border-subtle:   rgba(15, 23, 42, 0.04); /* 4% Slate border */
+    --color-border:          rgba(255, 255, 255, 0.08); 
+    --color-border-strong:   rgba(255, 255, 255, 0.15); 
+    --color-border-subtle:   rgba(255, 255, 255, 0.04); 
 
     --color-success:         #10B981;
     --color-success-bg:      rgba(16, 185, 129, 0.08);
@@ -48,10 +42,10 @@
     --transition-fast:   180ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 10px 24px -4px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
-    --shadow-lg: 0 20px 40px -8px rgba(37, 99, 235, 0.05), 0 6px 18px rgba(0, 0, 0, 0.02);
-    --shadow-glow: 0 12px 30px rgba(37, 99, 235, 0.15);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 10px 24px -4px rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 40px -8px rgba(250, 204, 21, 0.05), 0 6px 18px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 12px 30px rgba(250, 204, 21, 0.15);
 
     --sidebar-width:     248px;
     --topbar-height:     72px;
@@ -102,20 +96,20 @@ a:hover { color: var(--color-brand-light); }
 
 /* Glassmorphism helpers */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .text-gradient {
-    background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-secondary) 100%);
+    background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-light) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .text-gradient-cyan {
-    background: linear-gradient(135deg, #0052CC 0%, #00B4DB 100%);
+    background: linear-gradient(135deg, #00B4DB 0%, #00F2FE 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -130,7 +124,7 @@ a:hover { color: var(--color-brand-light); }
     transition: all var(--transition-smooth);
 }
 .card:hover { 
-    border-color: rgba(0, 102, 255, 0.2); 
+    border-color: rgba(250, 204, 21, 0.25); 
     transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
 }
@@ -146,10 +140,10 @@ a:hover { color: var(--color-brand-light); }
     font-weight: 600;
     letter-spacing: 0.03em;
 }
-.badge-success { background: var(--color-success-bg); color: #059669; border: 1px solid rgba(16, 185, 129, 0.15); }
-.badge-blue { background: var(--color-brand-subtle); color: var(--color-brand-primary); border: 1px solid rgba(0, 102, 255, 0.15); }
-.badge-warning { background: var(--color-warning-bg); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.15); }
-.badge-danger { background: var(--color-danger-bg); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.15); }
+.badge-success { background: var(--color-success-bg); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.15); }
+.badge-blue { background: var(--color-brand-subtle); color: var(--color-brand-primary); border: 1px solid rgba(250, 204, 21, 0.15); }
+.badge-warning { background: var(--color-warning-bg); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.15); }
+.badge-danger { background: var(--color-danger-bg); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.15); }
 
 /* Button layouts */
 .btn {
@@ -163,13 +157,13 @@ a:hover { color: var(--color-brand-light); }
     line-height: 1.2;
 }
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-brand-primary) 0%, #1D4ED8 100%);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+    background: linear-gradient(135deg, var(--color-brand-primary) 0%, #D97706 100%);
+    color: #030712;
+    box-shadow: 0 4px 14px rgba(250, 204, 21, 0.2);
 }
 .btn-primary:hover { 
     transform: translateY(-2px); 
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 6px 20px rgba(250, 204, 21, 0.3);
 }
 .btn-secondary {
     background: var(--color-bg-surface);
@@ -205,19 +199,19 @@ a:hover { color: var(--color-brand-light); }
 .form-input:focus, .form-select:focus, .form-textarea:focus {
     border-color: var(--color-brand-primary);
     background: var(--color-bg-surface);
-    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1);
 }
 
 /* Navigation and Footer Styles */
 .navbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     height: var(--topbar-height);
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(3, 7, 18, 0.8);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--color-border);
     display: flex; align-items: center;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.01);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
     transition: all var(--transition-smooth);
 }
 .navbar-logo-icon {
@@ -225,7 +219,7 @@ a:hover { color: var(--color-brand-light); }
     background: var(--color-brand-primary);
     border-radius: var(--radius-md);
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: #fff;
+    font-weight: 700; color: #030712;
 }
 .navbar-brand-name {
     font-family: 'Space Grotesk', sans-serif;
@@ -245,7 +239,7 @@ a:hover { color: var(--color-brand-light); }
 }
 
 .footer {
-    background: var(--color-bg-surface);
+    background: var(--color-bg-base);
     border-top: 1px solid var(--color-border);
     padding: 3rem 0;
     color: var(--color-text-muted);

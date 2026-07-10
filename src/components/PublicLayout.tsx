@@ -27,14 +27,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div style={{ backgroundColor: 'var(--color-bg-base)', minHeight: '100vh', color: 'var(--color-text-primary)' }}>
       {/* Navigation */}
-      <nav className="navbar" style={{ borderBottom: '1px solid rgba(15, 23, 42, 0.06)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000 }}>
+      <nav className="navbar" style={{ borderBottom: '1px solid var(--color-border)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000 }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', transition: 'transform 0.2s' }} className="hover-scale">
-            <Logo size={32} colorMode="light" />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="text-gradient" style={{ fontWeight: 900, fontSize: '1.35rem', letterSpacing: '-0.03em', lineHeight: '1.1' }}>FA Digital</span>
-              <span style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '0.15rem' }}>Utility gateway</span>
-            </div>
+            <Logo size={32} />
           </Link>
           
           <div className="nav-links-desktop" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
@@ -143,17 +139,16 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="footer" style={{ background: '#FFFFFF', borderTop: '1px solid var(--color-border)', padding: '5rem 0 3rem' }}>
+      <footer className="footer" style={{ backgroundColor: 'var(--color-bg-surface)', borderTop: '1px solid var(--color-border)', padding: '5rem 0 3rem' }}>
         <div className="container">
           <div className="footer-cols-grid" style={{ marginBottom: '4rem' }}>
             {/* Column 1: Info */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Logo size={32} colorMode="light" />
-                <span className="text-gradient" style={{ fontWeight: 900, fontSize: '1.35rem', letterSpacing: '-0.03em', lineHeight: '1.1' }}>FA Digital</span>
+                <Logo size={32} />
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                Instant VTU & utility transaction gateway in Ghana. Buy cheap internet bundles, top up airtime, settle domestic bills, and purchase result checkers in seconds.
+                DataMart Ghana is a licensed data bundle marketplace serving customers and resellers across Ghana. Buy MTN, Telecel, and AirtelTigo data bundles with fast delivery and secure mobile money payments.
               </p>
               {/* Social Icons */}
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
@@ -191,23 +186,20 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             <div>
               <div className="footer-col-title" style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Services</div>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <li><Link href="/services" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Data bundles</Link></li>
-                <li><Link href="/services" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Airtime top-up</Link></li>
-                <li><Link href="/services" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Bill payments</Link></li>
-                <li><Link href="/services" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Result checkers</Link></li>
-                <li><Link href="/services" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>All utilities</Link></li>
+                <li><Link href="/buy" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Buy Data Bundles</Link></li>
+                <li><Link href="/mtnup2u" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>MTN UP2U Data</Link></li>
+                <li><Link href="/pricing" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Discount Rates</Link></li>
+                <li><Link href="/become-agent" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Become an Agent</Link></li>
               </ul>
             </div>
-
+            
             {/* Column 3: Company */}
             <div>
               <div className="footer-col-title" style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Company</div>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <li><Link href="/about" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>About us</Link></li>
-                <li><Link href="/about" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>How it works</Link></li>
                 <li><Link href="/pricing" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Pricing</Link></li>
-                <li><Link href="/become-agent" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Become an agent</Link></li>
-                <li><Link href="/careers" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Careers</Link></li>
+                <li><Link href="/become-agent" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Reseller Program</Link></li>
               </ul>
             </div>
 
@@ -215,10 +207,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             <div>
               <div className="footer-col-title" style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Help</div>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <li><Link href="/faqs" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>FAQs</Link></li>
-                <li><Link href="/contact" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Contact us</Link></li>
-                <li><Link href="/support" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Support tickets</Link></li>
-                <li><Link href="/api-docs" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>API documentation</Link></li>
+                <li><Link href="/contact" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Contact support</Link></li>
+                <li><Link href="/tutorials/how-to-login" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Tutorials</Link></li>
               </ul>
             </div>
 
@@ -228,12 +218,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <li><Link href="/terms" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Terms of service</Link></li>
                 <li><Link href="/privacy" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Privacy policy</Link></li>
-                <li><Link href="/terms" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Refund policy</Link></li>
-                <li><Link href="/privacy" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Cookie policy</Link></li>
               </ul>
             </div>
 
-            {/* Column 6: Download App */}
+            {/* Column 6: App Channels */}
             <div>
               <div className="footer-col-title" style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>App Channels</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -257,17 +245,65 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Footer Bottom */}
           <div className="footer-bottom" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>&copy; {new Date().getFullYear()} FA DIGITAL SERVICES LTD. All rights reserved. Registered in Ghana.</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>&copy; {new Date().getFullYear()} DataMart Ghana. All rights reserved. Registered in Ghana.</span>
             
             {/* Country Selector Dropdown */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 1rem', background: 'var(--color-bg-base)', fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover-scale">
               <span>🇬🇭</span>
               <span>Ghana (GH₵)</span>
-              <span style={{ fontSize: '0.6rem', opacity: 0.6 }}>▼</span>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Floating Chat Widgets */}
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', zIndex: 99999 }}>
+        {/* Support Chat Float (Blue) */}
+        <Link 
+          href="/contact" 
+          style={{ 
+            width: '3.25rem', 
+            height: '3.25rem', 
+            borderRadius: '50%', 
+            backgroundColor: '#2563EB', 
+            color: '#FFFFFF', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)', 
+            transition: 'all 0.2s', 
+            cursor: 'pointer' 
+          }}
+          className="hover-scale"
+          title="Contact Support"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </Link>
+
+        {/* WhatsApp Support Float (Green) */}
+        <a 
+          href="https://wa.me/233596922026" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ 
+            width: '3.25rem', 
+            height: '3.25rem', 
+            borderRadius: '50%', 
+            backgroundColor: '#25D366', 
+            color: '#FFFFFF', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            boxShadow: '0 4px 14px rgba(37, 211, 102, 0.4)', 
+            transition: 'all 0.2s', 
+            cursor: 'pointer' 
+          }}
+          className="hover-scale"
+          title="WhatsApp Support"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        </a>
+      </div>
     </div>
   );
 }
