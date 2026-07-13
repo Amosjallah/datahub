@@ -15,7 +15,7 @@ export default function Blog() {
     },
     { 
       category: 'Backend Architecture', 
-      title: 'How DataMart delivers data fast', 
+      title: 'How FA Digital delivers data fast', 
       date: 'July 2, 2026', 
       readTime: '5 min read', 
       desc: 'An in-depth look at our low-latency VTU gateway integrations with MTN, Telecel, and AirtelTigo API nodes that allow 3-second delivery.', 
@@ -26,7 +26,7 @@ export default function Blog() {
       title: 'MTN, Telecel, AirtelTigo data prices in Ghana', 
       date: 'June 25, 2026', 
       readTime: '4 min read', 
-      desc: 'A comprehensive comparison of standard official data bundle rates in Ghana versus the bulk reseller rates available on DataMart.', 
+      desc: 'A comprehensive comparison of standard official data bundle rates in Ghana versus the bulk reseller rates available on FA Digital.', 
       badgeType: 'badge-success' 
     },
   ];

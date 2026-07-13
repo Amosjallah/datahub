@@ -18,7 +18,7 @@ export default function HowToLoginTutorial() {
       desc: 'Click on the "Sign In" button in the top right corner of the homepage navbar, or toggle to it directly from the registration panel.',
       mockUI: (
         <div style={{ padding: '1.5rem', backgroundColor: '#0B0F19', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 'bold', color: '#FFFFFF' }}>DataMartGH</span>
+          <span style={{ fontWeight: 'bold', color: '#FFFFFF' }}>FA Digital</span>
           <div style={{ padding: '0.4rem 1rem', backgroundColor: '#FACC15', color: '#030712', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>
             Sign In
           </div>
@@ -90,7 +90,7 @@ export default function HowToLoginTutorial() {
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <span style={{ color: '#FACC15', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.5rem' }}>Tutorial Guides</span>
             <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#FFFFFF', marginBottom: '0.75rem' }}>
-              How to Sign In &amp; Use DataMart
+              How to Sign In &amp; Use FA Digital
             </h1>
             <p style={{ color: '#9CA3AF', fontSize: '1.05rem' }}>
               Follow our step-by-step slideshow guide to navigate the login flow and access your dashboard.

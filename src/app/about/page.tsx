@@ -16,7 +16,7 @@ export default function About() {
             Connecting Ghanaians to <span className="text-gradient">Instant Digital Rails</span>
           </h1>
           <p style={{ fontSize: '1.05rem', lineHeight: '1.7', color: '#9CA3AF' }}>
-            DataMart Ghana (founded in 2023 by Samtech - Danaa Kojo Frimpong) is Ghana's leading virtual top-up (VTU) e-commerce and bills gateway, delivering instant and reliable utility transactions for consumers and reseller agents nationwide.
+            FA DIGITAL SERVICES LTD. (founded in 2023 by Samtech - Danaa Kojo Frimpong) is Ghana's leading virtual top-up (VTU) e-commerce and bills gateway, delivering instant and reliable utility transactions for consumers and reseller agents nationwide.
           </p>
         </div>
       </section>

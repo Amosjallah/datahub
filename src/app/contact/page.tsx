@@ -171,8 +171,8 @@ export default function Contact() {
                 <p style={{ fontSize: '0.85rem', color: '#9CA3AF', lineHeight: '1.5', marginBottom: '0.5rem' }}>
                   Send an email to our support helpdesk. We process tickets constantly.
                 </p>
-                <a href="mailto:support@datamartgh.shop" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FACC15', fontFamily: 'monospace' }}>
-                  support@datamartgh.shop
+                <a href="mailto:support@fadigitalservices.com" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FACC15', fontFamily: 'monospace' }}>
+                  support@fadigitalservices.com
                 </a>
               </div>
             </div>

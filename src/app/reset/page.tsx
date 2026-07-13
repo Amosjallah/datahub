@@ -184,7 +184,7 @@ export default function ResetPassword() {
               </button>
 
               <p style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: '1rem' }}>
-                Having issues? Email us directly at <a href="mailto:support@datamartgh.shop" style={{ color: '#FACC15' }}>support@datamartgh.shop</a> for manuals.
+                Having issues? Email us directly at <a href="mailto:support@fadigitalservices.com" style={{ color: '#FACC15' }}>support@fadigitalservices.com</a> for manuals.
               </p>
             </div>
           )}

@@ -148,7 +148,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 <Logo size={32} />
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                DataMart Ghana is a licensed data bundle marketplace serving customers and resellers across Ghana. Buy MTN, Telecel, and AirtelTigo data bundles with fast delivery and secure mobile money payments.
+                FA DIGITAL SERVICES LTD. is a licensed data bundle marketplace serving customers and resellers across Ghana. Buy MTN, Telecel, and AirtelTigo data bundles with fast delivery and secure mobile money payments.
               </p>
               {/* Social Icons */}
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
@@ -220,32 +220,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 <li><Link href="/privacy" className="footer-link" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Privacy policy</Link></li>
               </ul>
             </div>
-
-            {/* Column 6: App Channels */}
-            <div>
-              <div className="footer-col-title" style={{ color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>App Channels</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: '#0F172A', color: '#FFF', padding: '0.5rem 1rem', borderRadius: '10px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.2s' }} className="hover-scale">
-                  <span style={{ fontSize: '1.2rem' }}>🤖</span>
-                  <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
-                    <div style={{ fontSize: '0.6rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Get it on</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 'bold' }}>Google Play</div>
-                  </div>
-                </a>
-                <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: '#0F172A', color: '#FFF', padding: '0.5rem 1rem', borderRadius: '10px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.2s' }} className="hover-scale">
-                  <span style={{ fontSize: '1.2rem' }}>🍎</span>
-                  <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
-                    <div style={{ fontSize: '0.6rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Download on the</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 'bold' }}>App Store</div>
-                  </div>
-                </a>
-              </div>
-            </div>
           </div>
 
           {/* Footer Bottom */}
           <div className="footer-bottom" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>&copy; {new Date().getFullYear()} DataMart Ghana. All rights reserved. Registered in Ghana.</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>&copy; {new Date().getFullYear()} FA DIGITAL SERVICES LTD. All rights reserved. Registered in Ghana.</span>
             
             {/* Country Selector Dropdown */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.5rem 1rem', background: 'var(--color-bg-base)', fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} className="hover-scale">
