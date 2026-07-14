@@ -134,7 +134,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       </div>
 
       {/* Main content slot */}
-      <main style={{ minHeight: 'calc(100vh - 400px)', paddingTop: 'var(--topbar-height)', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ minHeight: 'calc(100vh - 400px)', paddingTop: '72px', display: 'flex', flexDirection: 'column' }}>
         {children}
       </main>
 
