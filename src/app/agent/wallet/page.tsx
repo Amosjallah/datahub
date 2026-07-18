@@ -64,7 +64,7 @@ export default function AgentWallet() {
             </div>
 
             {/* Payout form */}
-            <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+            <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Withdraw Commission to Bank</h3>
               <form onSubmit={handleWithdrawal}>
                 <div className="form-group" style={{ marginBottom: '1.25rem' }}>
@@ -88,12 +88,12 @@ export default function AgentWallet() {
           </div>
 
           {/* Statement logs */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Wallet Ledger Statement</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '330px', overflowY: 'auto' }}>
               {history.map(item => (
-                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--color-border-subtle)', borderRadius: '8px', background: '#FAFAFA' }}>
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--color-border-subtle)', borderRadius: '8px', background: 'var(--color-bg-surface)' }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{item.type}</div>
                     <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>{item.date} &middot; {item.id}</div>

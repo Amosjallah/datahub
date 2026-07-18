@@ -25,7 +25,7 @@ export default function AdminSettings() {
         </div>
 
         <div style={{ maxWidth: '650px' }}>
-          <form onSubmit={handleSave} className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '2rem' }}>
+          <form onSubmit={handleSave} className="card" style={{ border: '1px solid var(--color-border)', padding: '2rem' }}>
             
             {/* Toggle 1: Maintenance Mode */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1.25rem', borderBottom: '1px solid var(--color-border-subtle)', marginBottom: '1.25rem' }}>

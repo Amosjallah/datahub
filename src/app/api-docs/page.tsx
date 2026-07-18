@@ -157,7 +157,7 @@ export default function ApiDocs() {
               </div>
 
               {/* Endpoint Parameters Table */}
-              <div className="card" style={{ padding: '1.5rem', border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
+              <div className="card" style={{ padding: '1.5rem', border: '1px solid var(--color-border)' }}>
                 <h4 style={{ fontWeight: 800, marginBottom: '1rem', fontSize: '0.95rem' }}>POST PAYLOAD PARAMETERS</h4>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>

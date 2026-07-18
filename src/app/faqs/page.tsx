@@ -55,7 +55,7 @@ export default function Faqs() {
           </h1>
           
           {/* Search bar widget */}
-          <div style={{ position: 'relative', maxWidth: '500px', margin: '1.5rem auto 0', display: 'flex', alignItems: 'center', border: '1.5px solid var(--color-border)', borderRadius: '14px', background: '#FFFFFF', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ position: 'relative', maxWidth: '500px', margin: '1.5rem auto 0', display: 'flex', alignItems: 'center', border: '1.5px solid var(--color-border)', borderRadius: '14px', background: 'var(--color-bg-elevated)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
             <span style={{ padding: '0 0.75rem 0 1.15rem', display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
               <Search size={18} />
             </span>
@@ -70,7 +70,8 @@ export default function Faqs() {
                 outline: 'none',
                 padding: '0.85rem 1rem 0.85rem 0',
                 fontSize: '0.92rem',
-                color: 'var(--color-text-primary)'
+                color: 'var(--color-text-primary)',
+                background: 'transparent'
               }}
             />
           </div>
@@ -90,7 +91,7 @@ export default function Faqs() {
                 fontSize: '0.85rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                backgroundColor: activeCategory === cat ? 'var(--color-brand-primary)' : '#FFFFFF',
+                backgroundColor: activeCategory === cat ? 'var(--color-brand-primary)' : 'var(--color-bg-elevated)',
                 color: activeCategory === cat ? '#FFFFFF' : 'var(--color-text-secondary)',
                 border: activeCategory === cat ? '1.5px solid var(--color-brand-primary)' : '1.5px solid var(--color-border)',
                 transition: 'all 0.2s'

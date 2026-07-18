@@ -454,7 +454,7 @@ export default function Dashboard() {
                   <button 
                     onClick={copyReferral} 
                     className="btn btn-secondary" 
-                    style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.8rem', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}
+                    style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.8rem' }}
                   >
                     {copied ? 'Copied' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Copy size={14} /> Copy</span>}
                   </button>
@@ -501,10 +501,10 @@ export default function Dashboard() {
                       </div>
                       {/* Action buttons */}
                       <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                        <Link href={`/buy/data?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}>
+                        <Link href={`/buy/data?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem' }}>
                           📶 Buy
                         </Link>
-                        <Link href={`/buy/bills?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}>
+                        <Link href={`/buy/bills?phone=${b.phone}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.7rem' }}>
                           💵 Pay
                         </Link>
                         <button style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>

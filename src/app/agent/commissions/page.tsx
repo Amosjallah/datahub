@@ -32,7 +32,7 @@ export default function AgentCommissions() {
         {/* Stats Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
           {stats.map((s, idx) => (
-            <div key={idx} className="card" style={{ padding: '1.25rem', background: '#FFF', border: '1px solid var(--color-border)' }}>
+            <div key={idx} className="card" style={{ padding: '1.25rem', border: '1px solid var(--color-border)' }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {s.label}
               </div>
@@ -44,10 +44,10 @@ export default function AgentCommissions() {
         </div>
 
         {/* Commissions Table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Date</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Order ID</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Source Customer</th>

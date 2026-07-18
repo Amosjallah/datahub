@@ -31,10 +31,10 @@ export default function AdminTickets() {
         </div>
 
         {/* Tickets Table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Ticket ID</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>User / Contact</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Subject / Issue</th>
@@ -78,7 +78,7 @@ export default function AdminTickets() {
                           <button 
                             onClick={() => toggleStatus(t.id, 'In progress')}
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.72rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}
+                            style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.72rem', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-primary)' }}
                           >
                             Investigate
                           </button>

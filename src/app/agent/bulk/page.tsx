@@ -39,14 +39,14 @@ export default function AgentBulk() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {/* Uploader */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Upload CSV File</h3>
             <div style={{
               border: '2px dashed var(--color-border)',
               borderRadius: '12px',
               padding: '2.5rem 1rem',
               textAlign: 'center',
-              background: '#FAFAFA',
+              background: 'var(--color-bg-base)',
               marginBottom: '1rem'
             }}>
               <UploadCloud size={32} color="var(--color-brand-primary)" style={{ margin: '0 auto 1rem' }} />
@@ -58,7 +58,7 @@ export default function AgentBulk() {
                 onClick={handleUpload}
                 disabled={loading}
                 className="btn btn-secondary btn-sm"
-                style={{ padding: '0.5rem 1rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}
+                style={{ padding: '0.5rem 1rem', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-primary)' }}
               >
                 {loading ? 'Uploading & Parsing...' : 'Browse CSV'}
               </button>
@@ -72,13 +72,13 @@ export default function AgentBulk() {
           </div>
 
           {/* Records Table Preview */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Batch Preview & Dispatch</h3>
             
             <div style={{ overflowX: 'auto', marginBottom: '1.5rem', maxHeight: '180px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Phone</th>
                     <th style={{ padding: '0.5rem' }}>Network</th>
                     <th style={{ padding: '0.5rem' }}>Package</th>
@@ -88,7 +88,7 @@ export default function AgentBulk() {
                 <tbody>
                   {records.map((r, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                      <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 600 }}>{r.phone}</td>
+                      <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-primary)' }}>{r.phone}</td>
                       <td style={{ padding: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <ProviderIcon provider={r.network} size={12} />

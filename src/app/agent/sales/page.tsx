@@ -30,7 +30,7 @@ export default function AgentSales() {
         </div>
 
         {/* Filters */}
-        <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', background: '#FFF', border: '1px solid var(--color-border)' }}>
+        <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
           <input 
             type="text" 
             placeholder="Search by customer phone, transaction ID or service..." 
@@ -42,10 +42,10 @@ export default function AgentSales() {
         </div>
 
         {/* Sales Table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Order ID</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Customer</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Service</th>

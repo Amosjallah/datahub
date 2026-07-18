@@ -29,7 +29,7 @@ export default function AgentReferrals() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           {/* Copy invite link */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Link2 size={18} color="var(--color-brand-primary)" /> Invite New Agents
             </h3>
@@ -43,7 +43,7 @@ export default function AgentReferrals() {
                 readOnly 
                 className="form-input" 
                 value="https://fadigital.com/register?ref=KWAME_RES_241"
-                style={{ fontSize: '0.8rem', background: '#FAFAFA', border: '1px solid var(--color-border)', fontFamily: 'monospace' }} 
+                style={{ fontSize: '0.8rem', background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', fontFamily: 'monospace' }} 
               />
               <button 
                 onClick={handleCopyLink}
@@ -56,7 +56,7 @@ export default function AgentReferrals() {
           </div>
 
           {/* Stats summary */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem', display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem', display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(0,102,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-brand-primary)', flexShrink: 0 }}>
               <Users size={24} />
             </div>
@@ -75,10 +75,10 @@ export default function AgentReferrals() {
         </div>
 
         {/* Referrals table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Invite Name</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Phone</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Account Type</th>

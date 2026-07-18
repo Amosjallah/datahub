@@ -33,7 +33,7 @@ export default function AdminReports() {
         {/* Summaries Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
           {summaries.map((s, idx) => (
-            <div key={idx} className="card" style={{ padding: '1.25rem', background: '#FFF', border: '1px solid var(--color-border)' }}>
+            <div key={idx} className="card" style={{ padding: '1.25rem', border: '1px solid var(--color-border)' }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {s.label}
               </div>
@@ -46,9 +46,9 @@ export default function AdminReports() {
             </div>
           ))}
         </div>
-
+ 
         {/* Sales Chart */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.5rem' }}>Revenue Growth (H1 2026)</h3>
           
           <div style={{ display: 'flex', gap: '1.5rem', height: '260px', alignItems: 'flex-end', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-border-subtle)', position: 'relative' }}>

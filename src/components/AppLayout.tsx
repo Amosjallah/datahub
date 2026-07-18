@@ -125,7 +125,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
           <div 
             style={{
               display: 'flex', alignItems: 'center', gap: '0.75rem',
-              background: '#FFFFFF', border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
               padding: '0.35rem 0.5rem 0.35rem 0.875rem', borderRadius: 'var(--radius-md)'
             }}
           >
@@ -229,7 +229,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
         <div style={{ padding: '0 0.75rem', marginTop: 'auto', marginBottom: '1.25rem' }}>
           <div 
             style={{
-              background: '#FFFFFF',
+              background: 'var(--color-bg-base)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-lg)',
               padding: '1.1rem 1rem',

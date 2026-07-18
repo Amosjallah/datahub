@@ -46,10 +46,10 @@ export default function AdminAgents() {
         </div>
 
         {/* Agents Table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Agent Name</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Phone</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Level Tier</th>
@@ -98,7 +98,7 @@ export default function AdminAgents() {
                           onClick={() => changeTier(a.id, 'up')}
                           disabled={a.tier === 'Super Agent'}
                           className="btn btn-secondary btn-sm"
-                          style={{ padding: '0.25rem 0.45rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)', cursor: a.tier === 'Super Agent' ? 'not-allowed' : 'pointer', opacity: a.tier === 'Super Agent' ? 0.4 : 1 }}
+                          style={{ padding: '0.25rem 0.45rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', cursor: a.tier === 'Super Agent' ? 'not-allowed' : 'pointer', opacity: a.tier === 'Super Agent' ? 0.4 : 1 }}
                           title="Upgrade Tier"
                         >
                           <ChevronUp size={14} />
@@ -107,7 +107,7 @@ export default function AdminAgents() {
                           onClick={() => changeTier(a.id, 'down')}
                           disabled={a.tier === 'Bronze Agent'}
                           className="btn btn-secondary btn-sm"
-                          style={{ padding: '0.25rem 0.45rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)', cursor: a.tier === 'Bronze Agent' ? 'not-allowed' : 'pointer', opacity: a.tier === 'Bronze Agent' ? 0.4 : 1 }}
+                          style={{ padding: '0.25rem 0.45rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', cursor: a.tier === 'Bronze Agent' ? 'not-allowed' : 'pointer', opacity: a.tier === 'Bronze Agent' ? 0.4 : 1 }}
                           title="Downgrade Tier"
                         >
                           <ChevronDown size={14} />

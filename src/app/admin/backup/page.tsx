@@ -547,7 +547,7 @@ export default function AdminBackupRestore() {
 
         {/* Database Stats Card Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <div className="card" style={{ padding: '1.25rem', background: '#FFF', position: 'relative' }}>
+          <div className="card" style={{ padding: '1.25rem', background: 'var(--color-bg-card)', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
                 width: '38px', height: '38px', borderRadius: '50%',
@@ -563,7 +563,7 @@ export default function AdminBackupRestore() {
             </div>
           </div>
 
-          <div className="card" style={{ padding: '1.25rem', background: '#FFF' }}>
+          <div className="card" style={{ padding: '1.25rem', background: 'var(--color-bg-card)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
                 width: '38px', height: '38px', borderRadius: '50%',
@@ -581,7 +581,7 @@ export default function AdminBackupRestore() {
             </div>
           </div>
 
-          <div className="card" style={{ padding: '1.25rem', background: '#FFF' }}>
+          <div className="card" style={{ padding: '1.25rem', background: 'var(--color-bg-card)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
                 width: '38px', height: '38px', borderRadius: '50%',
@@ -626,7 +626,7 @@ export default function AdminBackupRestore() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
           
           {/* Section A: Generate / Export Database */}
-          <div className="card" style={{ background: '#FFF', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border-subtle)' }}>
               <h2 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Download size={16} style={{ color: 'var(--color-brand-primary)' }} />
@@ -757,7 +757,7 @@ export default function AdminBackupRestore() {
           </div>
 
           {/* Section B: Upload / Restore Database */}
-          <div id="restore-section" className="card" style={{ background: '#FFF', display: 'flex', flexDirection: 'column' }}>
+          <div id="restore-section" className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border-subtle)' }}>
               <h2 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Upload size={16} style={{ color: '#EF4444' }} />
@@ -960,7 +960,7 @@ export default function AdminBackupRestore() {
         </div>
 
         {/* Section C: Backup History */}
-        <div className="card" style={{ background: '#FFF' }}>
+        <div className="card">
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Backup History Logs</h2>
@@ -976,7 +976,7 @@ export default function AdminBackupRestore() {
                 fontWeight: 600,
                 color: 'var(--color-text-secondary)',
                 border: '1px solid var(--color-border)',
-                backgroundColor: '#FFF',
+                backgroundColor: 'transparent',
                 padding: '0.35rem 0.65rem',
                 borderRadius: '6px',
                 cursor: 'pointer'
@@ -989,7 +989,7 @@ export default function AdminBackupRestore() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+                <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 700 }}>Filename</th>
                   <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Timestamp</th>
                   <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Size</th>
@@ -1098,7 +1098,7 @@ export default function AdminBackupRestore() {
           padding: '1.5rem'
         }}>
           <div className="card animate-fade-up" style={{
-            background: '#FFF',
+            background: 'var(--color-bg-card)',
             width: '100%',
             maxWidth: '520px',
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)',
@@ -1165,7 +1165,7 @@ export default function AdminBackupRestore() {
                     fontWeight: 700,
                     cursor: isRestoring ? 'not-allowed' : 'pointer',
                     border: '1px solid var(--color-border)',
-                    backgroundColor: '#FFF',
+                    backgroundColor: 'transparent',
                     color: 'var(--color-text-secondary)',
                     opacity: isRestoring ? 0.5 : 1
                   }}

@@ -29,7 +29,7 @@ export default function AdminPlaceholder({ params }: PageProps) {
             type="button" 
             onClick={() => window.history.back()} 
             className="btn btn-secondary btn-sm"
-            style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)' }}
+            style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}
           >
             Go Back
           </button>

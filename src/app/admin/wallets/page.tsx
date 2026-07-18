@@ -60,7 +60,7 @@ export default function AdminWallets() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           {/* Credit/Debit Form */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem' }}>Trigger Balance Adjustment</h3>
             <form onSubmit={handleWalletUpdate}>
               
@@ -123,11 +123,11 @@ export default function AdminWallets() {
           </div>
 
           {/* Funding Logs */}
-          <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', padding: '1.5rem' }}>
+          <div className="card" style={{ border: '1px solid var(--color-border)', padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem' }}>Recent Wallet Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '310px', overflowY: 'auto' }}>
               {logs.map(log => (
-                <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--color-border-subtle)', borderRadius: '8px', background: '#FAFAFA' }}>
+                <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', border: '1px solid var(--color-border-subtle)', borderRadius: '8px', background: 'var(--color-bg-surface)' }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{log.user}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>{log.note}</div>

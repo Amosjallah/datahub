@@ -46,10 +46,10 @@ export default function AdminPricing() {
         </div>
 
         {/* Pricing List Table */}
-        <div className="card" style={{ background: '#FFF', border: '1px solid var(--color-border)', overflowX: 'auto' }}>
+        <div className="card" style={{ border: '1px solid var(--color-border)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: '#FAFAFA' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}>
                 <th style={{ padding: '1rem 1.25rem', fontWeight: 700 }}>Provider</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Service Name</th>
                 <th style={{ padding: '1rem 0.5rem', fontWeight: 700 }}>Wholesale Cost (GH₵)</th>
@@ -70,51 +70,51 @@ export default function AdminPricing() {
                   </td>
                   <td style={{ padding: '1rem 0.5rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>{p.name}</td>
                   
-                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace', color: 'var(--color-text-secondary)' }}>
                     {editingId === p.id ? (
                       <input 
                         type="number" 
                         value={wholesaleVal} 
                         onChange={(e) => setWholesaleVal(parseFloat(e.target.value))} 
-                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)' }} 
+                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', color: 'var(--color-text-primary)' }} 
                       />
                     ) : (
                       `GH₵${p.wholesale.toFixed(2)}`
                     )}
                   </td>
                   
-                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace', fontWeight: 600 }}>
+                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                     {editingId === p.id ? (
                       <input 
                         type="number" 
                         value={agentVal} 
                         onChange={(e) => setAgentVal(parseFloat(e.target.value))} 
-                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)' }} 
+                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', color: 'var(--color-text-primary)' }} 
                       />
                     ) : (
                       `GH₵${p.agent.toFixed(2)}`
                     )}
                   </td>
-
-                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace', fontWeight: 600 }}>
+ 
+                  <td style={{ padding: '1rem 0.5rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                     {editingId === p.id ? (
                       <input 
                         type="number" 
                         value={retailVal} 
                         onChange={(e) => setRetailVal(parseFloat(e.target.value))} 
-                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)' }} 
+                        style={{ width: '70px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', color: 'var(--color-text-primary)' }} 
                       />
                     ) : (
                       `GH₵${p.retail.toFixed(2)}`
                     )}
                   </td>
-
+ 
                   <td style={{ padding: '1rem 0.5rem' }}>
                     <span className={`badge ${p.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
                       {p.status}
                     </span>
                   </td>
-
+ 
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                     {editingId === p.id ? (
                       <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
@@ -137,7 +137,7 @@ export default function AdminPricing() {
                       <button 
                         onClick={() => startEdit(p.id, p.wholesale, p.agent, p.retail)}
                         className="btn btn-secondary btn-sm"
-                        style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.72rem', border: '1px solid var(--color-border)', backgroundColor: '#FFF', color: 'var(--color-text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                        style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.72rem', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                       >
                         <Pencil size={12} /> Edit Price
                       </button>
