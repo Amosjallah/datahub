@@ -564,6 +564,22 @@ a:hover { color: var(--color-brand-light); }
     }
 }
 
+.features-banner-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+@media (min-width: 640px) {
+    .features-banner-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+@media (min-width: 1024px) {
+    .features-banner-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
 .services-grid-3x2 {
     display: grid;
     grid-template-columns: 1fr;
