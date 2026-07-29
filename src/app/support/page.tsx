@@ -23,8 +23,8 @@ export default function SupportIndex() {
           </Link>
         </div>
 
-        {/* WhatsApp & Email Quick Help */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
+        {/* Quick Contact Channels */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
           <a
             href="https://wa.me/233241234567"
             target="_blank"
@@ -47,6 +47,30 @@ export default function SupportIndex() {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Chat directly with support agents</div>
             </div>
           </a>
+          <Link
+            href="/support/chat"
+            style={{
+              padding: '1.1rem',
+              background: 'rgba(250,204,21,0.06)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-lg)',
+              textDecoration: 'none',
+              color: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.875rem',
+            }}
+            id="btn-live-chat"
+          >
+            <div style={{ fontSize: '1.75rem' }}>💬</div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#FACC15', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                Live Chat
+                <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 6px #10B981' }} />
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Chat with an agent now</div>
+            </div>
+          </Link>
           <a
             href="mailto:info@fadigitalservices.com"
             style={{

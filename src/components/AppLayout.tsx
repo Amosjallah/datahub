@@ -33,6 +33,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
     { href: '/profile#referrals', label: 'Referrals', icon: TrendingUp },
     { href: '/become-agent', label: 'Become an agent', icon: User },
     { href: '/support', label: 'Support', icon: LifeBuoy },
+    { href: '/support/chat', label: 'Live Chat', icon: MessageSquare },
     { href: '/profile', label: 'Profile & security', icon: User },
   ];
 
