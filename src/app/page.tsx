@@ -793,7 +793,7 @@ export default function Home() {
 
               {/* WhatsApp Callout Card */}
               <a 
-                href="https://wa.me/233200000000" 
+                href="https://wa.me/233548519420" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 style={{ 

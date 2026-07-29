@@ -206,7 +206,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     { icon: <Facebook size={14} />, href: '#', label: 'Facebook' },
                     { icon: <Twitter size={14} />, href: '#', label: 'Twitter' },
                     { icon: <Instagram size={14} />, href: '#', label: 'Instagram' },
-                    { icon: <MessageCircle size={14} />, href: 'https://wa.me/233591234567', label: 'WhatsApp' },
+                    { icon: <MessageCircle size={14} />, href: 'https://wa.me/233548519420', label: 'WhatsApp' },
                   ].map((soc, idx) => (
                     <a
                       key={idx}
@@ -309,7 +309,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                   </li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.84rem', color: '#6B7280' }}>
                     <MessageCircle size={14} style={{ color: 'var(--color-brand-primary)', flexShrink: 0 }} />
-                    <a href="https://wa.me/233591234567" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>+233 59 123 4567</a>
+                    <a href="https://wa.me/233548519420" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>+233 54 851 9420</a>
                   </li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.84rem', color: '#6B7280' }}>
                     <Mail size={14} style={{ color: 'var(--color-brand-primary)', flexShrink: 0 }} />

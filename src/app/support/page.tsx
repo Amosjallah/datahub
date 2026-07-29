@@ -26,7 +26,7 @@ export default function SupportIndex() {
         {/* Quick Contact Channels */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
           <a
-            href="https://wa.me/233241234567"
+            href="https://wa.me/233548519420"
             target="_blank"
             rel="noopener noreferrer"
             style={{
