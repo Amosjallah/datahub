@@ -172,7 +172,7 @@ export default function LiveChatPage() {
         status: 'read',
       };
       setMessages((prev) => [
-        ...prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'read' } : m)),
+        ...prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'read' as const } : m)),
         agentMsg,
       ]);
     }, delay);

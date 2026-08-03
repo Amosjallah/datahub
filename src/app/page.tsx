@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicLayout from '@/components/PublicLayout';
+import LiveTransactionTicker from '@/components/LiveTransactionTicker';
 import { 
   ShieldCheck, 
   Sparkles, 
@@ -323,6 +324,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Live Transaction Ticker */}
+      <LiveTransactionTicker />
+
       {/* 3. How it Works Section */}
       <section style={{ padding: '6rem 0', backgroundColor: '#FFFFFF', color: '#1E293B' }}>
         <div className="container">
@@ -442,7 +446,7 @@ export default function Home() {
                 
                 <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <div>
-                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', tracking: '0.05em' }}>From</span>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.05em' }}>From</span>
                     <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>₵5.50</div>
                   </div>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>
@@ -467,7 +471,7 @@ export default function Home() {
                 
                 <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <div>
-                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', tracking: '0.05em' }}>From</span>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.05em' }}>From</span>
                     <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>₵13.00</div>
                   </div>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>
@@ -492,7 +496,7 @@ export default function Home() {
                 
                 <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <div>
-                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', tracking: '0.05em' }}>From</span>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.05em' }}>From</span>
                     <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>₵8.00</div>
                   </div>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>

@@ -9,6 +9,8 @@ import {
   Phone, Mail, MapPin, Youtube
 } from 'lucide-react';
 import Logo from './Logo';
+import LiveChatWidget from './LiveChatWidget';
+import LiveTransactionToast from './LiveTransactionToast';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -344,6 +346,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           </div>
         </div>
       </footer>
+
+      {/* Live Chat Widget & Toast — visible on all public pages */}
+      <LiveTransactionToast />
+      <LiveChatWidget />
     </div>
   );
 }

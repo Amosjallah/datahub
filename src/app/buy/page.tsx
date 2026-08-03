@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import PublicLayout from '@/components/PublicLayout';
 import { Loader2, Database, PhoneCall, Receipt, Tv, CheckCircle2 } from 'lucide-react';
+import { broadcastTransaction } from '@/lib/liveTransactions';
 
 interface Package {
   id: string;
@@ -67,6 +68,15 @@ export default function Buy() {
       setLoading(false);
       setSuccess(true);
       setMessage(`Payment request of GH₵ ${selectedPackage.price.toFixed(2)} sent to ${phone}. Please authorize from your wallet prompts.`);
+
+      // Broadcast live transaction to all users across the website!
+      const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
+      broadcastTransaction({
+        name: name.trim() || 'Amos',
+        network: net,
+        bundle: selectedPackage.capacity,
+        amount: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+      });
     }, 1500);
   };
 

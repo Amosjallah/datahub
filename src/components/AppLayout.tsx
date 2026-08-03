@@ -8,6 +8,8 @@ import {
   UserCheck, MessageSquare, FileCode, Settings, ChevronDown, Database
 } from 'lucide-react';
 import Logo from './Logo';
+import LiveChatWidget from './LiveChatWidget';
+import LiveTransactionToast from './LiveTransactionToast';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -301,6 +303,9 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
           );
         })}
       </nav>
+      {/* Live Chat Widget & Toast */}
+      <LiveTransactionToast />
+      <LiveChatWidget />
     </div>
   );
 }
