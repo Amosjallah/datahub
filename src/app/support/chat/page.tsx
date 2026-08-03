@@ -49,16 +49,16 @@ function getAgentReply(text: string): string {
 
 // ─── Mock live transactions ────────────────────────────────────────────────
 const transactionPool: Omit<LiveTransaction, 'id' | 'timeAgo' | 'isNew'>[] = [
-  { service: 'MTN Data CG 10GB', recipient: '0244-XXX-456', amount: 40.00, status: 'success', type: 'data', ref: 'TX_MTN_' + Math.floor(Math.random() * 9999) },
-  { service: 'Telecel Airtime', recipient: '0205-XXX-789', amount: 5.00, status: 'success', type: 'airtime', ref: 'TX_TEL_' + Math.floor(Math.random() * 9999) },
-  { service: 'AirtelTigo 5GB', recipient: '0278-XXX-123', amount: 20.00, status: 'pending', type: 'data', ref: 'TX_ATG_' + Math.floor(Math.random() * 9999) },
-  { service: 'ECG Prepaid', recipient: '1020-XXXXX-60', amount: 100.00, status: 'success', type: 'bill', ref: 'TX_ECG_' + Math.floor(Math.random() * 9999) },
-  { service: 'Wallet Fund', recipient: 'Self', amount: 200.00, status: 'success', type: 'wallet', ref: 'TX_WLT_' + Math.floor(Math.random() * 9999) },
-  { service: 'MTN Airtime', recipient: '0244-XXX-999', amount: 2.00, status: 'failed', type: 'airtime', ref: 'TX_MTN_' + Math.floor(Math.random() * 9999) },
-  { service: 'DStv Premium', recipient: 'IUC-XXXXXXX', amount: 280.00, status: 'success', type: 'bill', ref: 'TX_DST_' + Math.floor(Math.random() * 9999) },
-  { service: 'Telecel Data 2GB', recipient: '0205-XXX-321', amount: 8.00, status: 'success', type: 'data', ref: 'TX_TEL_' + Math.floor(Math.random() * 9999) },
-  { service: 'GWCL Water', recipient: '7123-XXXXX', amount: 60.00, status: 'pending', type: 'bill', ref: 'TX_WTR_' + Math.floor(Math.random() * 9999) },
-  { service: 'MTN Data CG 1GB', recipient: '0556-XXX-444', amount: 6.00, status: 'success', type: 'data', ref: 'TX_MTN_' + Math.floor(Math.random() * 9999) },
+  { service: 'MTN Data CG 10GB', recipient: '0244-XXX-456', amount: 40.00, status: 'success', type: 'data', ref: 'TX_MTN_9482' },
+  { service: 'Telecel Airtime', recipient: '0205-XXX-789', amount: 5.00, status: 'success', type: 'airtime', ref: 'TX_TEL_1048' },
+  { service: 'AirtelTigo 5GB', recipient: '0278-XXX-123', amount: 20.00, status: 'pending', type: 'data', ref: 'TX_ATG_4821' },
+  { service: 'ECG Prepaid', recipient: '1020-XXXXX-60', amount: 100.00, status: 'success', type: 'bill', ref: 'TX_ECG_9182' },
+  { service: 'Wallet Fund', recipient: 'Self', amount: 200.00, status: 'success', type: 'wallet', ref: 'TX_WLT_3049' },
+  { service: 'MTN Airtime', recipient: '0244-XXX-999', amount: 2.00, status: 'failed', type: 'airtime', ref: 'TX_MTN_8812' },
+  { service: 'DStv Premium', recipient: 'IUC-XXXXXXX', amount: 280.00, status: 'success', type: 'bill', ref: 'TX_DST_7712' },
+  { service: 'Telecel Data 2GB', recipient: '0205-XXX-321', amount: 8.00, status: 'success', type: 'data', ref: 'TX_TEL_6412' },
+  { service: 'GWCL Water', recipient: '7123-XXXXX', amount: 60.00, status: 'pending', type: 'bill', ref: 'TX_WTR_9051' },
+  { service: 'MTN Data CG 1GB', recipient: '0556-XXX-444', amount: 6.00, status: 'success', type: 'data', ref: 'TX_MTN_4432' },
 ];
 
 function makeTransaction(): LiveTransaction {

@@ -30,14 +30,17 @@ const SAMPLE_TRANSACTIONS: Omit<TransactionEvent, 'id' | 'timestamp'>[] = [
 const EVENT_NAME = 'live-transaction-broadcast';
 let channel: any = null;
 
-// Initialize Supabase Realtime channel
-if (typeof window !== 'undefined' && supabase) {
-  try {
-    channel = supabase.channel('public:live-transactions');
-    channel.subscribe();
-  } catch (err) {
-    console.warn('Supabase Realtime subscription error:', err);
+function getChannel() {
+  if (typeof window === 'undefined') return null;
+  if (!channel && supabase) {
+    try {
+      channel = supabase.channel('public:live-transactions');
+      channel.subscribe();
+    } catch (err) {
+      console.warn('Supabase Realtime subscription error:', err);
+    }
   }
+  return channel;
 }
 
 /**
@@ -62,8 +65,9 @@ export function broadcastTransaction(eventData: {
   }
 
   // 2. Broadcast via Supabase Realtime channel if available
-  if (channel) {
-    channel.send({
+  const ch = getChannel();
+  if (ch) {
+    ch.send({
       type: 'broadcast',
       event: 'new-transaction',
       payload: transaction,
@@ -89,9 +93,10 @@ export function subscribeToTransactions(callback: (tx: TransactionEvent) => void
   window.addEventListener(EVENT_NAME, handleLocalEvent);
 
   // Subscribe to Supabase channel broadcast
+  const ch = getChannel();
   let supabaseSub: any = null;
-  if (channel) {
-    supabaseSub = channel.on('broadcast', { event: 'new-transaction' }, (payload: any) => {
+  if (ch) {
+    supabaseSub = ch.on('broadcast', { event: 'new-transaction' }, (payload: any) => {
       if (payload.payload) {
         callback(payload.payload);
       }

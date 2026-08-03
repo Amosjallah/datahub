@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicLayout from '@/components/PublicLayout';
-import LiveTransactionTicker from '@/components/LiveTransactionTicker';
 import { 
   ShieldCheck, 
   Sparkles, 
@@ -323,9 +322,6 @@ export default function Home() {
 
         </div>
       </section>
-
-      {/* Live Transaction Ticker */}
-      <LiveTransactionTicker />
 
       {/* 3. How it Works Section */}
       <section style={{ padding: '6rem 0', backgroundColor: '#FFFFFF', color: '#1E293B' }}>
