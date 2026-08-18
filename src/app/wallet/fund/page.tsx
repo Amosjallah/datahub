@@ -1,18 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function WalletFund() {
+  const searchParams = useSearchParams();
   const [activePM, setActivePM] = useState<'momo' | 'card'>('momo');
   const [amount, setAmount] = useState<number | ''>('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('user@fadigital.com');
+  const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const presets = [10, 20, 50, 100, 200, 500];
 
-  const handleInitiate = (e: React.FormEvent) => {
+  // Auto-verify if returning from Paystack payment with a reference
+  useEffect(() => {
+    const ref = searchParams.get('ref') || searchParams.get('reference') || searchParams.get('trxref');
+    if (ref) {
+      setLoading(true);
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.success) {
+            setStatusMessage({
+              type: 'success',
+              text: `Payment verified! ₵${data.amount?.toFixed(2) || ''} credited to your wallet ledger. (Ref: ${ref})`,
+            });
+          } else {
+            setStatusMessage({
+              type: 'error',
+              text: data.message || 'Payment verification failed.',
+            });
+          }
+        })
+        .catch((err) => {
+          setLoading(false);
+          setStatusMessage({
+            type: 'error',
+            text: err.message || 'Failed to verify transaction status.',
+          });
+        });
+    }
+  }, [searchParams]);
+
+  const handleInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusMessage(null);
+
     if (!amount || amount < 1) {
       alert('Please enter a valid amount (minimum ₵1).');
       return;
@@ -21,7 +59,40 @@ export default function WalletFund() {
       alert('Please enter your Mobile Money number.');
       return;
     }
-    alert(`Paystack gateway integration triggered.\nAmount: ₵${Number(amount).toFixed(2)}\nMethod: ${activePM}`);
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/paystack/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          amount: Number(amount),
+          walletId: 'WAL_USER_DEMO_01',
+          userId: 'USER_DEMO_01',
+        }),
+      });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (data.success && data.authorization_url) {
+        // Redirect to Paystack Checkout URL
+        window.location.href = data.authorization_url;
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: data.message || 'Failed to initialize Paystack gateway session.',
+        });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Network error initiating Paystack checkout.',
+      });
+    }
   };
 
   return (
@@ -42,6 +113,24 @@ export default function WalletFund() {
           </div>
           <span className="badge badge-success">GHS Wallet</span>
         </div>
+
+        {statusMessage && (
+          <div style={{
+            padding: '1rem',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            background: statusMessage.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid ' + (statusMessage.type === 'success' ? '#22c55e' : '#ef4444'),
+            color: statusMessage.type === 'success' ? '#15803d' : '#b91c1c',
+            fontSize: '0.875rem',
+          }}>
+            {statusMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            <div>{statusMessage.text}</div>
+          </div>
+        )}
 
         <div className="card">
           <div className="card-body">
@@ -137,8 +226,21 @@ export default function WalletFund() {
                 </div>
               )}
 
-              <button type="submit" className="btn btn-primary btn-full">
-                🔒 Fund Wallet Securely
+              {/* Email Address */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label className="form-label" htmlFor="customer-email">Email Address (for Paystack Receipt)</label>
+                <input
+                  type="email"
+                  id="customer-email"
+                  className="form-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={18} /> : '🔒 Fund Wallet via Paystack'}
               </button>
             </form>
 

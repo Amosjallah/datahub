@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { WalletService } from './WalletService';
 import { ProviderAdapterInterface } from './providers/ProviderAdapterInterface';
+import { ResellerXpressProviderAdapter } from './providers/ResellerXpressProviderAdapter';
 
 interface CreateTransactionPayload {
   userId: string;
@@ -10,15 +11,16 @@ interface CreateTransactionPayload {
   recipient: string;
   network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL';
   serviceType: 'data' | 'airtime' | 'bill';
+  planId?: number;
 }
 
 export class VtuTransactionService {
   private walletService: WalletService;
   private provider: ProviderAdapterInterface;
 
-  constructor(provider: ProviderAdapterInterface) {
+  constructor(provider?: ProviderAdapterInterface) {
     this.walletService = new WalletService();
-    this.provider = provider;
+    this.provider = provider || new ResellerXpressProviderAdapter();
   }
 
   /**
@@ -77,6 +79,7 @@ export class VtuTransactionService {
         network: payload.network,
         serviceType: payload.serviceType,
         reference,
+        planId: payload.planId,
       });
 
       if (response.success && response.status === 'success') {

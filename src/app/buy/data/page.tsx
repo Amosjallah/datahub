@@ -8,6 +8,7 @@ interface Bundle {
   id: string;
   name: string;
   price: number;
+  planId?: number;
 }
 
 export default function BuyData() {
@@ -19,41 +20,71 @@ export default function BuyData() {
 
   const bundles: Record<'MTN' | 'Telecel' | 'AirtelTigo', Bundle[]> = {
     MTN: [
-      { id: 'mtn-5', name: 'MTN CG 5GB (30 Days)', price: 20.00 },
-      { id: 'mtn-10', name: 'MTN CG 10GB (30 Days)', price: 40.00 },
-      { id: 'mtn-20', name: 'MTN CG 20GB (30 Days)', price: 75.00 },
+      { id: 'mtn-1', name: 'MTN SME 1GB (30 Days)', price: 4.50, planId: 1 },
+      { id: 'mtn-5', name: 'MTN CG 5GB (30 Days)', price: 20.00, planId: 2 },
+      { id: 'mtn-10', name: 'MTN CG 10GB (30 Days)', price: 40.00, planId: 3 },
+      { id: 'mtn-20', name: 'MTN CG 20GB (30 Days)', price: 75.00, planId: 4 },
     ],
     Telecel: [
-      { id: 'tel-5', name: 'Telecel Special 5GB', price: 18.00 },
-      { id: 'tel-10', name: 'Telecel Special 10GB', price: 35.00 },
+      { id: 'tel-5', name: 'Telecel Special 5GB', price: 18.00, planId: 10 },
+      { id: 'tel-10', name: 'Telecel Special 10GB', price: 35.00, planId: 11 },
     ],
     AirtelTigo: [
-      { id: 'at-5', name: 'AirtelTigo Big Time 5GB', price: 15.00 },
-      { id: 'at-10', name: 'AirtelTigo Big Time 10GB', price: 28.00 },
+      { id: 'at-5', name: 'AirtelTigo Big Time 5GB', price: 15.00, planId: 20 },
+      { id: 'at-10', name: 'AirtelTigo Big Time 10GB', price: 28.00, planId: 21 },
     ],
   };
+
+  const currentBundles = network ? bundles[network] : [];
+  const selectedBundle = currentBundles.find((b) => b.id === selectedBundleId);
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!network) return alert('Please select a network.');
     if (!phone) return alert('Please enter phone number.');
-    if (!selectedBundleId) return alert('Please choose a package.');
+    if (!selectedBundle) return alert('Please choose a package.');
 
     setLoading(true);
     setMessage(null);
 
-    // Simulate VTU API process
-    setTimeout(() => {
-      setLoading(false);
-      if (phone.startsWith('0244000')) {
-        setMessage({ type: 'error', text: 'VTU API Timeout. Wallet automatically refunded.' });
-      } else {
-        setMessage({ type: 'success', text: 'Transaction processed successfully! Data delivered.' });
-      }
-    }, 1200);
-  };
+    try {
+      const response = await fetch('/api/vtu/recharge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'USER_DEMO_01',
+          walletId: 'WAL_USER_DEMO_01',
+          serviceId: selectedBundle.id,
+          amount: selectedBundle.price,
+          recipient: phone,
+          network,
+          serviceType: 'data',
+          planId: selectedBundle.planId,
+        }),
+      });
 
-  const currentBundles = network ? bundles[network] : [];
+      const data = await response.json();
+      setLoading(false);
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: data.message || 'Data bundle delivered successfully via ResellerXpress!',
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.message || 'Recharge failed. Wallet auto-refunded.',
+        });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setMessage({
+        type: 'error',
+        text: err.message || 'Connection failure. Wallet auto-refunded.',
+      });
+    }
+  };
 
   return (
     <AppLayout userName="Kwame Mensah" userRole="customer">
@@ -63,12 +94,12 @@ export default function BuyData() {
             🌐 Buy Data Bundle
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-            Select network, enter the phone number, and choose your bundle.
+            Select network, enter recipient phone number, and choose your bundle. (Powered by ResellerXpress)
           </p>
         </div>
 
         {message && (
-          <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+          <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`} style={{ marginBottom: '1.25rem' }}>
             {message.type === 'success' ? '✅' : '❌'} {message.text}
           </div>
         )}
@@ -173,9 +204,9 @@ export default function BuyData() {
                 disabled={loading}
               >
                 {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                     <Loader2 className="animate-spin" size={16} />
-                    Processing...
+                    Processing via ResellerXpress...
                   </span>
                 ) : (
                   '⚡ Confirm & Pay'

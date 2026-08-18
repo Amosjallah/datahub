@@ -4,6 +4,7 @@ export interface RechargeRequest {
   network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL';
   serviceType: 'data' | 'airtime' | 'bill';
   reference: string;
+  planId?: number;
 }
 
 export interface RechargeResponse {
