@@ -59,25 +59,45 @@ export default function Buy() {
     setLoading(false);
   };
 
-  const handleDataSubmit = (e: React.FormEvent) => {
+  const handleDataSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPackage) return;
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setMessage(`Payment request of GH₵ ${selectedPackage.price.toFixed(2)} sent to ${phone}. Please authorize from your wallet prompts.`);
-
-      // Broadcast live transaction to all users across the website!
-      const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
-      broadcastTransaction({
-        name: name.trim() || 'Amos',
-        network: net,
-        bundle: selectedPackage.capacity,
-        amount: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+    try {
+      const response = await fetch('/api/paystack/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: `${phone.replace(/\D/g, '')}@fadigital.com`,
+          amount: selectedPackage.price,
+          callbackUrl: `${window.location.origin}/buy?ref=PAYSTACK_REF`,
+        }),
       });
-    }, 1500);
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (data.success && data.authorization_url) {
+        // Redirect to Paystack Checkout URL where Mobile Money prompt (USSD) is pushed to the phone!
+        window.location.href = data.authorization_url;
+      } else {
+        setSuccess(true);
+        setMessage(`Payment session initialized for GH₵ ${selectedPackage.price.toFixed(2)} (${phone}). Please approve the Mobile Money prompt on your phone.`);
+
+        // Broadcast live transaction ticker
+        const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
+        broadcastTransaction({
+          name: name.trim() || 'Customer',
+          network: net,
+          bundle: selectedPackage.capacity,
+          amount: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+        });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      alert('Failed to initialize Paystack gateway session: ' + err.message);
+    }
   };
 
   const handleAirtimeSubmit = (e: React.FormEvent) => {
