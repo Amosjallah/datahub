@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
-export default function WalletFund() {
+function WalletFundContent() {
   const searchParams = useSearchParams();
   const [activePM, setActivePM] = useState<'momo' | 'card'>('momo');
   const [amount, setAmount] = useState<number | ''>('');
@@ -252,5 +252,19 @@ export default function WalletFund() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function WalletFund() {
+  return (
+    <Suspense fallback={
+      <AppLayout userName="Kwame Mensah" userRole="customer">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+          <Loader2 className="animate-spin" size={32} color="var(--color-brand-primary)" />
+        </div>
+      </AppLayout>
+    }>
+      <WalletFundContent />
+    </Suspense>
   );
 }
