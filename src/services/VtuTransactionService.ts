@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { WalletService } from './WalletService';
 import { ProviderAdapterInterface } from './providers/ProviderAdapterInterface';
 import { ResellerXpressProviderAdapter } from './providers/ResellerXpressProviderAdapter';
@@ -29,21 +29,29 @@ export class VtuTransactionService {
   async processTransaction(payload: CreateTransactionPayload) {
     const reference = `VTU_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-    // 1. Create a pending transaction record
-    const { data: record, error: recordError } = await supabase
-      .from('transaction_records')
-      .insert({
-        user_id: payload.userId,
-        service_id: payload.serviceId,
-        amount: payload.amount,
-        recipient: payload.recipient,
-        status: 'pending',
-      })
-      .select()
-      .single();
+    let recordId = reference;
 
-    if (recordError) {
-      throw new Error(`Failed to initialize transaction: ${recordError.message}`);
+    // 1. Create a pending transaction record if Supabase is active
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: record, error: recordError } = await supabase
+          .from('transaction_records')
+          .insert({
+            user_id: payload.userId,
+            service_id: payload.serviceId,
+            amount: payload.amount,
+            recipient: payload.recipient,
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        if (!recordError && record) {
+          recordId = record.id;
+        }
+      } catch (err: any) {
+        console.warn('[VtuTransactionService] Supabase record creation skipped/failed:', err.message);
+      }
     }
 
     try {
@@ -56,18 +64,25 @@ export class VtuTransactionService {
         description: `VTU Purchase: ${payload.network} ${payload.serviceType} for ${payload.recipient}`,
       });
 
-      // Update record status to processing
-      await supabase
-        .from('transaction_records')
-        .update({ status: 'processing' })
-        .eq('id', record.id);
+      // Update record status to processing if connected
+      if (isSupabaseConfigured() && recordId !== reference) {
+        try {
+          await supabase
+            .from('transaction_records')
+            .update({ status: 'processing' })
+            .eq('id', recordId);
+        } catch (_) {}
+      }
 
     } catch (debitError: any) {
-      // Debit failed (e.g., insufficient balance)
-      await supabase
-        .from('transaction_records')
-        .update({ status: 'failed', provider_reference: debitError.message })
-        .eq('id', record.id);
+      if (isSupabaseConfigured() && recordId !== reference) {
+        try {
+          await supabase
+            .from('transaction_records')
+            .update({ status: 'failed', provider_reference: debitError.message })
+            .eq('id', recordId);
+        } catch (_) {}
+      }
       throw debitError;
     }
 
@@ -84,23 +99,27 @@ export class VtuTransactionService {
 
       if (response.success && response.status === 'success') {
         // Success: Update record
-        await supabase
-          .from('transaction_records')
-          .update({
-            status: 'success',
-            provider_reference: response.providerReference,
-          })
-          .eq('id', record.id);
+        if (isSupabaseConfigured() && recordId !== reference) {
+          try {
+            await supabase
+              .from('transaction_records')
+              .update({
+                status: 'success',
+                provider_reference: response.providerReference,
+              })
+              .eq('id', recordId);
+          } catch (_) {}
+        }
         
-        return { success: true, transactionId: record.id };
+        return { success: true, transactionId: recordId };
       } else {
         // Provider returned failure: Trigger auto-refund
-        await this.handleRefund(payload.walletId, payload.amount, reference, record.id, response.errorMessage || 'Provider failure');
+        await this.handleRefund(payload.walletId, payload.amount, reference, recordId, response.errorMessage || 'Provider failure');
         return { success: false, errorMessage: response.errorMessage };
       }
     } catch (providerError: any) {
       // System/Network failure: Trigger auto-refund
-      await this.handleRefund(payload.walletId, payload.amount, reference, record.id, providerError.message || 'System error');
+      await this.handleRefund(payload.walletId, payload.amount, reference, recordId, providerError.message || 'System error');
       return { success: false, errorMessage: 'System recharge connection timeout. Auto-refunded.' };
     }
   }
@@ -120,13 +139,17 @@ export class VtuTransactionService {
       description: `Refund for failed purchase. Reason: ${reason}`,
     });
 
-    // Mark transaction record as reversed
-    await supabase
-      .from('transaction_records')
-      .update({
-        status: 'reversed',
-        provider_reference: `Refunded: ${reason}`,
-      })
-      .eq('id', recordId);
+    // Mark transaction record as reversed if connected
+    if (isSupabaseConfigured() && recordId !== reference) {
+      try {
+        await supabase
+          .from('transaction_records')
+          .update({
+            status: 'reversed',
+            provider_reference: `Refunded: ${reason}`,
+          })
+          .eq('id', recordId);
+      } catch (_) {}
+    }
   }
 }
