@@ -6,9 +6,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, amount, walletId, userId, callbackUrl } = body;
 
-    if (!email || !amount || amount <= 0) {
+    const numAmount = Number(amount);
+    if (!numAmount || isNaN(numAmount) || numAmount <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Valid email and deposit amount are required.' },
+        { success: false, message: 'Valid payment amount (minimum GH₵ 1.00) is required.' },
         { status: 400 }
       );
     }

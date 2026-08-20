@@ -59,18 +59,24 @@ export default function Buy() {
     setLoading(false);
   };
 
-  const handleDataSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPackage) return;
+  const processPaystackPayment = async (
+    payAmount: number, 
+    description: string, 
+    broadcastInfo?: { name: string; network: 'MTN' | 'Telecel' | 'AirtelTigo'; bundle: string; amountStr: string }
+  ) => {
     setLoading(true);
+    resetStatus();
 
     try {
+      const cleanPhone = phone.replace(/\D/g, '') || '0000000000';
+      const customerEmail = `${cleanPhone}@fadigital.com`;
+
       const response = await fetch('/api/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: `${phone.replace(/\D/g, '')}@fadigital.com`,
-          amount: selectedPackage.price,
+          email: customerEmail,
+          amount: payAmount,
           callbackUrl: `${window.location.origin}/buy?ref=PAYSTACK_REF`,
         }),
       });
@@ -79,58 +85,69 @@ export default function Buy() {
       setLoading(false);
 
       if (data.success && data.authorization_url) {
-        // Redirect to Paystack Checkout URL where Mobile Money prompt (USSD) is pushed to the phone!
+        if (broadcastInfo) {
+          broadcastTransaction({
+            name: broadcastInfo.name.trim() || 'Customer',
+            network: broadcastInfo.network,
+            bundle: broadcastInfo.bundle,
+            amount: broadcastInfo.amountStr,
+          });
+        }
+
+        // Redirect to Paystack Checkout URL
         window.location.href = data.authorization_url;
       } else {
         setSuccess(true);
-        setMessage(`Payment session initialized for GH₵ ${selectedPackage.price.toFixed(2)} (${phone}). Please approve the Mobile Money prompt on your phone.`);
-
-        // Broadcast live transaction ticker
-        const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
-        broadcastTransaction({
-          name: name.trim() || 'Customer',
-          network: net,
-          bundle: selectedPackage.capacity,
-          amount: `GH₵ ${selectedPackage.price.toFixed(2)}`,
-        });
+        setMessage(`${description} Please complete payment via the Paystack gateway session.`);
       }
     } catch (err: any) {
       setLoading(false);
-      alert('Failed to initialize Paystack gateway session: ' + err.message);
+      alert('Failed to initialize Paystack payment gateway: ' + (err.message || 'Unknown error'));
     }
   };
 
-  const handleAirtimeSubmit = (e: React.FormEvent) => {
+  const handleDataSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setMessage(`Airtime order of GH₵ ${parseFloat(amount).toFixed(2)} sent to ${phone} successfully! Check your phone for payment verification.`);
-    }, 1500);
+    if (!selectedPackage) return;
+    const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
+    await processPaystackPayment(selectedPackage.price, `Data bundle order of ${selectedPackage.capacity} for ${phone} initialized.`, {
+      name: name || 'Customer',
+      network: net,
+      bundle: selectedPackage.capacity,
+      amountStr: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+    });
   };
 
-  const handleBillSubmit = (e: React.FormEvent) => {
+  const handleAirtimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setMessage(`Utility transaction initiated! GH₵ ${parseFloat(amount).toFixed(2)} for ${billProvider} meter ${accountNumber} has been queued.`);
-    }, 1500);
+    const airtimeAmount = parseFloat(amount as string) || 0;
+    if (airtimeAmount < 1) {
+      alert('Please enter a valid amount (minimum GH₵ 1.00)');
+      return;
+    }
+    await processPaystackPayment(airtimeAmount, `Airtime order of GH₵ ${airtimeAmount.toFixed(2)} for ${phone} initialized.`, {
+      name: 'Customer',
+      network: 'MTN',
+      bundle: `Airtime GH₵ ${airtimeAmount.toFixed(2)}`,
+      amountStr: `GH₵ ${airtimeAmount.toFixed(2)}`,
+    });
   };
 
-  const handleTvSubmit = (e: React.FormEvent) => {
+  const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    const billAmount = parseFloat(amount as string) || 0;
+    if (billAmount < 1) {
+      alert('Please enter a valid amount (minimum GH₵ 1.00)');
+      return;
+    }
+    await processPaystackPayment(billAmount, `Utility bill payment of GH₵ ${billAmount.toFixed(2)} for ${billProvider} meter ${accountNumber} initialized.`);
+  };
 
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setMessage(`TV Subscription request submitted! ${tvProvider} Smartcard ${accountNumber} renewed under tier ${tvPlan}.`);
-    }, 1500);
+  const handleTvSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const priceMatch = tvPlan.match(/GH₵\s*(\d+)/i);
+    const tvAmount = priceMatch ? parseFloat(priceMatch[1]) : 50;
+    await processPaystackPayment(tvAmount, `TV Subscription renewal for ${tvProvider} Smartcard ${accountNumber} (${tvPlan}) initialized.`);
   };
 
   const filteredPackages = initialPackages.filter(p => p.network === activeNetwork);

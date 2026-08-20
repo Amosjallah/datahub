@@ -50,16 +50,32 @@ export class PaystackService {
     this.publicKey = process.env.PAYSTACK_PUBLIC_KEY || '';
   }
 
+  private getSecretKey(): string {
+    return process.env.PAYSTACK_SECRET_KEY || this.secretKey || '';
+  }
+
+  private getPublicKey(): string {
+    return process.env.PAYSTACK_PUBLIC_KEY || this.publicKey || '';
+  }
+
   /**
    * Initialize Paystack payment session
    */
   async initializeTransaction(params: InitializePaystackParams): Promise<PaystackInitResponse> {
     const reference = params.reference || `PSK_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const amountInPesewas = Math.round(params.amount * 100);
+    const key = this.getSecretKey();
+
+    // Ensure valid email address format
+    let email = (params.email || '').trim();
+    if (!email || !email.includes('@') || email.startsWith('@')) {
+      const sanitizedPhone = email.replace(/\D/g, '');
+      email = sanitizedPhone ? `${sanitizedPhone}@fadigital.com` : `customer_${Date.now()}@fadigital.com`;
+    }
 
     // Sandbox mock response if placeholder key is used
-    if (!this.secretKey || this.secretKey.includes('placeholder')) {
-      console.log(`[Paystack Mock Mode] Initializing payment GHS ${params.amount} for ${params.email}`);
+    if (!key || key.includes('placeholder')) {
+      console.log(`[Paystack Mock Mode] Initializing payment GHS ${params.amount} for ${email}`);
       return {
         status: true,
         message: 'Authorization URL created (Mock Sandbox)',
@@ -75,11 +91,11 @@ export class PaystackService {
       const response = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.secretKey}`,
+          Authorization: `Bearer ${key}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: params.email,
+          email,
           amount: amountInPesewas,
           currency: 'GHS',
           reference,
@@ -103,7 +119,8 @@ export class PaystackService {
    * Verify transaction status with Paystack API
    */
   async verifyTransaction(reference: string): Promise<PaystackVerifyResponse> {
-    if (!this.secretKey || this.secretKey.includes('placeholder')) {
+    const key = this.getSecretKey();
+    if (!key || key.includes('placeholder')) {
       return {
         status: true,
         message: 'Verification successful (Mock Sandbox)',
@@ -127,7 +144,7 @@ export class PaystackService {
       const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.secretKey}`,
+          Authorization: `Bearer ${key}`,
         },
       });
 
@@ -146,8 +163,9 @@ export class PaystackService {
    * Validate Paystack HMAC SHA512 Webhook Signature
    */
   verifyWebhookSignature(rawBody: string, signature: string): boolean {
-    if (!this.secretKey) return false;
-    const hash = crypto.createHmac('sha512', this.secretKey).update(rawBody).digest('hex');
+    const key = this.getSecretKey();
+    if (!key) return false;
+    const hash = crypto.createHmac('sha512', key).update(rawBody).digest('hex');
     return hash === signature;
   }
 }
