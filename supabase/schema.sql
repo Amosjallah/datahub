@@ -1,157 +1,199 @@
 -- ============================================================
--- QUICKNETDATA GH — Supabase PostgreSQL Schema
+-- FA DIGITAL SERVICES LTD. — MASTER COMBINED SUPABASE DATABASE MIGRATION
 -- ============================================================
 
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- 1. Enable Required Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ── 1. Users ────────────────────────────────────────────────
-create table public.users (
-    id uuid default gen_random_uuid() primary key,
-    name text not null,
-    email text unique not null,
-    phone text,
-    role text not null default 'customer' check (role in ('customer', 'agent', 'admin', 'super_admin')),
-    kyc_status text not null default 'pending' check (kyc_status in ('pending', 'approved', 'rejected')),
-    referral_code text unique,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- 2. Create Users / Profiles Table
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  phone TEXT,
+  role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'agent', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS for users
-alter table public.users enable row level security;
-
--- ── 2. Wallets ──────────────────────────────────────────────
-create table public.wallets (
-    id uuid default gen_random_uuid() primary key,
-    user_id uuid references public.users(id) on delete cascade unique not null,
-    currency text not null default 'GHS',
-    cached_balance numeric(12, 4) not null default 0.0000 check (cached_balance >= 0),
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- 3. Create Wallets Table (Supports String/UUID wallet IDs e.g. WAL_USER_DEMO_01)
+CREATE TABLE IF NOT EXISTS public.wallets (
+  id TEXT PRIMARY KEY DEFAULT ('WAL_' || upper(substring(md5(random()::text) from 1 for 10))),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  currency TEXT DEFAULT 'GHS',
+  cached_balance NUMERIC(14, 4) DEFAULT 0.0000 CHECK (cached_balance >= 0),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS for wallets
-alter table public.wallets enable row level security;
-
--- ── 3. Wallet Transactions (Ledger) ──────────────────────────
-create table public.wallet_transactions (
-    id uuid default gen_random_uuid() primary key,
-    wallet_id uuid references public.wallets(id) on delete cascade not null,
-    amount numeric(12, 4) not null,
-    type text not null check (type in ('credit', 'debit', 'refund', 'commission', 'transfer')),
-    reference text unique not null,
-    description text,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- 4. Create Wallet Transactions Ledger Table
+CREATE TABLE IF NOT EXISTS public.wallet_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet_id TEXT NOT NULL REFERENCES public.wallets(id) ON DELETE CASCADE,
+  amount NUMERIC(14, 4) NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('credit', 'debit', 'refund', 'commission', 'transfer')),
+  reference TEXT UNIQUE NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS for wallet transactions
-alter table public.wallet_transactions enable row level security;
-
--- ── 4. Services ─────────────────────────────────────────────
-create table public.services (
-    id uuid default gen_random_uuid() primary key,
-    type text not null check (type in ('data', 'airtime', 'bill', 'pin')),
-    name text not null,
-    network text not null check (network in ('MTN', 'Telecel', 'AirtelTigo', 'ECG', 'GWCL', 'DSTV', 'GOTV', 'STARTIMES')),
-    retail_price numeric(12, 2) not null,
-    agent_price numeric(12, 2) not null,
-    api_price numeric(12, 2),
-    is_active boolean not null default true,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- 5. Create VTU / Service Transaction Records Table
+CREATE TABLE IF NOT EXISTS public.transaction_records (
+  id TEXT PRIMARY KEY DEFAULT ('VTU_' || upper(substring(md5(random()::text) from 1 for 10))),
+  user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  service_id TEXT NOT NULL,
+  amount NUMERIC(14, 2) NOT NULL,
+  recipient TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'success', 'failed', 'reversed')),
+  provider_reference TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS for services
-alter table public.services enable row level security;
+-- 6. Stored Procedure: Credit Wallet (Idempotent & Safe Ledger RPC)
+CREATE OR REPLACE FUNCTION public.credit_wallet(
+  p_wallet_id TEXT,
+  p_amount NUMERIC,
+  p_type TEXT,
+  p_reference TEXT,
+  p_description TEXT DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_tx_id UUID;
+  v_existing_id UUID;
+BEGIN
+  -- Idempotency Check (prevent duplicate credits for same reference)
+  SELECT id INTO v_existing_id
+  FROM public.wallet_transactions 
+  WHERE reference = p_reference;
+  
+  IF v_existing_id IS NOT NULL THEN
+    RETURN v_existing_id;
+  END IF;
 
--- ── 5. Transaction Records ──────────────────────────────────
-create table public.transaction_records (
-    id uuid default gen_random_uuid() primary key,
-    user_id uuid references public.users(id) on delete set null not null,
-    service_id uuid references public.services(id) on delete set null,
-    amount numeric(12, 2) not null,
-    recipient text not null,
-    status text not null default 'pending' check (status in ('pending', 'processing', 'success', 'failed', 'reversed')),
-    provider_reference text,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+  -- Lock wallet row
+  PERFORM cached_balance 
+  FROM public.wallets 
+  WHERE id = p_wallet_id 
+  FOR UPDATE;
 
--- Enable RLS for transaction records
-alter table public.transaction_records enable row level security;
+  -- Insert into ledger
+  INSERT INTO public.wallet_transactions (wallet_id, amount, type, reference, description)
+  VALUES (p_wallet_id, abs(p_amount), p_type, p_reference, p_description)
+  RETURNING id INTO v_tx_id;
 
--- ── 6. Beneficiaries ────────────────────────────────────────
-create table public.beneficiaries (
-    id uuid default gen_random_uuid() primary key,
-    user_id uuid references public.users(id) on delete cascade not null,
-    name text not null,
-    phone text not null,
-    network text not null,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+  -- Update cached balance
+  UPDATE public.wallets
+  SET cached_balance = cached_balance + abs(p_amount),
+      updated_at = NOW()
+  WHERE id = p_wallet_id;
 
--- Enable RLS for beneficiaries
-alter table public.beneficiaries enable row level security;
+  RETURN v_tx_id;
+END;
+$$;
 
--- ── 7. Support Tickets ──────────────────────────────────────
-create table public.support_tickets (
-    id uuid default gen_random_uuid() primary key,
-    user_id uuid references public.users(id) on delete cascade not null,
-    subject text not null,
-    category text not null,
-    priority text not null default 'medium' check (priority in ('low', 'medium', 'high')),
-    message text not null,
-    status text not null default 'open' check (status in ('open', 'resolved', 'closed')),
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- 7. Stored Procedure: Debit Wallet (Idempotent with Row Locking & Overdraft Protection)
+CREATE OR REPLACE FUNCTION public.debit_wallet(
+  p_wallet_id TEXT,
+  p_amount NUMERIC,
+  p_type TEXT,
+  p_reference TEXT,
+  p_description TEXT DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_tx_id UUID;
+  v_existing_id UUID;
+  v_current_balance NUMERIC;
+BEGIN
+  -- Idempotency Check
+  SELECT id INTO v_existing_id
+  FROM public.wallet_transactions 
+  WHERE reference = p_reference;
+  
+  IF v_existing_id IS NOT NULL THEN
+    RETURN v_existing_id;
+  END IF;
 
--- Enable RLS for support tickets
-alter table public.support_tickets enable row level security;
+  -- Lock row for concurrency safety
+  SELECT cached_balance INTO v_current_balance
+  FROM public.wallets
+  WHERE id = p_wallet_id
+  FOR UPDATE;
 
+  IF v_current_balance IS NULL THEN
+    RAISE EXCEPTION 'Wallet ID % not found.', p_wallet_id;
+  END IF;
 
--- ============================================================
--- RLS POLICIES (Row Level Security)
--- ============================================================
+  IF v_current_balance < abs(p_amount) THEN
+    RAISE EXCEPTION 'Insufficient wallet balance. Current balance is GHS %, requested GHS %.', v_current_balance, abs(p_amount);
+  END IF;
 
--- Users policies
-create policy "Users can view their own profile" on public.users
-    for select using (auth.uid() = id);
+  -- Insert negative/debit entry into ledger
+  INSERT INTO public.wallet_transactions (wallet_id, amount, type, reference, description)
+  VALUES (p_wallet_id, -abs(p_amount), p_type, p_reference, p_description)
+  RETURNING id INTO v_tx_id;
 
-create policy "Users can update their own profile" on public.users
-    for update using (auth.uid() = id);
+  -- Deduct from cached balance
+  UPDATE public.wallets
+  SET cached_balance = cached_balance - abs(p_amount),
+      updated_at = NOW()
+  WHERE id = p_wallet_id;
 
--- Wallets policies
-create policy "Users can view their own wallet" on public.wallets
-    for select using (auth.uid() = user_id);
+  RETURN v_tx_id;
+END;
+$$;
 
--- Wallet transactions policies
-create policy "Users can view their own wallet transactions" on public.wallet_transactions
-    for select using (
-        exists (
-            select 1 from public.wallets 
-            where public.wallets.id = wallet_transactions.wallet_id 
-            and public.wallets.user_id = auth.uid()
-        )
-    );
+-- 8. Enable Row Level Security (RLS)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transaction_records ENABLE ROW LEVEL SECURITY;
 
--- Services policies (Public read-only)
-create policy "Anyone can view active services" on public.services
-    for select using (is_active = true);
+-- 9. Add RLS Policies
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public select users') THEN
+    CREATE POLICY "Allow public select users" ON public.users FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public insert users') THEN
+    CREATE POLICY "Allow public insert users" ON public.users FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public update users') THEN
+    CREATE POLICY "Allow public update users" ON public.users FOR UPDATE USING (true);
+  END IF;
 
--- Transaction records policies
-create policy "Users can view their own transactions" on public.transaction_records
-    for select using (auth.uid() = user_id);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public select wallets') THEN
+    CREATE POLICY "Allow public select wallets" ON public.wallets FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public insert wallets') THEN
+    CREATE POLICY "Allow public insert wallets" ON public.wallets FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public update wallets') THEN
+    CREATE POLICY "Allow public update wallets" ON public.wallets FOR UPDATE USING (true);
+  END IF;
 
-create policy "Users can create their own transactions" on public.transaction_records
-    for insert with check (auth.uid() = user_id);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public select wallet_transactions') THEN
+    CREATE POLICY "Allow public select wallet_transactions" ON public.wallet_transactions FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public insert wallet_transactions') THEN
+    CREATE POLICY "Allow public insert wallet_transactions" ON public.wallet_transactions FOR INSERT WITH CHECK (true);
+  END IF;
 
--- Beneficiaries policies
-create policy "Users can manage their own beneficiaries" on public.beneficiaries
-    for all using (auth.uid() = user_id);
-
--- Support tickets policies
-create policy "Users can manage their own tickets" on public.support_tickets
-    for all using (auth.uid() = user_id);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public select transaction_records') THEN
+    CREATE POLICY "Allow public select transaction_records" ON public.transaction_records FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public insert transaction_records') THEN
+    CREATE POLICY "Allow public insert transaction_records" ON public.transaction_records FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public update transaction_records') THEN
+    CREATE POLICY "Allow public update transaction_records" ON public.transaction_records FOR UPDATE USING (true);
+  END IF;
+END $$;
