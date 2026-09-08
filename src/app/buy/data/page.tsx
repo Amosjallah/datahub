@@ -33,8 +33,18 @@ export default function BuyData() {
   // Live API Plans
   const [apiPlans, setApiPlans] = useState<Plan[]>([]);
 
-  // 1. Fetch user & wallet from Supabase
+  // 1. Fetch user & wallet from Supabase, and read URL query params
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qPhone = params.get('phone');
+      const qNet = params.get('network');
+      if (qPhone) setPhone(qPhone);
+      if (qNet === 'MTN' || qNet === 'Telecel' || qNet === 'AirtelTigo') {
+        setNetwork(qNet);
+      }
+    }
+
     async function loadUserData() {
       setAuthLoading(true);
       try {

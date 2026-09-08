@@ -4,7 +4,7 @@ import { paystackService } from '@/lib/paystack';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, amount, walletId, userId, callbackUrl, phone } = body;
+    const { email, amount, walletId, userId, callbackUrl, phone, service, planId, network } = body;
 
     const numAmount = Number(amount);
     if (!numAmount || isNaN(numAmount) || numAmount <= 0) {
@@ -14,26 +14,30 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!walletId || !userId) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: 'User authentication required. Please log in again.' },
-        { status: 401 }
+        { success: false, message: 'Customer email or phone is required.' },
+        { status: 400 }
       );
     }
 
-    const reference = `WAL_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const reference = walletId 
+      ? `WAL_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+      : `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const result = await paystackService.initializeTransaction({
       email,
-      amount,
+      amount: numAmount,
       reference,
       callbackUrl: callbackUrl || `${request.headers.get('origin') || 'http://localhost:3000'}/wallet/fund?ref=${reference}`,
       metadata: {
-        userId,
-        walletId,
-        type: 'wallet_topup',
-        // Include phone for Mobile Money channel prompt
-        ...(phone ? { phone } : {}),
+        userId: userId || null,
+        walletId: walletId || null,
+        type: walletId ? 'wallet_topup' : 'guest_order',
+        service: service || 'data',
+        planId: planId || null,
+        network: network || null,
+        phone: phone || null,
       },
     });
 

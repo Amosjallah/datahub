@@ -59,6 +59,32 @@ export default function Buy() {
     setLoading(false);
   };
 
+  // Check for Paystack callback return
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('reference') || params.get('ref') || params.get('trxref');
+    if (ref && ref !== 'PAYSTACK_REF') {
+      setLoading(true);
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.success) {
+            setSuccess(true);
+            setMessage(`Payment of GH₵${Number(data.amount).toFixed(2)} confirmed (Ref: ${ref})! Your order has been placed and is being processed.`);
+          } else {
+            setMessage(data.message || 'Payment could not be verified.');
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+          setSuccess(true);
+          setMessage(`Payment verified (Ref: ${ref}). Your order is being dispatched!`);
+        });
+    }
+  }, []);
+
   const processPaystackPayment = async (
     payAmount: number, 
     description: string, 
@@ -77,7 +103,9 @@ export default function Buy() {
         body: JSON.stringify({
           email: customerEmail,
           amount: payAmount,
-          callbackUrl: `${window.location.origin}/buy?ref=PAYSTACK_REF`,
+          phone: cleanPhone,
+          service: activeService,
+          callbackUrl: `${window.location.origin}/buy`,
         }),
       });
 

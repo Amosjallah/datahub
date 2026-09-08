@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
+import { supabase } from '@/lib/supabase';
+import { Trash2 } from 'lucide-react';
 
 interface Beneficiary {
   id: string;
@@ -16,29 +18,68 @@ export default function BeneficiariesIndex() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [network, setNetwork] = useState('MTN');
+  const [userName, setUserName] = useState('User');
 
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
     { id: '1', name: 'Mum', phone: '0244111222', network: 'MTN' },
     { id: '2', name: 'Dad', phone: '0205333444', network: 'Telecel' },
   ]);
 
+  useEffect(() => {
+    // Load persisted beneficiaries
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('user_beneficiaries');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setBeneficiaries(parsed);
+          }
+        } catch (_) {}
+      }
+    }
+
+    async function loadUser() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          setUserName(fullName);
+        }
+      } catch (_) {}
+    }
+    loadUser();
+  }, []);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone) return;
-    const newBen = { id: Date.now().toString(), name, phone, network };
-    setBeneficiaries([...beneficiaries, newBen]);
+    const newBen = { id: Date.now().toString(), name, phone: phone.trim(), network };
+    const updated = [...beneficiaries, newBen];
+    setBeneficiaries(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_beneficiaries', JSON.stringify(updated));
+    }
     setName('');
     setPhone('');
     setShowAddForm(false);
   };
 
+  const handleDelete = (id: string) => {
+    const updated = beneficiaries.filter((b) => b.id !== id);
+    setBeneficiaries(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_beneficiaries', JSON.stringify(updated));
+    }
+  };
+
   return (
-    <AppLayout userName="Kwame Mensah" userRole="customer">
+    <AppLayout userName={userName} userRole="customer">
       <div className="animate-fade-up">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.2rem' }}>👥 Saved Beneficiaries</h1>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Save frequently used numbers for fast recharges.</p>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Save frequently used numbers for fast 1-click recharges.</p>
           </div>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
             + Add Beneficiary
@@ -70,7 +111,7 @@ export default function BeneficiariesIndex() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="submit" className="btn btn-primary btn-sm">Save</button>
+                  <button type="submit" className="btn btn-primary btn-sm">Save Beneficiary</button>
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddForm(false)}>Cancel</button>
                 </div>
               </form>
@@ -79,9 +120,26 @@ export default function BeneficiariesIndex() {
         )}
 
         {/* Beneficiaries Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.875rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.875rem' }}>
           {beneficiaries.map((ben) => (
-            <div key={ben.id} className="card" style={{ padding: '1.25rem' }}>
+            <div key={ben.id} className="card" style={{ padding: '1.25rem', position: 'relative' }}>
+              <button
+                onClick={() => handleDelete(ben.id)}
+                title="Delete beneficiary"
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <Trash2 size={14} />
+              </button>
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1rem' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
                   {ben.name.charAt(0).toUpperCase()}
@@ -93,8 +151,12 @@ export default function BeneficiariesIndex() {
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>{ben.phone}</div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Link href={`/buy/data?phone=${ben.phone}&network=${ben.network}`} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>Data</Link>
-                <Link href={`/buy/airtime?phone=${ben.phone}&network=${ben.network}`} className="btn btn-secondary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>Airtime</Link>
+                <Link href={`/buy/data?phone=${encodeURIComponent(ben.phone)}&network=${encodeURIComponent(ben.network)}`} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                  Buy Data
+                </Link>
+                <Link href={`/buy/airtime?phone=${encodeURIComponent(ben.phone)}&network=${encodeURIComponent(ben.network)}`} className="btn btn-secondary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                  Buy Airtime
+                </Link>
               </div>
             </div>
           ))}

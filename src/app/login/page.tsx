@@ -11,15 +11,43 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
 
-    // Simulate login and redirect based on role matching email
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setErrorMsg(error.message || 'Invalid login credentials.');
+        setLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        // Ensure user wallet exists in wallets table
+        const { data: wallet } = await supabase
+          .from('wallets')
+          .select('id')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
+        if (!wallet) {
+          await supabase.from('wallets').insert({
+            user_id: data.user.id,
+            currency: 'GHS',
+            cached_balance: 0.0000,
+          });
+        }
+      }
+
       const emailLower = email.toLowerCase();
       if (emailLower.includes('admin')) {
         router.push('/admin/dashboard');
@@ -28,7 +56,11 @@ export default function Login() {
       } else {
         router.push('/dashboard');
       }
-    }, 1000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -111,6 +143,20 @@ export default function Login() {
               Don't have an account? <Link href="/register" style={{ color: '#FACC15', fontWeight: 600 }}>Create account</Link>
             </p>
           </div>
+
+          {errorMsg && (
+            <div style={{
+              padding: '0.85rem 1rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: '#F87171',
+              fontSize: '0.875rem',
+              marginBottom: '1.25rem',
+            }}>
+              ⚠️ {errorMsg}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             

@@ -12,17 +12,54 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
-    // Simulate signup
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        try {
+          await supabase.from('wallets').insert({
+            user_id: data.user.id,
+            currency: 'GHS',
+            cached_balance: 0.0000,
+          });
+        } catch (_) {}
+      }
+
+      if (data?.session) {
+        router.push('/dashboard');
+      } else {
+        setSuccessMsg('Account created successfully! You can now sign in with your email and password.');
+        setTimeout(() => router.push('/login'), 2500);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to create account.');
+    } finally {
       setLoading(false);
-      router.push('/buy');
-    }, 1000);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -106,13 +143,40 @@ export default function Register() {
       {/* Right Column - Sign Up Form */}
       <section style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: '440px' }} className="animate-fade-up">
-          
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>Create your account</h2>
             <p style={{ color: '#9CA3AF', fontSize: '0.9rem' }}>
               Already have an account? <Link href="/login" style={{ color: '#FACC15', fontWeight: 600 }}>Sign In</Link>
             </p>
           </div>
+
+          {errorMsg && (
+            <div style={{
+              padding: '0.85rem 1rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: '#F87171',
+              fontSize: '0.875rem',
+              marginBottom: '1.25rem',
+            }}>
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
+          {successMsg && (
+            <div style={{
+              padding: '0.85rem 1rem',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              borderRadius: '8px',
+              color: '#4ADE80',
+              fontSize: '0.875rem',
+              marginBottom: '1.25rem',
+            }}>
+              ✅ {successMsg}
+            </div>
+          )}
 
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             

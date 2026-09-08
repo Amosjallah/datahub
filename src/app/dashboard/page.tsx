@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import ProviderIcon from '@/components/ProviderIcon';
+import { supabase } from '@/lib/supabase';
 import { 
   Wallet, TrendingDown, TrendingUp, FileText, Copy, MoreVertical, 
   Contact, Eye, EyeOff, ChevronDown, History, Users,
@@ -11,13 +13,94 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [userName, setUserName] = useState('User');
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [txCount, setTxCount] = useState<number>(0);
   const [showBalance, setShowBalance] = useState(true);
   const [activeTab, setActiveTab] = useState<'data' | 'airtime' | 'tv' | 'bills'>('data');
+  const [quickPhone, setQuickPhone] = useState('0244123456');
   const [tvProvider, setTvProvider] = useState('DStv');
   const [tvIuc, setTvIuc] = useState('');
   const [tvPlan, setTvPlan] = useState('Compact Plus - GH₵120');
   const [selectedNetwork, setSelectedNetwork] = useState('MTN');
   const [copied, setCopied] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          setUserName(name);
+
+          const { data: wallet } = await supabase
+            .from('wallets')
+            .select('id, cached_balance')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (wallet) {
+            setWalletBalance(Number(wallet.cached_balance));
+          }
+
+          const { data: records, count } = await supabase
+            .from('transaction_records')
+            .select('*', { count: 'exact' })
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          if (records && records.length > 0) {
+            setTxCount(count || records.length);
+            const mapped = records.map((r) => {
+              const sId = (r.service_id || '').toUpperCase();
+              let sType = 'data';
+              let prov = 'MTN';
+              if (sId.includes('AIRTIME')) sType = 'airtime';
+              if (sId.includes('TELECEL')) prov = 'Telecel';
+              if (sId.includes('AIRTEL') || sId.includes('AT')) prov = 'AirtelTigo';
+
+              return {
+                id: r.id.slice(0, 12),
+                type: sType,
+                provider: prov,
+                detail: r.service_id,
+                phone: r.recipient || '—',
+                amount: `-GH₵${Number(r.amount).toFixed(2)}`,
+                status: r.status || 'success',
+                date: new Date(r.created_at).toLocaleString('en-GH', { dateStyle: 'medium', timeStyle: 'short' }),
+              };
+            });
+            setRecentTransactions(mapped);
+          } else {
+            // Default demo items if fresh account
+            setRecentTransactions([
+              { id: 'TRX-SAMPLE-01', type: 'data', provider: 'MTN', detail: 'MTN 10GB Data', phone: '0244 123 456', amount: '-GH₵43.00', status: 'success', date: 'Recent' },
+              { id: 'TRX-SAMPLE-02', type: 'airtime', provider: 'Telecel', detail: 'Airtime top-up', phone: '0205 123 456', amount: '-GH₵10.00', status: 'success', date: 'Recent' },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.warn('[Dashboard] Load notice:', err);
+      }
+    }
+    loadDashboardData();
+  }, []);
+
+  const handleQuickBuy = () => {
+    const cleanPhone = quickPhone.trim();
+    if (activeTab === 'data') {
+      router.push(`/buy/data?phone=${encodeURIComponent(cleanPhone)}&network=${encodeURIComponent(selectedNetwork)}`);
+    } else if (activeTab === 'airtime') {
+      router.push(`/buy/airtime?phone=${encodeURIComponent(cleanPhone)}&network=${encodeURIComponent(selectedNetwork)}`);
+    } else if (activeTab === 'tv') {
+      router.push('/buy/tv');
+    } else if (activeTab === 'bills') {
+      router.push('/buy/bills');
+    }
+  };
 
   const referralCode = 'DATASURE9X';
 
@@ -26,14 +109,6 @@ export default function Dashboard() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const recentTransactions = [
-    { id: 'TRX-2024-0001', type: 'data', provider: 'MTN', detail: 'MTN 10GB', phone: '0803 123 4567', amount: '-GH₵4,500.00', status: 'success', date: 'May 20, 2024 10:45 AM' },
-    { id: 'TRX-2024-0002', type: 'airtime', provider: 'MTN', detail: 'Airtime top-up', phone: '0803 123 4567', amount: '-GH₵1,000.00', status: 'processing', date: 'May 20, 2024 10:42 AM' },
-    { id: 'TRX-2024-0003', type: 'electricity', provider: 'electricity', detail: 'Ikeja Electric', phone: 'Customer: 0123456789', amount: '-GH₵2,500.00', status: 'success', date: 'May 19, 2024 09:15 PM' },
-    { id: 'TRX-2024-0004', type: 'data', provider: 'Airtel', detail: 'Airtel 5GB', phone: '0701 234 5678', amount: '-GH₵2,200.00', status: 'reversed', date: 'May 19, 2024 08:11 PM' },
-    { id: 'TRX-2024-0005', type: 'tv', provider: 'GOtv', detail: 'GoTV Max', phone: 'Smartcard: 1234567890', amount: '-GH₵3,600.00', status: 'success', date: 'May 18, 2024 07:30 PM' },
-  ];
 
   const beneficiaries = [
     { name: 'John Oliver', phone: '0803 123 4567', initial: 'JO', color: '#0066FF' },
@@ -49,7 +124,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <AppLayout userName="Kwame Kwame" userRole="customer">
+    <AppLayout userName={userName} userRole="customer">
       <div className="animate-fade-up">
         {/* Top 4 Stats Cards Grid */}
         <div 
@@ -76,7 +151,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
-                {showBalance ? 'GH₵25,680.50' : '••••••'}
+                {showBalance ? (walletBalance !== null ? `GH₵${walletBalance.toFixed(2)}` : 'GH₵0.00') : '••••••'}
               </div>
               <Link href="/wallet/fund" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 Fund your wallet &rarr;
@@ -94,10 +169,10 @@ export default function Dashboard() {
                 Monthly spend
               </div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
-                GH₵18,850.00
+                GH₵0.00
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#F87171', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
-                <TrendingDown size={12} /> 8.5% vs last month
+              <div style={{ fontSize: '0.72rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
+                <TrendingUp size={12} /> Live tracking
               </div>
             </div>
           </div>
@@ -112,10 +187,10 @@ export default function Dashboard() {
                 Transactions
               </div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
-                32
+                {txCount}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
-                <TrendingUp size={12} /> 12% vs last month
+                <TrendingUp size={12} /> Live total
               </div>
             </div>
           </div>
@@ -235,7 +310,14 @@ export default function Dashboard() {
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Phone number</label>
                       <div style={{ position: 'relative' }}>
-                        <input type="tel" className="form-input" defaultValue="0803 123 4567" style={{ paddingRight: '2.25rem', fontSize: '0.875rem', fontFamily: 'monospace' }} />
+                        <input
+                          type="tel"
+                          className="form-input"
+                          placeholder="e.g. 0244 123 456"
+                          value={quickPhone}
+                          onChange={(e) => setQuickPhone(e.target.value)}
+                          style={{ paddingRight: '2.25rem', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                        />
                         <Contact size={16} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', cursor: 'pointer' }} />
                       </div>
                     </div>
@@ -243,12 +325,13 @@ export default function Dashboard() {
                     {/* Bundle or Amount */}
                     {activeTab === 'data' ? (
                       <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">Bundle</label>
+                        <label className="form-label">Data Plan</label>
                         <div style={{ position: 'relative' }}>
                           <select className="form-input" style={{ appearance: 'none', paddingRight: '2rem', fontSize: '0.875rem' }}>
-                            <option>10GB – GH₵4,500</option>
-                            <option>20GB – GH₵8,000</option>
-                            <option>5GB – GH₵2,500</option>
+                            <option>10GB – GH₵43.00</option>
+                            <option>5GB – GH₵23.00</option>
+                            <option>2GB – GH₵9.60</option>
+                            <option>1GB – GH₵5.80</option>
                           </select>
                           <ChevronDown size={14} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
                         </div>
@@ -359,8 +442,13 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <button className="btn btn-primary btn-full" style={{ marginTop: '1.25rem', padding: '0.75rem', borderRadius: '8px' }}>
-                  {activeTab === 'tv' ? '📺 Subscribe Now' : activeTab === 'bills' ? '💵 Pay Bill' : '🚀 Buy Now'}
+                <button
+                  type="button"
+                  onClick={handleQuickBuy}
+                  className="btn btn-primary btn-full"
+                  style={{ marginTop: '1.25rem', padding: '0.75rem', borderRadius: '8px' }}
+                >
+                  {activeTab === 'tv' ? '📺 Proceed to TV Sub' : activeTab === 'bills' ? '💵 Proceed to Pay Bill' : '🚀 Proceed to Purchase'}
                 </button>
               </div>
             </div>

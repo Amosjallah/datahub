@@ -1,40 +1,179 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
+import { Loader2, CheckCircle2, AlertTriangle, Wallet } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 interface TVProvider {
   id: string;
   name: string;
   icon: string;
   color: string;
-  plans: string[];
+  plans: { name: string; price: number }[];
 }
 
 export default function BuyTv() {
   const [provider, setProvider] = useState<TVProvider | null>(null);
   const [iuc, setIuc] = useState('');
-  const [plan, setPlan] = useState('');
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // User & Wallet state
+  const [userId, setUserId] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string>('User');
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUserData() {
+      setAuthLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          setUserName(fullName);
+
+          const { data: wallet } = await supabase
+            .from('wallets')
+            .select('id, cached_balance')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (wallet) {
+            setWalletId(wallet.id);
+            setWalletBalance(Number(wallet.cached_balance));
+          }
+        }
+      } catch (err) {
+        console.warn('[BuyTv] User load warning:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+    loadUserData();
+  }, []);
 
   const tvProviders: TVProvider[] = [
-    { id: 'dstv', name: 'DStv', icon: '📺', color: 'rgba(59,130,246,0.12)', plans: ['Compact Plus - ₵120', 'Compact - ₵79', 'Access - ₵38'] },
-    { id: 'gotv', name: 'GOtv', icon: '📡', color: 'rgba(16,185,129,0.12)', plans: ['Supa Plus - ₵55', 'Supa - ₵38', 'Max - ₵29', 'Jolli - ₵22', 'Jinja - ₵10'] },
-    { id: 'startimes', name: 'StarTimes', icon: '🎬', color: 'rgba(245,158,11,0.12)', plans: ['Nova - ₵12', 'Basic - ₵25', 'Smart - ₵35', 'Classic - ₵50'] },
+    { 
+      id: 'dstv', 
+      name: 'DStv', 
+      icon: '📺', 
+      color: 'rgba(59,130,246,0.12)', 
+      plans: [
+        { name: 'Compact Plus', price: 120.00 },
+        { name: 'Compact', price: 79.00 },
+        { name: 'Access', price: 38.00 },
+      ]
+    },
+    { 
+      id: 'gotv', 
+      name: 'GOtv', 
+      icon: '📡', 
+      color: 'rgba(16,185,129,0.12)', 
+      plans: [
+        { name: 'Supa Plus', price: 55.00 },
+        { name: 'Supa', price: 38.00 },
+        { name: 'Max', price: 29.00 },
+        { name: 'Jolli', price: 22.00 },
+        { name: 'Jinja', price: 10.00 },
+      ]
+    },
+    { 
+      id: 'startimes', 
+      name: 'StarTimes', 
+      icon: '🎬', 
+      color: 'rgba(245,158,11,0.12)', 
+      plans: [
+        { name: 'Classic', price: 50.00 },
+        { name: 'Smart', price: 35.00 },
+        { name: 'Basic', price: 25.00 },
+        { name: 'Nova', price: 12.00 },
+      ]
+    },
   ];
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!iuc) return alert('Please enter smart card / IUC number.');
-    alert(`TV Subscription processed.\nProvider: ${provider?.name}\nIUC: ${iuc}\nPlan: ${plan}`);
+    if (!provider) return;
+
+    const currentPlan = provider.plans[selectedPlanIndex];
+    if (!currentPlan) return;
+
+    if (walletBalance !== null && walletBalance < currentPlan.price) {
+      setMessage({
+        type: 'error',
+        text: `Insufficient wallet balance (₵${walletBalance.toFixed(2)}). Package requires ₵${currentPlan.price.toFixed(2)}. Please fund your wallet.`,
+      });
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/bills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          walletId,
+          provider: `${provider.name} TV`,
+          account: iuc,
+          amount: currentPlan.price,
+          billType: currentPlan.name,
+        }),
+      });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: data.message || `${provider.name} (${currentPlan.name}) subscription renewed successfully for IUC: ${iuc}!`,
+        });
+        if (walletBalance !== null) {
+          setWalletBalance(prev => (prev !== null ? Math.max(0, prev - currentPlan.price) : 0));
+        }
+        setIuc('');
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.message || 'Subscription payment failed. Please try again.',
+        });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setMessage({
+        type: 'error',
+        text: err.message || 'Connection failure. Please try again.',
+      });
+    }
   };
 
   return (
-    <AppLayout userName="Kwame Mensah" userRole="customer">
+    <AppLayout userName={userName} userRole="customer">
       <div className="animate-fade-up">
         <div style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.2rem' }}>📺 TV Subscriptions</h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Renew DStv, GOtv, and StarTimes instantly.</p>
         </div>
+
+        {message && (
+          <div
+            className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}
+            style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '480px' }}
+          >
+            {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            <span>{message.text}</span>
+          </div>
+        )}
 
         {/* Provider selector cards */}
         {!provider && (
@@ -43,7 +182,7 @@ export default function BuyTv() {
               <button
                 key={tv.id}
                 type="button"
-                onClick={() => { setProvider(tv); setPlan(tv.plans[0]); }}
+                onClick={() => { setProvider(tv); setSelectedPlanIndex(0); setMessage(null); }}
                 style={{
                   padding: '1.5rem 1rem',
                   textAlign: 'center',
@@ -94,24 +233,55 @@ export default function BuyTv() {
                   <select
                     id="tv-plan"
                     className="form-select"
-                    value={plan}
-                    onChange={(e) => setPlan(e.target.value)}
+                    value={selectedPlanIndex}
+                    onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
                   >
                     {provider.plans.map((p, idx) => (
-                      <option key={idx} value={p}>{p}</option>
+                      <option key={idx} value={idx}>{p.name} — ₵{p.price.toFixed(2)}</option>
                     ))}
                   </select>
                 </div>
 
-                <div className="divider"></div>
+                <div className="divider" style={{ margin: '1.25rem 0' }}></div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Wallet Balance</span>
-                  <strong style={{ color: 'var(--color-brand-primary)' }}>₵245.50</strong>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.25rem',
+                  padding: '0.75rem 1rem',
+                  background: 'var(--color-bg-elevated)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Wallet size={16} color="var(--color-brand-primary)" />
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Wallet Balance:</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <strong style={{ color: 'var(--color-brand-primary)', fontSize: '1rem', fontFamily: 'Space Grotesk' }}>
+                      {authLoading ? '...' : walletBalance !== null ? `₵${walletBalance.toFixed(2)}` : '₵0.00'}
+                    </strong>
+                    <Link
+                      href="/wallet/fund"
+                      style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', textDecoration: 'underline' }}
+                    >
+                      + Top Up
+                    </Link>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>📺 Subscribe Now</button>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+                    {loading ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                        <Loader2 className="animate-spin" size={16} />
+                        Processing...
+                      </span>
+                    ) : (
+                      `📺 Subscribe Now (₵${provider.plans[selectedPlanIndex]?.price.toFixed(2)})`
+                    )}
+                  </button>
                   <button type="button" className="btn btn-secondary" onClick={() => setProvider(null)}>Change</button>
                 </div>
               </form>

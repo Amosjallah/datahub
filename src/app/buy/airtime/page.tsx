@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, Wallet } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 export default function BuyAirtime() {
   const [network, setNetwork] = useState<'MTN' | 'Telecel' | 'AirtelTigo' | ''>('');
@@ -11,28 +13,114 @@ export default function BuyAirtime() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // User & Wallet state
+  const [userId, setUserId] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string>('User');
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Load user data and pre-fill query params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qPhone = params.get('phone');
+      const qNet = params.get('network');
+      if (qPhone) setPhone(qPhone);
+      if (qNet === 'MTN' || qNet === 'Telecel' || qNet === 'AirtelTigo') {
+        setNetwork(qNet);
+      }
+    }
+
+    async function loadUserData() {
+      setAuthLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          setUserName(fullName);
+
+          const { data: wallet } = await supabase
+            .from('wallets')
+            .select('id, cached_balance')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (wallet) {
+            setWalletId(wallet.id);
+            setWalletBalance(Number(wallet.cached_balance));
+          }
+        }
+      } catch (err) {
+        console.warn('[BuyAirtime] User load warning:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+    loadUserData();
+  }, []);
+
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!network) return alert('Please select a network.');
     if (!phone) return alert('Please enter phone number.');
-    if (!amount || amount < 1) return alert('Please enter a valid amount (minimum ₵1).');
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount < 1) return alert('Please enter a valid amount (minimum ₵1).');
+
+    if (walletBalance !== null && walletBalance < numAmount) {
+      setMessage({
+        type: 'error',
+        text: `Insufficient wallet balance (₵${walletBalance.toFixed(2)}). You need ₵${numAmount.toFixed(2)}. Please fund your wallet.`,
+      });
+      return;
+    }
 
     setLoading(true);
     setMessage(null);
 
-    // Simulate VTU API process
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/airtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          walletId,
+          amount: numAmount,
+          recipient: phone,
+          network,
+        }),
+      });
+
+      const data = await response.json();
       setLoading(false);
-      if (phone.startsWith('0244000')) {
-        setMessage({ type: 'error', text: 'Airtime VTU Gateway error. Wallet automatically refunded.' });
+
+      if (data.success) {
+        setMessage({
+          type: 'success',
+          text: data.message || `₵${numAmount.toFixed(2)} ${network} airtime sent successfully!`,
+        });
+        if (walletBalance !== null) {
+          setWalletBalance(prev => (prev !== null ? Math.max(0, prev - numAmount) : 0));
+        }
+        setAmount('');
       } else {
-        setMessage({ type: 'success', text: `₵${Number(amount).toFixed(2)} airtime sent successfully!` });
+        setMessage({
+          type: 'error',
+          text: data.message || 'Airtime recharge failed. Please try again.',
+        });
       }
-    }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      setMessage({
+        type: 'error',
+        text: err.message || 'Connection failure. Please check your network and try again.',
+      });
+    }
   };
 
   return (
-    <AppLayout userName="Kwame Mensah" userRole="customer">
+    <AppLayout userName={userName} userRole="customer">
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         <div style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.25rem' }}>
@@ -44,8 +132,12 @@ export default function BuyAirtime() {
         </div>
 
         {message && (
-          <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
-            {message.type === 'success' ? '✅' : '❌'} {message.text}
+          <div
+            className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}
+            style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            <span>{message.text}</span>
           </div>
         )}
 
@@ -118,26 +210,48 @@ export default function BuyAirtime() {
                 />
               </div>
 
-              <div className="divider"></div>
+              <div className="divider" style={{ margin: '1.25rem 0' }}></div>
 
               {/* Wallet info */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', fontSize: '0.85rem' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Wallet Balance</span>
-                <strong style={{ color: 'var(--color-brand-primary)' }}>₵245.50</strong>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.25rem',
+                padding: '0.75rem 1rem',
+                background: 'var(--color-bg-elevated)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--color-border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Wallet size={16} color="var(--color-brand-primary)" />
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Your Wallet Balance:</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <strong style={{ color: 'var(--color-brand-primary)', fontSize: '1rem', fontFamily: 'Space Grotesk' }}>
+                    {authLoading ? '...' : walletBalance !== null ? `₵${walletBalance.toFixed(2)}` : '₵0.00'}
+                  </strong>
+                  <Link
+                    href="/wallet/fund"
+                    style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', textDecoration: 'underline' }}
+                  >
+                    + Top Up
+                  </Link>
+                </div>
               </div>
 
               <button
                 type="submit"
                 className="btn btn-primary btn-full"
-                disabled={loading}
+                disabled={loading || !amount || (walletBalance !== null && walletBalance < Number(amount))}
               >
                 {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                     <Loader2 className="animate-spin" size={16} />
-                    Processing...
+                    Processing Airtime...
                   </span>
                 ) : (
-                  '⚡ Confirm & Pay'
+                  `⚡ Confirm & Pay ${amount ? `₵${Number(amount).toFixed(2)}` : ''}`
                 )}
               </button>
             </form>
