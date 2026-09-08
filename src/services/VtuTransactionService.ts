@@ -97,21 +97,21 @@ export class VtuTransactionService {
         planId: payload.planId,
       });
 
-      if (response.success && response.status === 'success') {
-        // Success: Update record
+      if (response.success && (response.status === 'success' || response.status === 'processing')) {
+        // Success or in-flight processing: Update record without triggering premature refund
         if (isSupabaseConfigured() && recordId !== reference) {
           try {
             await supabase
               .from('transaction_records')
               .update({
-                status: 'success',
+                status: response.status,
                 provider_reference: response.providerReference,
               })
               .eq('id', recordId);
           } catch (_) {}
         }
         
-        return { success: true, transactionId: recordId };
+        return { success: true, transactionId: recordId, status: response.status };
       } else {
         // Provider returned failure: Trigger auto-refund
         await this.handleRefund(payload.walletId, payload.amount, reference, recordId, response.errorMessage || 'Provider failure');
