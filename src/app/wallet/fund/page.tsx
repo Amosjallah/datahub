@@ -4,31 +4,78 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 function WalletFundContent() {
   const searchParams = useSearchParams();
   const [activePM, setActivePM] = useState<'momo' | 'card'>('momo');
   const [amount, setAmount] = useState<number | ''>('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('user@fadigital.com');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Real user state from Supabase auth
+  const [userId, setUserId] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
   const presets = [10, 20, 50, 100, 200, 500];
+
+  // Load real logged-in user and their wallet from Supabase
+  useEffect(() => {
+    async function loadUser() {
+      setUserLoading(true);
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.error('[Auth] No logged in user:', authError?.message);
+          setUserLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+        setEmail(user.email || '');
+
+        // Fetch user's wallet from Supabase
+        const { data: wallet, error: walletError } = await supabase
+          .from('wallets')
+          .select('id, cached_balance')
+          .eq('user_id', user.id)
+          .single();
+
+        if (walletError || !wallet) {
+          console.error('[Wallet] Could not load wallet:', walletError?.message);
+        } else {
+          setWalletId(wallet.id);
+          setBalance(Number(wallet.cached_balance));
+        }
+      } catch (err: any) {
+        console.error('[loadUser] Unexpected error:', err.message);
+      } finally {
+        setUserLoading(false);
+      }
+    }
+
+    loadUser();
+  }, []);
 
   // Auto-verify if returning from Paystack payment with a reference
   useEffect(() => {
     const ref = searchParams.get('ref') || searchParams.get('reference') || searchParams.get('trxref');
-    if (ref) {
+    if (ref && walletId) {
       setLoading(true);
-      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}`)
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}&walletId=${encodeURIComponent(walletId)}`)
         .then((res) => res.json())
         .then((data) => {
           setLoading(false);
           if (data.success) {
+            // Refresh real balance after successful credit
+            setBalance((prev) => (prev !== null ? prev + (data.amount || 0) : data.amount));
             setStatusMessage({
               type: 'success',
-              text: `Payment verified! ₵${data.amount?.toFixed(2) || ''} credited to your wallet ledger. (Ref: ${ref})`,
+              text: `✅ Payment verified! ₵${data.amount?.toFixed(2) || ''} has been credited to your wallet. (Ref: ${ref})`,
             });
           } else {
             setStatusMessage({
@@ -45,11 +92,16 @@ function WalletFundContent() {
           });
         });
     }
-  }, [searchParams]);
+  }, [searchParams, walletId]);
 
   const handleInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMessage(null);
+
+    if (!userId || !walletId) {
+      setStatusMessage({ type: 'error', text: 'You must be logged in to fund your wallet.' });
+      return;
+    }
 
     if (!amount || amount < 1) {
       alert('Please enter a valid amount (minimum ₵1).');
@@ -69,8 +121,10 @@ function WalletFundContent() {
         body: JSON.stringify({
           email,
           amount: Number(amount),
-          walletId: 'WAL_USER_DEMO_01',
-          userId: 'USER_DEMO_01',
+          walletId,        // ✅ Real wallet ID from Supabase
+          userId,          // ✅ Real user ID from Supabase auth
+          // Pass phone for Mobile Money prompt on customer's handset
+          ...(activePM === 'momo' && phone ? { phone } : {}),
         }),
       });
 
@@ -96,7 +150,7 @@ function WalletFundContent() {
   };
 
   return (
-    <AppLayout userName="Kwame Mensah" userRole="customer">
+    <AppLayout userName="Customer" userRole="customer">
       <div style={{ maxWidth: '520px', margin: '0 auto' }} className="animate-fade-up">
         <div style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.2rem' }}>💰 Fund Your Wallet</h1>
@@ -108,11 +162,24 @@ function WalletFundContent() {
           <div>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Current Balance</div>
             <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--color-brand-primary)', fontFamily: 'Space Grotesk' }}>
-              ₵245.50
+              {userLoading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : balance !== null ? (
+                `₵${balance.toFixed(2)}`
+              ) : (
+                '₵0.00'
+              )}
             </div>
           </div>
           <span className="badge badge-success">GHS Wallet</span>
         </div>
+
+        {/* Auth warning if not logged in */}
+        {!userLoading && !userId && (
+          <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#b91c1c', fontSize: '0.875rem' }}>
+            ⚠️ You are not logged in. Please <a href="/login" style={{ textDecoration: 'underline', fontWeight: 600 }}>log in</a> to fund your wallet.
+          </div>
+        )}
 
         {statusMessage && (
           <div style={{
@@ -223,6 +290,9 @@ function WalletFundContent() {
                     onChange={(e) => setPhone(e.target.value)}
                     required
                   />
+                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.4rem' }}>
+                    📲 You will receive a Mobile Money prompt on this number to approve the payment.
+                  </p>
                 </div>
               )}
 
@@ -239,7 +309,11 @@ function WalletFundContent() {
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              <button
+                type="submit"
+                className="btn btn-primary btn-full"
+                disabled={loading || userLoading || !userId}
+              >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : '🔒 Fund Wallet via Paystack'}
               </button>
             </form>
@@ -258,7 +332,7 @@ function WalletFundContent() {
 export default function WalletFund() {
   return (
     <Suspense fallback={
-      <AppLayout userName="Kwame Mensah" userRole="customer">
+      <AppLayout userName="Customer" userRole="customer">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
           <Loader2 className="animate-spin" size={32} color="var(--color-brand-primary)" />
         </div>

@@ -4,7 +4,8 @@ export interface ResellerXpressPlan {
   id: number;
   name: string;
   network: string;
-  capacity?: string;
+  volume?: string;
+  volume_mb?: number;
   price: number;
   type: string;
 }
@@ -12,6 +13,9 @@ export interface ResellerXpressPlan {
 export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
   private apiKey: string;
   private baseUrl: string;
+
+  // In-memory cache for plans to avoid repeated API calls
+  private cachedPlans: ResellerXpressPlan[] | null = null;
 
   constructor(apiKey?: string, baseUrl?: string) {
     this.apiKey = apiKey || process.env.RESELLERXPRESS_API_KEY || '';
@@ -30,42 +34,102 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
   }
 
   /**
-   * Default plan map fallback if specific planId is not provided
+   * Fetch available plans from the API and cache them in memory.
+   * Uses the correct /plans endpoint as confirmed from the live API.
    */
-  private resolvePlanId(network: string, amount: number, serviceType: string): number {
-    const networkUpper = network.toUpperCase();
-    if (serviceType === 'airtime') {
-      return 100; // General VTU Airtime top-up plan
+  async getPlans(): Promise<ResellerXpressPlan[]> {
+    if (!this.apiKey || this.apiKey.includes('placeholder')) {
+      // Mock plans matching real API structure
+      return [
+        { id: 17, name: '1GB AirtelTigo', network: 'airteltigo', volume: '1', volume_mb: 1, price: 5.80, type: 'data' },
+        { id: 18, name: '2GB AirtelTigo', network: 'airteltigo', volume: '2', volume_mb: 2, price: 9.60, type: 'data' },
+        { id: 19, name: '3GB AirtelTigo', network: 'airteltigo', volume: '3', volume_mb: 3, price: 13.50, type: 'data' },
+        { id: 28, name: '10GB Telecel', network: 'telecel', volume: '10', volume_mb: 10, price: 39.00, type: 'data' },
+        { id: 29, name: '15GB Telecel', network: 'telecel', volume: '15', volume_mb: 15, price: 55.00, type: 'data' },
+        { id: 30, name: '20GB Telecel', network: 'telecel', volume: '20', volume_mb: 20, price: 74.00, type: 'data' },
+      ];
     }
 
-    if (networkUpper === 'MTN') {
-      if (amount <= 10) return 1;  // e.g. 1GB / 2GB
-      if (amount <= 25) return 2;  // e.g. 5GB
-      if (amount <= 50) return 3;  // e.g. 10GB
-      return 4;                   // e.g. 20GB+
-    } else if (networkUpper === 'TELECEL') {
-      if (amount <= 15) return 10;
-      if (amount <= 35) return 11;
-      return 12;
-    } else if (networkUpper === 'AIRTELTIGO') {
-      if (amount <= 15) return 20;
-      if (amount <= 35) return 21;
-      return 22;
+    // Return cache if available
+    if (this.cachedPlans && this.cachedPlans.length > 0) {
+      return this.cachedPlans;
     }
 
-    return 1; // Default plan ID fallback
+    try {
+      const response = await fetch(`${this.baseUrl}/plans`, {
+        headers: { 'X-API-KEY': this.apiKey },
+      });
+
+      if (response.ok) {
+        const raw = await response.json();
+        // API returns an object keyed by index; convert to array and normalize
+        const plans: ResellerXpressPlan[] = Object.values(raw).map((item: any) => ({
+          id: item.id,
+          name: `${item.name} ${item.network}`,
+          network: item.network.toLowerCase(),
+          volume: item.volume,
+          volume_mb: item.volume_mb,
+          price: parseFloat(item.price),
+          type: 'data',
+        }));
+
+        this.cachedPlans = plans;
+        return plans;
+      }
+
+      console.error('[ResellerXpress] Failed to fetch plans, status:', response.status);
+    } catch (err) {
+      console.error('[ResellerXpress] getPlans error:', err);
+    }
+
+    return this.cachedPlans || [];
   }
 
   /**
-   * Execute VTU Airtime or Data recharge via ResellerXpress API
+   * Find the best matching plan ID for a given network + amount (GHS price).
+   * This replaces the old hardcoded plan ID map with a real lookup.
+   */
+  private async resolvePlanId(network: string, amount: number, serviceType: string): Promise<number> {
+    if (serviceType === 'airtime') {
+      // ResellerXpress currently only supports data; fallback plan ID
+      return 0;
+    }
+
+    const plans = await this.getPlans();
+    const networkLower = network.toLowerCase().replace('airteltigo', 'airteltigo').replace('at', 'airteltigo');
+
+    // Find plans for this network, sorted by price ascending
+    const networkPlans = plans
+      .filter((p) => p.network === networkLower)
+      .sort((a, b) => a.price - b.price);
+
+    if (networkPlans.length === 0) {
+      console.warn(`[ResellerXpress] No plans found for network: ${network}`);
+      return 0;
+    }
+
+    // Find the plan whose price most closely matches the requested amount
+    // (find the last plan whose price is <= amount, or the cheapest available)
+    let bestPlan = networkPlans[0];
+    for (const plan of networkPlans) {
+      if (plan.price <= amount) {
+        bestPlan = plan;
+      }
+    }
+
+    return bestPlan.id;
+  }
+
+  /**
+   * Execute VTU Data recharge via ResellerXpress API
+   * Endpoint: POST /place-order
    */
   async recharge(request: RechargeRequest): Promise<RechargeResponse> {
     const formattedPhone = this.formatPhoneNumber(request.recipient);
-    const planId = request.planId || this.resolvePlanId(request.network, request.amount, request.serviceType);
 
     // Sandbox / Mock fallback if placeholder API key is used
     if (!this.apiKey || this.apiKey.includes('placeholder')) {
-      console.log(`[ResellerXpress Mock Mode] Processing ${request.network} ${request.serviceType} for ${formattedPhone} (Plan #${planId})`);
+      console.log(`[ResellerXpress Mock Mode] Processing ${request.network} ${request.serviceType} for ${formattedPhone}`);
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       if (formattedPhone.startsWith('0244000')) {
@@ -80,6 +144,17 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
         success: true,
         providerReference: `RX_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
         status: 'success',
+      };
+    }
+
+    // Resolve the correct plan ID from the live API
+    const planId = request.planId || await this.resolvePlanId(request.network, request.amount, request.serviceType);
+
+    if (!planId) {
+      return {
+        success: false,
+        errorMessage: `No data plan available for ${request.network} at ₵${request.amount}. This network may not be supported.`,
+        status: 'failed',
       };
     }
 
@@ -110,7 +185,7 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
 
       return {
         success: false,
-        errorMessage: data?.message || data?.error || `ResellerXpress API Error (${response.status})`,
+        errorMessage: data?.message || data?.error || `ResellerXpress API Error (HTTP ${response.status})`,
         status: 'failed',
       };
     } catch (error: any) {
@@ -125,23 +200,18 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
 
   /**
    * Query status of an existing order by request_id
+   * Endpoint: GET /order-status?request_id=...
    */
   async queryStatus(providerReference: string): Promise<RechargeResponse> {
     if (!this.apiKey || this.apiKey.includes('placeholder')) {
-      return {
-        success: true,
-        providerReference,
-        status: 'success',
-      };
+      return { success: true, providerReference, status: 'success' };
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/order-status?request_id=${encodeURIComponent(providerReference)}`, {
-        method: 'GET',
-        headers: {
-          'X-API-KEY': this.apiKey,
-        },
-      });
+      const response = await fetch(
+        `${this.baseUrl}/order-status?request_id=${encodeURIComponent(providerReference)}`,
+        { method: 'GET', headers: { 'X-API-KEY': this.apiKey } }
+      );
 
       const data = await response.json().catch(() => null);
 
@@ -165,46 +235,13 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
         status: 'processing',
       };
     } catch (error: any) {
-      return {
-        success: false,
-        providerReference,
-        errorMessage: error.message,
-        status: 'processing',
-      };
+      return { success: false, providerReference, errorMessage: error.message, status: 'processing' };
     }
   }
 
   /**
-   * Fetch active data plans and pricing from ResellerXpress
-   */
-  async getPlans(): Promise<ResellerXpressPlan[]> {
-    if (!this.apiKey || this.apiKey.includes('placeholder')) {
-      return [
-        { id: 1, name: 'MTN SME Data 1GB', network: 'MTN', price: 4.50, type: 'data' },
-        { id: 2, name: 'MTN SME Data 5GB', network: 'MTN', price: 21.00, type: 'data' },
-        { id: 3, name: 'MTN SME Data 10GB', network: 'MTN', price: 38.00, type: 'data' },
-        { id: 10, name: 'Telecel Data 5GB', network: 'Telecel', price: 20.00, type: 'data' },
-        { id: 20, name: 'AirtelTigo Big Time 10GB', network: 'AirtelTigo', price: 35.00, type: 'data' },
-        { id: 100, name: 'Universal Airtime Top-Up', network: 'ALL', price: 1.00, type: 'airtime' },
-      ];
-    }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/plans`, {
-        headers: { 'X-API-KEY': this.apiKey },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        return data.plans || data.data || [];
-      }
-    } catch (err) {
-      console.error('Failed to fetch ResellerXpress plans:', err);
-    }
-    return [];
-  }
-
-  /**
-   * Query upstream reseller balance
+   * Query upstream reseller wallet balance
+   * Endpoint: GET /wallet-balance  (NOT /wallet)
    */
   async getWalletBalance(): Promise<{ balance: number; currency: string }> {
     if (!this.apiKey || this.apiKey.includes('placeholder')) {
@@ -212,15 +249,15 @@ export class ResellerXpressProviderAdapter implements ProviderAdapterInterface {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/wallet`, {
+      const response = await fetch(`${this.baseUrl}/wallet-balance`, {
         headers: { 'X-API-KEY': this.apiKey },
       });
       if (response.ok) {
         const data = await response.json();
-        return { balance: parseFloat(data.balance || '0'), currency: 'GHS' };
+        return { balance: parseFloat(data.balance || data.wallet_balance || '0'), currency: 'GHS' };
       }
     } catch (err) {
-      console.error('Failed to fetch ResellerXpress wallet balance:', err);
+      console.error('[ResellerXpress] getWalletBalance error:', err);
     }
     return { balance: 0, currency: 'GHS' };
   }

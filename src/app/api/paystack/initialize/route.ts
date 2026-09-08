@@ -4,13 +4,20 @@ import { paystackService } from '@/lib/paystack';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, amount, walletId, userId, callbackUrl } = body;
+    const { email, amount, walletId, userId, callbackUrl, phone } = body;
 
     const numAmount = Number(amount);
     if (!numAmount || isNaN(numAmount) || numAmount <= 0) {
       return NextResponse.json(
         { success: false, message: 'Valid payment amount (minimum GH₵ 1.00) is required.' },
         { status: 400 }
+      );
+    }
+
+    if (!walletId || !userId) {
+      return NextResponse.json(
+        { success: false, message: 'User authentication required. Please log in again.' },
+        { status: 401 }
       );
     }
 
@@ -25,6 +32,8 @@ export async function POST(request: Request) {
         userId,
         walletId,
         type: 'wallet_topup',
+        // Include phone for Mobile Money channel prompt
+        ...(phone ? { phone } : {}),
       },
     });
 
