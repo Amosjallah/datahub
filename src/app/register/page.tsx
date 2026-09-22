@@ -14,6 +14,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showDemoRegister, setShowDemoRegister] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -21,6 +22,7 @@ export default function Register() {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
+    setShowDemoRegister(false);
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -34,6 +36,38 @@ export default function Register() {
       });
 
       if (error) {
+        // If client fetch failed (e.g. adblocker, CORS, network), try server-side proxy
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('fetch') || error.message?.includes('network')) {
+          try {
+            const res = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+            });
+            const serverData = await res.json();
+            if (serverData.success) {
+              if (serverData.session) {
+                await supabase.auth.setSession(serverData.session);
+                router.push('/dashboard');
+                return;
+              } else {
+                setSuccessMsg('Account created successfully! You can now sign in with your email and password.');
+                setTimeout(() => router.push('/login'), 2500);
+                return;
+              }
+            } else {
+              setErrorMsg(serverData.message || 'Failed to create account.');
+              setLoading(false);
+              return;
+            }
+          } catch (_) {
+            setErrorMsg('Could not connect to Supabase auth service. Click below to continue to Dashboard in Demo Mode.');
+            setShowDemoRegister(true);
+            setLoading(false);
+            return;
+          }
+        }
+
         setErrorMsg(error.message);
         setLoading(false);
         return;
@@ -57,13 +91,18 @@ export default function Register() {
       }
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('network')) {
-        setErrorMsg('Could not connect to Supabase (project domain is paused or offline). You can unpause your project on Supabase dashboard or continue in Demo Mode.');
+        setErrorMsg('Could not connect to Supabase auth service. Click below to continue in Demo Mode.');
+        setShowDemoRegister(true);
       } else {
         setErrorMsg(err.message || 'Failed to create account.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoRegister = () => {
+    router.push('/dashboard');
   };
 
   const handleGoogleLogin = async () => {
@@ -164,7 +203,19 @@ export default function Register() {
               fontSize: '0.875rem',
               marginBottom: '1.25rem',
             }}>
-              ⚠️ {errorMsg}
+              <div style={{ marginBottom: showDemoRegister ? '0.75rem' : 0 }}>
+                ⚠️ {errorMsg}
+              </div>
+              {showDemoRegister && (
+                <button
+                  type="button"
+                  onClick={handleDemoRegister}
+                  className="btn btn-primary btn-sm"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  🚀 Continue to Dashboard (Demo Mode)
+                </button>
+              )}
             </div>
           )}
 

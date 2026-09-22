@@ -22,32 +22,68 @@ export default function Login() {
     setShowDemoLogin(false);
 
     try {
+      let userLoggedIn = false;
+      let targetUser = null;
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) {
-        setErrorMsg(error.message || 'Invalid login credentials.');
-        setLoading(false);
-        return;
+        // If client-side fetch failed (adblocker, CORS, network, or domain issue), try server-side proxy
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('fetch') || error.message?.includes('network')) {
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email.trim(), password }),
+            });
+            const serverData = await res.json();
+            if (serverData.success) {
+              if (serverData.session) {
+                await supabase.auth.setSession(serverData.session);
+              }
+              userLoggedIn = true;
+              targetUser = serverData.user;
+            } else {
+              setErrorMsg(serverData.message || 'Invalid login credentials.');
+              setLoading(false);
+              return;
+            }
+          } catch (_) {
+            setErrorMsg('Could not connect to Supabase auth. Click below to continue to Dashboard in Demo Mode.');
+            setShowDemoLogin(true);
+            setLoading(false);
+            return;
+          }
+        } else {
+          setErrorMsg(error.message || 'Invalid login credentials.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        userLoggedIn = true;
+        targetUser = data?.user;
       }
 
-      if (data?.user) {
+      if (userLoggedIn && targetUser) {
         // Ensure user wallet exists in wallets table
-        const { data: wallet } = await supabase
-          .from('wallets')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
+        try {
+          const { data: wallet } = await supabase
+            .from('wallets')
+            .select('id')
+            .eq('user_id', targetUser.id)
+            .maybeSingle();
 
-        if (!wallet) {
-          await supabase.from('wallets').insert({
-            user_id: data.user.id,
-            currency: 'GHS',
-            cached_balance: 0.0000,
-          });
-        }
+          if (!wallet) {
+            await supabase.from('wallets').insert({
+              user_id: targetUser.id,
+              currency: 'GHS',
+              cached_balance: 0.0000,
+            });
+          }
+        } catch (_) {}
       }
 
       const emailLower = email.toLowerCase();
@@ -60,7 +96,7 @@ export default function Login() {
       }
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('fetch') || err.message?.includes('network')) {
-        setErrorMsg('Could not connect to Supabase (project domain is paused or offline). You can unpause it on your Supabase dashboard or click below to enter Demo Mode.');
+        setErrorMsg('Could not connect to Supabase auth. Click below to continue to Dashboard in Demo Mode.');
         setShowDemoLogin(true);
       } else {
         setErrorMsg(err.message || 'An unexpected error occurred.');
