@@ -1,9 +1,10 @@
 const fs = require('fs');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // Load .env variables
-const envPath = 'c:\\Users\\AMOS\\Documents\\DATA\\.env';
-const envContent = fs.readFileSync(envPath, 'utf8');
+const envPath = path.resolve(__dirname, '../.env');
+const envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
 const env = {};
 envContent.split('\n').forEach(line => {
   const parts = line.split('=');

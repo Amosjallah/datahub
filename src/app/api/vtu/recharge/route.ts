@@ -1,10 +1,62 @@
 import { NextResponse } from 'next/server';
 import { VtuTransactionService } from '@/services/VtuTransactionService';
+import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProviderAdapter';
 import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
+import { ProviderAdapterInterface, RechargeRequest, RechargeResponse } from '@/services/providers/ProviderAdapterInterface';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const resellerProvider = new ResellerXpressProviderAdapter();
-const vtuService = new VtuTransactionService(resellerProvider);
+/**
+ * Dual VTU Provider — tries DatamartGH first, falls back to ResellerXpress.
+ * This ensures maximum uptime for airtime and data recharges.
+ */
+class DualVtuProvider implements ProviderAdapterInterface {
+  private primary: DatamartGHProviderAdapter;
+  private fallback: ResellerXpressProviderAdapter;
+
+  constructor() {
+    this.primary = new DatamartGHProviderAdapter();
+    this.fallback = new ResellerXpressProviderAdapter();
+  }
+
+  async recharge(request: RechargeRequest): Promise<RechargeResponse> {
+    // Try DatamartGH first
+    try {
+      const result = await this.primary.recharge(request);
+      if (result.success || result.status === 'processing') {
+        return result;
+      }
+      console.warn('[DualVtuProvider] DatamartGH failed, falling back to ResellerXpress. Reason:', result.errorMessage);
+    } catch (err: any) {
+      console.warn('[DualVtuProvider] DatamartGH threw error, falling back. Error:', err.message);
+    }
+
+    // Fallback to ResellerXpress (data bundles only — airtime not supported)
+    if (request.serviceType === 'data') {
+      return this.fallback.recharge(request);
+    }
+
+    // Airtime fallback: ResellerXpress doesn't support airtime — return clean error
+    return {
+      success: false,
+      errorMessage: 'Airtime service temporarily unavailable. Please try again shortly.',
+      status: 'failed',
+    };
+  }
+
+  async queryStatus(providerReference: string): Promise<RechargeResponse> {
+    // Try DatamartGH first, then ResellerXpress
+    try {
+      const result = await this.primary.queryStatus(providerReference);
+      if (result.status !== 'processing') return result;
+    } catch (_) {}
+
+    return this.fallback.queryStatus(providerReference);
+  }
+}
+
+const dualProvider = new DualVtuProvider();
+const datamartProvider = new DatamartGHProviderAdapter();
+const vtuService = new VtuTransactionService(dualProvider);
 
 export async function POST(request: Request) {
   try {
@@ -14,16 +66,6 @@ export async function POST(request: Request) {
     if (!amount || !recipient || !network || !serviceType) {
       return NextResponse.json(
         { success: false, message: 'Missing required recharge parameters: amount, recipient, network, serviceType.' },
-        { status: 400 }
-      );
-    }
-
-    if (serviceType === 'airtime') {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'ResellerXpress is currently configured for Data Bundles only. Airtime VTU is not supported on this provider.',
-        },
         { status: 400 }
       );
     }
@@ -59,7 +101,7 @@ export async function POST(request: Request) {
     const result = await vtuService.processTransaction({
       userId,
       walletId,
-      serviceId: serviceId || 'RESELLERXPRESS_VTU',
+      serviceId: serviceId || 'DATAMARTGH_VTU',
       amount: Number(amount),
       recipient,
       network,
@@ -72,9 +114,10 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         status: result.status || 'processing',
+        provider: 'DatamartGH + ResellerXpress',
         message: isProcessing
-          ? `${network} DATA order for ${recipient} placed successfully and is being dispatched!`
-          : `${network} DATA recharge completed successfully!`,
+          ? `${network} ${serviceType.toUpperCase()} order for ${recipient} placed and is being dispatched!`
+          : `${network} ${serviceType.toUpperCase()} recharge completed successfully!`,
         transactionId: result.transactionId,
       });
     }
@@ -97,13 +140,25 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const plans = await resellerProvider.getPlans();
-    const balanceInfo = await resellerProvider.getWalletBalance();
+    const [datamartPlans, rxPlans, datamartBalance, rxBalance] = await Promise.allSettled([
+      datamartProvider.getPlans(),
+      new ResellerXpressProviderAdapter().getPlans(),
+      datamartProvider.getWalletBalance(),
+      new ResellerXpressProviderAdapter().getWalletBalance(),
+    ]);
+
     return NextResponse.json({
       success: true,
-      provider: 'ResellerXpress',
-      plans,
-      upstreamBalance: balanceInfo,
+      providers: {
+        datamartGH: {
+          plans: datamartPlans.status === 'fulfilled' ? datamartPlans.value : [],
+          balance: datamartBalance.status === 'fulfilled' ? datamartBalance.value : null,
+        },
+        resellerXpress: {
+          plans: rxPlans.status === 'fulfilled' ? rxPlans.value : [],
+          balance: rxBalance.status === 'fulfilled' ? rxBalance.value : null,
+        },
+      },
     });
   } catch (error: any) {
     return NextResponse.json(

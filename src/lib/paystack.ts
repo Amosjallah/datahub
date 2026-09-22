@@ -55,7 +55,7 @@ export class PaystackService {
   }
 
   private getPublicKey(): string {
-    return process.env.PAYSTACK_PUBLIC_KEY || this.publicKey || '';
+    return process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.PAYSTACK_PUBLIC_KEY || this.publicKey || '';
   }
 
   /**

@@ -1,10 +1,10 @@
 export interface RechargeRequest {
   recipient: string;
   amount: number;
-  network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL';
+  network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL' | string;
   serviceType: 'data' | 'airtime' | 'bill';
   reference: string;
-  planId?: number;
+  planId?: number | string;
 }
 
 export interface RechargeResponse {

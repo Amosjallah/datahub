@@ -8,7 +8,7 @@ export default function AdminSettings() {
   const [maintenance, setMaintenance] = useState(false);
   const [autoRefund, setAutoRefund] = useState(true);
   const [defaultMargin, setDefaultMargin] = useState(8.5);
-  const [gateway, setGateway] = useState('flutterwave');
+  const [gateway, setGateway] = useState('datamartgh');
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,8 +79,10 @@ export default function AdminSettings() {
                 onChange={(e) => setGateway(e.target.value)}
                 style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
               >
-                <option value="flutterwave">Flutterwave Telecom API</option>
-                <option value="hubtel">Hubtel SMS & VTU Gateway</option>
+                <option value="datamartgh">DatamartGH VTU (Primary Data & Airtime)</option>
+                <option value="resellerxpress">ResellerXpress (VTU Fallback)</option>
+                <option value="hubtel">Hubtel Ghana (Direct MoMo & Bill Payment)</option>
+                <option value="paystack">Paystack Payment Rails (Cards & Collections)</option>
                 <option value="mtn-momo">MTN MoMo API Direct Connect</option>
               </select>
             </div>

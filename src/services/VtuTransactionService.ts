@@ -9,9 +9,9 @@ interface CreateTransactionPayload {
   serviceId: string;
   amount: number;
   recipient: string;
-  network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL';
+  network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL' | string;
   serviceType: 'data' | 'airtime' | 'bill';
-  planId?: number;
+  planId?: number | string;
 }
 
 export class VtuTransactionService {

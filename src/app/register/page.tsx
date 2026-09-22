@@ -56,7 +56,11 @@ export default function Register() {
         setTimeout(() => router.push('/login'), 2500);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to create account.');
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('network')) {
+        setErrorMsg('Could not connect to Supabase (project domain is paused or offline). You can unpause your project on Supabase dashboard or continue in Demo Mode.');
+      } else {
+        setErrorMsg(err.message || 'Failed to create account.');
+      }
     } finally {
       setLoading(false);
     }
