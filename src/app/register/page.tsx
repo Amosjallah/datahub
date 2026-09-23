@@ -32,65 +32,22 @@ export default function Register() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: name.trim(),
-          },
-        },
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
       });
+      const result = await response.json().catch(() => null);
 
-      if (error) {
-        // If client fetch failed (e.g. adblocker, CORS, network), try server-side proxy
-        if (error.message?.includes('Failed to fetch') || error.message?.includes('fetch') || error.message?.includes('network')) {
-          try {
-            const res = await fetch('/api/auth/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
-            });
-            const serverData = await res.json();
-            if (serverData.success) {
-              if (serverData.session) {
-                await supabase.auth.setSession(serverData.session);
-                router.push('/dashboard');
-                return;
-              } else {
-                setSuccessMsg('Account created successfully! You can now sign in with your email and password.');
-                setTimeout(() => router.push('/login'), 2500);
-                return;
-              }
-            } else {
-              setErrorMsg(serverData.message || 'Failed to create account.');
-              setLoading(false);
-              return;
-            }
-          } catch (_) {
-            setErrorMsg('Could not connect to Supabase auth service. Click below to continue to Dashboard in Demo Mode.');
-            setShowDemoRegister(true);
-            setLoading(false);
-            return;
-          }
-        }
-
-        setErrorMsg(error.message);
+      if (!response.ok || !result?.success) {
+        setErrorMsg(result?.message || 'Unable to create your account right now. Please try again.');
+        setShowDemoRegister(Boolean(result?.demo));
         setLoading(false);
         return;
       }
 
-      if (data?.user) {
-        try {
-          await supabase.from('wallets').insert({
-            user_id: data.user.id,
-            currency: 'GHS',
-            cached_balance: 0.0000,
-          });
-        } catch (_) {}
-      }
-
-      if (data?.session) {
+      if (result.session && supabase) {
+        await supabase.auth.setSession(result.session);
         router.push('/dashboard');
       } else {
         setSuccessMsg('Account created successfully! You can now sign in with your email and password.');

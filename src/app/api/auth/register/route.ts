@@ -61,9 +61,15 @@ export async function POST(request: Request) {
       session: data.session,
     });
   } catch (err: any) {
+    const isNetworkError = /fetch|network|timeout|connect/i.test(err?.message || '');
     return NextResponse.json(
-      { success: false, message: err.message || 'Registration server error' },
-      { status: 500 }
+      {
+        success: false,
+        message: isNetworkError
+          ? 'The authentication service is temporarily unavailable. Please try again shortly.'
+          : err.message || 'Registration server error',
+      },
+      { status: isNetworkError ? 503 : 500 }
     );
   }
 }
