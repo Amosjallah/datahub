@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: Request) {
+  if (!isSupabaseConfigured()) {
+    const { email } = await request.json().catch(() => ({ email: '' }));
+    return NextResponse.json({
+      success: true,
+      demo: true,
+      user: {
+        id: 'demo-user',
+        email: email || 'demo@fadigital.com',
+        role: 'customer',
+      },
+      session: null,
+      message: 'Demo mode enabled because Supabase is not configured.',
+    });
+  }
+
+  const supabase = createAdminClient();
   try {
     const { email, password } = await request.json();
 

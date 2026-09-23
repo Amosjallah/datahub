@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import Logo from '@/components/Logo';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,6 +20,13 @@ export default function Login() {
     setLoading(true);
     setErrorMsg(null);
     setShowDemoLogin(false);
+
+    if (!isSupabaseConfigured()) {
+      setErrorMsg('Authentication is not configured in this environment. Continuing in demo mode.');
+      setShowDemoLogin(true);
+      setLoading(false);
+      return;
+    }
 
     try {
       let userLoggedIn = false;

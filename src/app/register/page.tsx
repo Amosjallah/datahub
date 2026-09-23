@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import Logo from '@/components/Logo';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -23,6 +23,13 @@ export default function Register() {
     setErrorMsg(null);
     setSuccessMsg(null);
     setShowDemoRegister(false);
+
+    if (!isSupabaseConfigured()) {
+      setSuccessMsg('Authentication is not configured. Demo mode is active, and you can continue to the dashboard.');
+      setShowDemoRegister(true);
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
