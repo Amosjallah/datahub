@@ -29,68 +29,27 @@ export default function Login() {
     }
 
     try {
-      let userLoggedIn = false;
-      let targetUser = null;
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
+      const result = await response.json().catch(() => null);
 
-      if (error) {
-        // If client-side fetch failed (adblocker, CORS, network, or domain issue), try server-side proxy
-        if (error.message?.includes('Failed to fetch') || error.message?.includes('fetch') || error.message?.includes('network')) {
-          try {
-            const res = await fetch('/api/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: email.trim(), password }),
-            });
-            const serverData = await res.json();
-            if (serverData.success) {
-              if (serverData.session) {
-                await supabase.auth.setSession(serverData.session);
-              }
-              userLoggedIn = true;
-              targetUser = serverData.user;
-            } else {
-              setErrorMsg(serverData.message || 'Invalid login credentials.');
-              setLoading(false);
-              return;
-            }
-          } catch (_) {
-            setErrorMsg('Could not connect to Supabase auth. Click below to continue to Dashboard in Demo Mode.');
-            setShowDemoLogin(true);
-            setLoading(false);
-            return;
-          }
-        } else {
-          setErrorMsg(error.message || 'Invalid login credentials.');
-          setLoading(false);
-          return;
-        }
-      } else {
-        userLoggedIn = true;
-        targetUser = data?.user;
+      if (!response.ok || !result?.success) {
+        const message = result?.message || '';
+        setErrorMsg(
+          /invalid login credentials/i.test(message)
+            ? 'Email or password is incorrect. If you just created this account, confirm your email first, then try again.'
+            : message || 'Unable to sign in right now. Please try again.'
+        );
+        setShowDemoLogin(Boolean(result?.demo));
+        setLoading(false);
+        return;
       }
 
-      if (userLoggedIn && targetUser) {
-        // Ensure user wallet exists in wallets table
-        try {
-          const { data: wallet } = await supabase
-            .from('wallets')
-            .select('id')
-            .eq('user_id', targetUser.id)
-            .maybeSingle();
-
-          if (!wallet) {
-            await supabase.from('wallets').insert({
-              user_id: targetUser.id,
-              currency: 'GHS',
-              cached_balance: 0.0000,
-            });
-          }
-        } catch (_) {}
+      if (result.session && supabase) {
+        await supabase.auth.setSession(result.session);
       }
 
       const emailLower = email.toLowerCase();
