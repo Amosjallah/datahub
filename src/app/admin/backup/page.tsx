@@ -88,6 +88,13 @@ export default function AdminBackupRestore() {
           return;
         }
 
+        if (!supabase) {
+          setDbMode('sandbox');
+          setCheckingDb(false);
+          loadMockHistory();
+          return;
+        }
+
         // Try standard light ping
         const { error } = await supabase.from('users').select('id').limit(1);
         if (error) {
@@ -147,6 +154,10 @@ export default function AdminBackupRestore() {
   };
 
   const fetchLiveCounts = async () => {
+    if (!supabase) {
+      return;
+    }
+
     // If live, let's query the API to fetch row counts
     const updatedStats = [...tableStats];
     for (let stat of updatedStats) {
@@ -263,7 +274,7 @@ export default function AdminBackupRestore() {
         setOperationLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Fetching rows from table: ${tableKey}...`]);
         
         let data: any[] = [];
-        if (dbMode === 'live') {
+        if (dbMode === 'live' && supabase) {
           const { data: dbData, error } = await supabase.from(tableKey).select('*');
           if (error) {
             setOperationLog(prev => [...prev, `⚠️ Error reading table ${tableKey}: ${error.message}. Falling back to schema mock.`]);
@@ -404,7 +415,7 @@ export default function AdminBackupRestore() {
         log(`Injecting ${rows.length} records into table: '${table}'...`);
 
         // If in live mode, we could attempt supabase queries
-        if (dbMode === 'live') {
+        if (dbMode === 'live' && supabase) {
           if (restoreStrategy === 'overwrite') {
             // Delete all and insert
             // Warning: client-side bulk overwrite should be performed with caution
