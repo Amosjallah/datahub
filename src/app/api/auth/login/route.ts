@@ -28,15 +28,29 @@ export async function POST(request: Request) {
       );
     }
 
+    const trimmedEmail = email.trim();
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
     });
 
     if (error) {
+      const isNetworkError = /fetch|network|timeout|connect|undici/i.test(error.message || '');
+      const isCredentialError = /invalid login credentials|invalid_credentials/i.test(error.message || '');
+      const isUnconfirmed = /email not confirmed/i.test(error.message || '');
+
+      let friendlyMessage = error.message;
+      if (isNetworkError) {
+        friendlyMessage = 'Unable to reach the authentication service. Please check your internet connection and try again.';
+      } else if (isCredentialError) {
+        friendlyMessage = 'Email or password is incorrect. If you just created this account, confirm your email first, then try again.';
+      } else if (isUnconfirmed) {
+        friendlyMessage = 'Please confirm your email address using the verification link sent to your inbox before signing in.';
+      }
+
       return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 400 }
+        { success: false, message: friendlyMessage, networkError: isNetworkError },
+        { status: isNetworkError ? 503 : 400 }
       );
     }
 
@@ -56,7 +70,9 @@ export async function POST(request: Request) {
             cached_balance: 0.0000,
           });
         }
-      } catch (_) {}
+      } catch (walletErr) {
+        console.warn('Wallet check/creation skipped during login:', walletErr);
+      }
     }
 
     return NextResponse.json({
@@ -65,13 +81,14 @@ export async function POST(request: Request) {
       user: data.user,
     });
   } catch (err: any) {
-    const isNetworkError = /fetch|network|timeout|connect/i.test(err?.message || '');
+    const isNetworkError = /fetch|network|timeout|connect|undici/i.test(err?.message || '');
     return NextResponse.json(
       {
         success: false,
         message: isNetworkError
-          ? 'The authentication service is temporarily unavailable. Please try again shortly.'
+          ? 'Unable to reach authentication service. Please check your network and try again.'
           : err.message || 'Authentication server error',
+        networkError: isNetworkError,
       },
       { status: isNetworkError ? 503 : 500 }
     );

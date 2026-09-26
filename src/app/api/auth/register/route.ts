@@ -38,9 +38,14 @@ export async function POST(request: Request) {
     });
 
     if (error) {
+      const isNetworkError = /fetch|network|timeout|connect|undici/i.test(error.message || '');
+      const friendlyMessage = isNetworkError
+        ? 'Unable to reach the authentication service. Please check your network and try again.'
+        : error.message;
+
       return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 400 }
+        { success: false, message: friendlyMessage, networkError: isNetworkError },
+        { status: isNetworkError ? 503 : 400 }
       );
     }
 
@@ -61,13 +66,14 @@ export async function POST(request: Request) {
       session: data.session,
     });
   } catch (err: any) {
-    const isNetworkError = /fetch|network|timeout|connect/i.test(err?.message || '');
+    const isNetworkError = /fetch|network|timeout|connect|undici/i.test(err?.message || '');
     return NextResponse.json(
       {
         success: false,
         message: isNetworkError
           ? 'The authentication service is temporarily unavailable. Please try again shortly.'
           : err.message || 'Registration server error',
+        networkError: isNetworkError,
       },
       { status: isNetworkError ? 503 : 500 }
     );

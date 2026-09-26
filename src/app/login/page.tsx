@@ -21,6 +21,8 @@ export default function Login() {
     setErrorMsg(null);
     setShowDemoLogin(false);
 
+    const trimmedEmail = email.trim();
+
     if (!isSupabaseConfigured()) {
       setErrorMsg('Authentication is not configured in this environment. Continuing in demo mode.');
       setShowDemoLogin(true);
@@ -29,30 +31,80 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-      const result = await response.json().catch(() => null);
+      let authSuccess = false;
 
-      if (!response.ok || !result?.success) {
-        const message = result?.message || '';
-        setErrorMsg(
-          /invalid login credentials/i.test(message)
-            ? 'Email or password is incorrect. If you just created this account, confirm your email first, then try again.'
-            : message || 'Unable to sign in right now. Please try again.'
-        );
-        setShowDemoLogin(Boolean(result?.demo));
-        setLoading(false);
-        return;
+      // Layer 1: Attempt direct client-side Supabase authentication
+      // Native browser fetch avoids Node.js proxy delays and directly manages browser session
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          });
+
+          if (!error && data?.session) {
+            authSuccess = true;
+            // Background ping to ensure wallet row exists
+            fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: trimmedEmail, password }),
+            }).catch(() => null);
+          } else if (error) {
+            const msg = error.message || '';
+            if (/invalid login credentials|invalid_credentials/i.test(msg)) {
+              setErrorMsg('Email or password is incorrect. If you just created this account, confirm your email first, then try again.');
+              setLoading(false);
+              return;
+            }
+            if (/email not confirmed/i.test(msg)) {
+              setErrorMsg('Please confirm your email address using the verification link sent to your inbox, then try logging in again.');
+              setLoading(false);
+              return;
+            }
+            // If another error occurs (e.g. network/fetch), proceed to Layer 2 fallback
+          }
+        } catch (clientErr) {
+          console.warn('Client-side sign in fallback to API route:', clientErr);
+        }
       }
 
-      if (result.session && supabase) {
-        await supabase.auth.setSession(result.session);
+      // Layer 2: Fallback to server-side API route if client auth didn't complete
+      if (!authSuccess) {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: trimmedEmail, password }),
+        });
+        const result = await response.json().catch(() => null);
+
+        if (!response.ok || !result?.success) {
+          const message = result?.message || '';
+          const isNetwork = /fetch|network|timeout|connect|unavailable|unreachable/i.test(message) || result?.networkError;
+
+          if (isNetwork) {
+            setErrorMsg('Unable to connect to the authentication service. Please check your internet connection, or continue in Demo Mode.');
+            setShowDemoLogin(true);
+          } else {
+            setErrorMsg(
+              /email not confirmed/i.test(message)
+                ? 'Please confirm your email address using the verification link we sent, then try logging in again.'
+                : /invalid login credentials/i.test(message)
+                ? 'Email or password is incorrect. If you just created this account, confirm your email first, then try again.'
+                : message || 'Unable to sign in right now. Please try again.'
+            );
+            setShowDemoLogin(Boolean(result?.demo));
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (result.session && supabase) {
+          await supabase.auth.setSession(result.session).catch(() => null);
+        }
       }
 
-      const emailLower = email.toLowerCase();
+      const emailLower = trimmedEmail.toLowerCase();
       if (emailLower.includes('admin')) {
         router.push('/admin/dashboard');
       } else if (emailLower.includes('agent')) {
@@ -61,11 +113,12 @@ export default function Login() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      if (err.message?.includes('Failed to fetch') || err.message?.includes('fetch') || err.message?.includes('network')) {
-        setErrorMsg('Could not connect to Supabase auth. Click below to continue to Dashboard in Demo Mode.');
+      const isNetwork = /fetch|network|timeout|connect/i.test(err?.message || '');
+      if (isNetwork) {
+        setErrorMsg('Could not connect to authentication service. Please check your internet connection or continue in Demo Mode.');
         setShowDemoLogin(true);
       } else {
-        setErrorMsg(err.message || 'An unexpected error occurred.');
+        setErrorMsg(err.message || 'An unexpected error occurred during sign in.');
       }
     } finally {
       setLoading(false);
@@ -84,6 +137,11 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!supabase) {
+      setErrorMsg('Google sign-in is unavailable because authentication is not configured.');
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -91,9 +149,15 @@ export default function Login() {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      if (error) throw error;
+      if (error) {
+        if (/unsupported provider|provider is not enabled/i.test(error.message)) {
+          setErrorMsg('Google sign-in is not enabled yet. Enable Google under Supabase Authentication > Providers, then try again.');
+          return;
+        }
+        throw error;
+      }
     } catch (err: any) {
-      alert(err.message || 'Failed to initialize Google login');
+      setErrorMsg(err.message || 'Failed to initialize Google login.');
     }
   };
 
