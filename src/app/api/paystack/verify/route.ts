@@ -142,14 +142,16 @@ export async function GET(request: Request) {
                 description: `Referral commission from customer order (${reference})`,
               });
 
-              await supabase.from('referral_orders').insert({
-                agent_id: agent.id,
-                referral_code: refCode,
-                order_reference: reference,
-                order_amount: amountInGHS,
-                commission_amount: commissionAmount,
-                status: 'credited',
-              }).catch(() => {});
+              try {
+                await supabase.from('referral_orders').insert({
+                  agent_id: agent.id,
+                  referral_code: refCode,
+                  order_reference: reference,
+                  order_amount: amountInGHS,
+                  commission_amount: commissionAmount,
+                  status: 'credited',
+                });
+              } catch (_) {}
             }
           }
         } catch (refErr) {
