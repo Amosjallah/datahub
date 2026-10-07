@@ -4,7 +4,7 @@ import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProvid
 import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
 import { HubtelPaymentService } from '@/services/HubtelPaymentService';
 import { WalletService } from '@/services/WalletService';
-import { allServices } from '../../services/route';
+import { allServices } from '@/lib/servicesData';
 
 const datamart = new DatamartGHProviderAdapter();
 const reseller = new ResellerXpressProviderAdapter();

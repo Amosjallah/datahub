@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PublicLayout from '@/components/PublicLayout';
-import { Loader2, Database, PhoneCall, Receipt, Tv, CheckCircle2, Star, ShieldCheck, Sparkles } from 'lucide-react';
+import { Loader2, Database, PhoneCall, Receipt, Tv, CheckCircle2, Star, ShieldCheck, UserCheck, Users, Smartphone, CreditCard } from 'lucide-react';
 import { broadcastTransaction } from '@/lib/liveTransactions';
 
 interface Package {
@@ -50,9 +50,14 @@ export default function Buy() {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentRef, setAgentRef] = useState<string | null>(null);
 
-  // Forms state
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  // Purchase targets: 'self' vs 'others'
+  const [dataBuyFor, setDataBuyFor] = useState<'self' | 'others'>('self');
+  const [airtimeBuyFor, setAirtimeBuyFor] = useState<'self' | 'others'>('self');
+
+  // Form Fields: Payer MoMo number (where money is deducted from) & Recipient number (where service goes)
+  const [payerPhone, setPayerPhone] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [amount, setAmount] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [billProvider, setBillProvider] = useState('ECG Prepaid');
@@ -76,7 +81,6 @@ export default function Buy() {
     
     // 1. Capture Agent Referral Code
     const refParam = params.get('agent') || params.get('ref') || params.get('referral');
-    // If ref starts with ORDER_ or WAL_ it is a payment reference, not an agent ref
     const isPaymentRef = refParam && (refParam.startsWith('ORDER_') || refParam.startsWith('WAL_') || refParam.length > 20);
     
     if (refParam && !isPaymentRef) {
@@ -98,7 +102,7 @@ export default function Buy() {
           setLoading(false);
           if (data.success) {
             setSuccess(true);
-            setMessage(`Payment of GH₵${Number(data.amount).toFixed(2)} confirmed (Ref: ${payRef})! Your order has been placed and is being dispatched.`);
+            setMessage(data.message || `Payment of GH₵${Number(data.amount).toFixed(2)} confirmed! Your order has been placed and is being dispatched.`);
           } else {
             setMessage(data.message || 'Payment could not be verified.');
           }
@@ -111,17 +115,30 @@ export default function Buy() {
     }
   }, []);
 
-  const processPaystackPayment = async (
-    payAmount: number, 
-    description: string, 
-    broadcastInfo?: { name: string; network: 'MTN' | 'Telecel' | 'AirtelTigo'; bundle: string; amountStr: string }
-  ) => {
+  const processPayment = async ({
+    payAmount,
+    deductFromPhone,
+    deliverToPhone,
+    description,
+    broadcastInfo,
+    buyFor = 'self',
+    accountNum = undefined,
+  }: {
+    payAmount: number;
+    deductFromPhone: string;
+    deliverToPhone: string;
+    description: string;
+    broadcastInfo?: { name: string; network: 'MTN' | 'Telecel' | 'AirtelTigo'; bundle: string; amountStr: string };
+    buyFor?: 'self' | 'others';
+    accountNum?: string;
+  }) => {
     setLoading(true);
     resetStatus();
 
     try {
-      const cleanPhone = phone.replace(/\D/g, '') || '0000000000';
-      const customerEmail = `${cleanPhone}@fadigital.com`;
+      const cleanPayer = deductFromPhone.replace(/\D/g, '') || '0000000000';
+      const cleanRecipient = deliverToPhone.replace(/\D/g, '') || cleanPayer;
+      const customerEmail = `${cleanPayer}@quicknetdata.com`;
 
       const response = await fetch('/api/paystack/initialize', {
         method: 'POST',
@@ -129,7 +146,11 @@ export default function Buy() {
         body: JSON.stringify({
           email: customerEmail,
           amount: payAmount,
-          phone: cleanPhone,
+          phone: cleanPayer,
+          payer_phone: cleanPayer,
+          recipient_phone: cleanRecipient,
+          account_number: accountNum,
+          buy_for: buyFor,
           service: activeService,
           network: activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo',
           referral_code: agentRef || undefined,
@@ -150,30 +171,52 @@ export default function Buy() {
           });
         }
 
-        // Redirect to Paystack Checkout URL
+        // Redirect to Paystack Checkout URL (where MoMo prompt is triggered)
         window.location.href = data.authorization_url;
       } else {
         setSuccess(true);
-        setMessage(`${description} Please complete payment via the Paystack gateway session.`);
+        setMessage(`${description} Please complete payment via the MoMo payment gateway session.`);
       }
     } catch (err: any) {
       setLoading(false);
-      alert('Failed to initialize Paystack payment gateway: ' + (err.message || 'Unknown error'));
+      alert('Failed to initialize payment gateway: ' + (err.message || 'Unknown error'));
     }
   };
 
+  // 1. DATA SUBMISSION
   const handleDataSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPackage) return;
+
+    const payer = payerPhone.trim();
+    const recipient = dataBuyFor === 'self' ? payer : recipientPhone.trim();
+
+    if (!payer) {
+      alert('Please enter your Mobile Money payment number to deduct payment from.');
+      return;
+    }
+    if (dataBuyFor === 'others' && !recipient) {
+      alert('Please enter the recipient phone number who will receive the data bundle.');
+      return;
+    }
+
     const net = selectedPackage.network === 'YELLO' ? 'MTN' : selectedPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
-    await processPaystackPayment(selectedPackage.price, `Data bundle order of ${selectedPackage.capacity} for ${phone} initialized.`, {
-      name: name || 'Customer',
-      network: net,
-      bundle: selectedPackage.capacity,
-      amountStr: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+    await processPayment({
+      payAmount: selectedPackage.price,
+      deductFromPhone: payer,
+      deliverToPhone: recipient,
+      buyFor: dataBuyFor,
+      description: `Data order of ${selectedPackage.capacity} initialized. Payment to be deducted from ${payer}.`,
+      broadcastInfo: {
+        name: customerName || 'Customer',
+        network: net,
+        bundle: selectedPackage.capacity,
+        amountStr: `GH₵ ${selectedPackage.price.toFixed(2)}`,
+      },
     });
   };
 
+  // 2. AIRTIME SUBMISSION
   const handleAirtimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const airtimeAmount = parseFloat(amount as string) || 0;
@@ -181,15 +224,36 @@ export default function Buy() {
       alert('Please enter a valid amount (minimum GH₵ 1.00)');
       return;
     }
+
+    const payer = payerPhone.trim();
+    const recipient = airtimeBuyFor === 'self' ? payer : recipientPhone.trim();
+
+    if (!payer) {
+      alert('Please enter your Mobile Money phone number to deduct payment from.');
+      return;
+    }
+    if (airtimeBuyFor === 'others' && !recipient) {
+      alert('Please enter the recipient phone number to receive the airtime.');
+      return;
+    }
+
     const net = activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
-    await processPaystackPayment(airtimeAmount, `Airtime order of GH₵ ${airtimeAmount.toFixed(2)} for ${phone} initialized.`, {
-      name: 'Customer',
-      network: net,
-      bundle: `Airtime GH₵ ${airtimeAmount.toFixed(2)}`,
-      amountStr: `GH₵ ${airtimeAmount.toFixed(2)}`,
+    await processPayment({
+      payAmount: airtimeAmount,
+      deductFromPhone: payer,
+      deliverToPhone: recipient,
+      buyFor: airtimeBuyFor,
+      description: `Airtime order of GH₵ ${airtimeAmount.toFixed(2)} initialized. Payment deducted from ${payer}.`,
+      broadcastInfo: {
+        name: customerName || 'Customer',
+        network: net,
+        bundle: `Airtime GH₵ ${airtimeAmount.toFixed(2)}`,
+        amountStr: `GH₵ ${airtimeAmount.toFixed(2)}`,
+      },
     });
   };
 
+  // 3. UTILITY BILL SUBMISSION
   const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const billAmount = parseFloat(amount as string) || 0;
@@ -197,14 +261,53 @@ export default function Buy() {
       alert('Please enter a valid amount (minimum GH₵ 1.00)');
       return;
     }
-    await processPaystackPayment(billAmount, `Utility bill payment of GH₵ ${billAmount.toFixed(2)} for ${billProvider} meter ${accountNumber} initialized.`);
+    const payer = payerPhone.trim();
+    const meter = accountNumber.trim();
+
+    if (!meter) {
+      alert('Please enter the meter or account number to credit.');
+      return;
+    }
+    if (!payer) {
+      alert('Please enter your Mobile Money phone number where money will be deducted from.');
+      return;
+    }
+
+    await processPayment({
+      payAmount: billAmount,
+      deductFromPhone: payer,
+      deliverToPhone: payer,
+      accountNum: meter,
+      buyFor: 'self',
+      description: `Utility bill payment of GH₵ ${billAmount.toFixed(2)} for ${billProvider} meter ${meter}. Deducted from ${payer}.`,
+    });
   };
 
+  // 4. TV SUBMISSION
   const handleTvSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceMatch = tvPlan.match(/GH₵\s*(\d+)/i);
     const tvAmount = priceMatch ? parseFloat(priceMatch[1]) : 50;
-    await processPaystackPayment(tvAmount, `TV Subscription renewal for ${tvProvider} Smartcard ${accountNumber} (${tvPlan}) initialized.`);
+    const payer = payerPhone.trim();
+    const smartcard = accountNumber.trim();
+
+    if (!smartcard) {
+      alert('Please enter your Smartcard or IUC number.');
+      return;
+    }
+    if (!payer) {
+      alert('Please enter your Mobile Money phone number where payment will be deducted from.');
+      return;
+    }
+
+    await processPayment({
+      payAmount: tvAmount,
+      deductFromPhone: payer,
+      deliverToPhone: payer,
+      accountNum: smartcard,
+      buyFor: 'self',
+      description: `TV Subscription renewal for ${tvProvider} Smartcard ${smartcard}. Deducted from ${payer}.`,
+    });
   };
 
   const filteredPackages = initialPackages.filter(p => p.network === activeNetwork);
@@ -244,13 +347,13 @@ export default function Buy() {
 
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <span style={{ color: '#FACC15', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.5rem' }}>
-              Instant Delivery & Best Rates
+              Direct MoMo Deduction & Instant Delivery
             </span>
             <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.8rem)', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
-              DIRECT PURCHASE STORE
+              DIRECT PURCHASE PORTAL
             </h1>
-            <p style={{ color: '#9CA3AF', fontSize: '1.02rem', maxWidth: '600px', margin: '0 auto' }}>
-              Select a package below to buy non-expiry data, airtime, pay electricity, or renew TV subscriptions with instant MoMo checkout.
+            <p style={{ color: '#9CA3AF', fontSize: '1.02rem', maxWidth: '640px', margin: '0 auto' }}>
+              Buy data, airtime, or pay utility bills. Enter your Mobile Money number and payment will be deducted directly from your MoMo wallet!
             </p>
           </div>
 
@@ -259,8 +362,8 @@ export default function Buy() {
             {[
               { id: 'data', label: 'Buy Data', icon: Database },
               { id: 'airtime', label: 'Buy Airtime', icon: PhoneCall },
-              { id: 'bills', label: 'Pay Bills', icon: Receipt },
-              { id: 'tv', label: 'TV Setup', icon: Tv }
+              { id: 'bills', label: 'Electricity & Water', icon: Receipt },
+              { id: 'tv', label: 'TV Subscription', icon: Tv }
             ].map((srv) => {
               const isActive = activeService === srv.id;
               const Icon = srv.icon;
@@ -297,7 +400,7 @@ export default function Buy() {
               <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', marginBottom: '1.5rem' }}>
                 <CheckCircle2 size={36} />
               </div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem' }}>Transaction Successful!</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem' }}>Payment & Order Complete!</h3>
               <p style={{ color: '#9CA3AF', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '2rem' }}>
                 {message}
               </p>
@@ -318,7 +421,7 @@ export default function Buy() {
                   {/* Left: Package Selection */}
                   <div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '1rem' }}>
-                      1. Choose Telecom Carrier
+                      1. Choose Telecom Network
                     </h3>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -420,54 +523,152 @@ export default function Buy() {
                     </div>
                   </div>
 
-                  {/* Right: Checkout Form */}
+                  {/* Right: Checkout Form with "Myself" vs "Others" */}
                   <div>
                     <div style={{ backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '1.75rem' }}>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.25rem' }}>
-                        Customer Checkout
-                      </h3>
+                      
+                      {/* Who are you buying for toggle */}
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Who are you buying for?
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <button
+                            type="button"
+                            onClick={() => setDataBuyFor('self')}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: dataBuyFor === 'self' ? '#FACC15' : 'transparent',
+                              color: dataBuyFor === 'self' ? '#030712' : '#9CA3AF',
+                              fontWeight: 800,
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <UserCheck size={15} /> Buying for Myself
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDataBuyFor('others')}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: dataBuyFor === 'others' ? '#FACC15' : 'transparent',
+                              color: dataBuyFor === 'others' ? '#030712' : '#9CA3AF',
+                              fontWeight: 800,
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <Users size={15} /> Buying for Others
+                          </button>
+                        </div>
+                      </div>
 
                       {selectedPackage ? (
                         <div style={{ padding: '0.85rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <span style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'block' }}>Selected Package:</span>
+                            <span style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'block' }}>Package Selected:</span>
                             <strong style={{ color: '#FFFFFF', fontSize: '0.95rem' }}>{selectedPackage.displayName}</strong>
                           </div>
-                          <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FACC15' }}>
+                          <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FACC15' }}>
                             GH₵ {selectedPackage.price.toFixed(2)}
                           </span>
                         </div>
                       ) : (
                         <div style={{ padding: '0.85rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: '12px', marginBottom: '1.5rem', color: '#EF4444', fontSize: '0.85rem', textAlign: 'center' }}>
-                          👈 Please choose a bundle package from the left.
+                          👈 Please choose a bundle package on the left.
                         </div>
                       )}
 
                       <form onSubmit={handleDataSubmit}>
-                        <div style={{ marginBottom: '1rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                            Recipient Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="e.g. 0244123456"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                          />
-                        </div>
+                        
+                        {/* CASE 1: BUYING FOR MYSELF */}
+                        {dataBuyFor === 'self' && (
+                          <div style={{ marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
+                              Your Phone Number (MoMo Payment & Data Delivery)
+                            </label>
+                            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginBottom: '0.5rem', lineHeight: '1.4' }}>
+                              Payment prompt will be sent to this number, and data will be loaded directly onto it.
+                            </p>
+                            <input
+                              type="tel"
+                              required
+                              placeholder="e.g. 0244123456 or 0502515547"
+                              value={payerPhone}
+                              onChange={(e) => setPayerPhone(e.target.value)}
+                              style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.3)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                            />
+                          </div>
+                        )}
+
+                        {/* CASE 2: BUYING FOR SOMEONE ELSE */}
+                        {dataBuyFor === 'others' && (
+                          <>
+                            {/* Field 1: Recipient Phone Number */}
+                            <div style={{ marginBottom: '1.1rem' }}>
+                              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.35rem' }}>
+                                Recipient Phone Number (Who Receives Data)
+                              </label>
+                              <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                                Enter the number that should receive the {activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo'} bundle.
+                              </p>
+                              <input
+                                type="tel"
+                                required
+                                placeholder="e.g. 0244123456"
+                                value={recipientPhone}
+                                onChange={(e) => setRecipientPhone(e.target.value)}
+                                style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                              />
+                            </div>
+
+                            {/* Field 2: Payer MoMo Phone Number */}
+                            <div style={{ marginBottom: '1.25rem' }}>
+                              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                                Your Mobile Money Number (Payment Deduction)
+                              </label>
+                              <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                                Enter your number where the money will be deducted from via MoMo prompt.
+                              </p>
+                              <input
+                                type="tel"
+                                required
+                                placeholder="e.g. 0502515547"
+                                value={payerPhone}
+                                onChange={(e) => setPayerPhone(e.target.value)}
+                                style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                              />
+                            </div>
+                          </>
+                        )}
 
                         <div style={{ marginBottom: '1.5rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                            Customer Name (Optional)
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.35rem' }}>
+                            Your Name (Optional)
                           </label>
                           <input
                             type="text"
-                            placeholder="e.g. Kofi Mensah"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
+                            placeholder="e.g. Kwame Mensah"
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            style={{ width: '100%', height: '42px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.85rem', outline: 'none' }}
                           />
                         </div>
 
@@ -475,15 +676,20 @@ export default function Buy() {
                           type="submit"
                           disabled={loading || !selectedPackage}
                           className="btn btn-primary"
-                          style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (!selectedPackage || loading) ? 0.6 : 1 }}
+                          style={{ width: '100%', height: '50px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (!selectedPackage || loading) ? 0.6 : 1 }}
                         >
-                          {loading ? <Loader2 size={18} className="animate-spin" /> : '💳 Pay with MoMo / Card'}
+                          {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                            <>
+                              <CreditCard size={18} />
+                              Deduct GH₵ {selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} from MoMo
+                            </>
+                          )}
                         </button>
                       </form>
 
                       <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#9CA3AF', fontSize: '0.75rem' }}>
                         <ShieldCheck size={14} color="#10B981" />
-                        <span>Instant automated carrier delivery · 100% secure</span>
+                        <span>Prompt sent directly to your phone · BoG regulated rails</span>
                       </div>
                     </div>
                   </div>
@@ -493,11 +699,12 @@ export default function Buy() {
 
               {/* TAB 2: AIRTIME */}
               {activeService === 'airtime' && (
-                <div style={{ maxWidth: '520px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.5rem', textAlign: 'center' }}>
+                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.25rem', textAlign: 'center' }}>
                     Instant Airtime Top-Up
                   </h3>
                   
+                  {/* Carrier tabs */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
                     {(['YELLO', 'TELECEL', 'AT_PREMIUM'] as const).map((net) => (
                       <button
@@ -520,24 +727,105 @@ export default function Buy() {
                     ))}
                   </div>
 
-                  <form onSubmit={handleAirtimeSubmit}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0244123456"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      />
+                  {/* Toggle: Myself vs Others */}
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAirtimeBuyFor('self')}
+                        style={{
+                          flex: 1,
+                          padding: '0.55rem',
+                          borderRadius: '8px',
+                          border: 'none',
+                          backgroundColor: airtimeBuyFor === 'self' ? '#FACC15' : 'transparent',
+                          color: airtimeBuyFor === 'self' ? '#030712' : '#9CA3AF',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.4rem',
+                        }}
+                      >
+                        <UserCheck size={15} /> Top Up My Own Number
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAirtimeBuyFor('others')}
+                        style={{
+                          flex: 1,
+                          padding: '0.55rem',
+                          borderRadius: '8px',
+                          border: 'none',
+                          backgroundColor: airtimeBuyFor === 'others' ? '#FACC15' : 'transparent',
+                          color: airtimeBuyFor === 'others' ? '#030712' : '#9CA3AF',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.4rem',
+                        }}
+                      >
+                        <Users size={15} /> Top Up For Someone Else
+                      </button>
                     </div>
+                  </div>
+
+                  <form onSubmit={handleAirtimeSubmit}>
+                    
+                    {airtimeBuyFor === 'self' ? (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
+                          Your Phone Number (MoMo Payment & Airtime)
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="e.g. 0244123456"
+                          value={payerPhone}
+                          onChange={(e) => setPayerPhone(e.target.value)}
+                          style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.3)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.35rem' }}>
+                            Recipient Phone Number (To Receive Airtime)
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="e.g. 0244123456"
+                            value={recipientPhone}
+                            onChange={(e) => setRecipientPhone(e.target.value)}
+                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                          />
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                            Your Mobile Money Number (To Deduct Payment)
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="e.g. 0502515547"
+                            value={payerPhone}
+                            onChange={(e) => setPayerPhone(e.target.value)}
+                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Amount (GH₵)
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                        Airtime Amount (GH₵)
                       </label>
                       <input
                         type="number"
@@ -547,7 +835,7 @@ export default function Buy() {
                         placeholder="Min GH₵ 1.00"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
+                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
                       />
                     </div>
 
@@ -557,23 +845,23 @@ export default function Buy() {
                       className="btn btn-primary"
                       style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '⚡ Recharge Airtime'}
+                      {loading ? <Loader2 size={18} className="animate-spin" /> : '⚡ Deduct from MoMo & Recharge Airtime'}
                     </button>
                   </form>
                 </div>
               )}
 
-              {/* TAB 3: BILLS */}
+              {/* TAB 3: BILLS (ELECTRICITY & WATER) */}
               {activeService === 'bills' && (
-                <div style={{ maxWidth: '520px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.5rem', textAlign: 'center' }}>
-                    Pay Utility Bills
+                    Pay Electricity & Water Bills
                   </h3>
 
                   <form onSubmit={handleBillSubmit}>
                     <div style={{ marginBottom: '1rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Provider
+                        Utility Service
                       </label>
                       <select
                         value={billProvider}
@@ -586,21 +874,38 @@ export default function Buy() {
                     </div>
 
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Meter / Account Number
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
+                        Meter / Customer Account Number
                       </label>
                       <input
                         type="text"
                         required
-                        placeholder="Enter meter or account number"
+                        placeholder="Enter meter or account number to credit"
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
                         style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
                       />
                     </div>
 
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                        Your Mobile Money Number (To Deduct Payment)
+                      </label>
+                      <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                        A MoMo prompt will be sent to this number to authorize the bill payment deduction.
+                      </p>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 0502515547"
+                        value={payerPhone}
+                        onChange={(e) => setPayerPhone(e.target.value)}
+                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                      />
+                    </div>
+
                     <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
                         Amount (GH₵)
                       </label>
                       <input
@@ -620,7 +925,7 @@ export default function Buy() {
                       className="btn btn-primary"
                       style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '💡 Pay Bill via MoMo'}
+                      {loading ? <Loader2 size={18} className="animate-spin" /> : '💡 Deduct from MoMo & Pay Bill'}
                     </button>
                   </form>
                 </div>
@@ -628,9 +933,9 @@ export default function Buy() {
 
               {/* TAB 4: TV */}
               {activeService === 'tv' && (
-                <div style={{ maxWidth: '520px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.5rem', textAlign: 'center' }}>
-                    Cable TV Subscription
+                    Cable TV Subscription Renewal
                   </h3>
 
                   <form onSubmit={handleTvSubmit}>
@@ -650,7 +955,7 @@ export default function Buy() {
                     </div>
 
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
                         Smartcard / IUC Number
                       </label>
                       <input
@@ -660,6 +965,20 @@ export default function Buy() {
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
                         style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                        Your Mobile Money Number (To Deduct Payment)
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 0502515547"
+                        value={payerPhone}
+                        onChange={(e) => setPayerPhone(e.target.value)}
+                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
                       />
                     </div>
 
@@ -686,7 +1005,7 @@ export default function Buy() {
                       className="btn btn-primary"
                       style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '📺 Renew Subscription'}
+                      {loading ? <Loader2 size={18} className="animate-spin" /> : '📺 Deduct from MoMo & Renew TV'}
                     </button>
                   </form>
                 </div>

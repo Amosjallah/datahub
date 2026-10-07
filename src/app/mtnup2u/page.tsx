@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PublicLayout from '@/components/PublicLayout';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserCheck, Users, CreditCard, ShieldCheck } from 'lucide-react';
 
 interface UP2UPackage {
   id: string;
@@ -24,22 +24,65 @@ export default function MtnUp2u() {
   const [showModal, setShowModal] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<UP2UPackage | null>(null);
   
-  // Checkout Form fields (No Name field required for UP2U!)
-  const [phone, setPhone] = useState('');
+  // Buying for myself vs others
+  const [buyFor, setBuyFor] = useState<'self' | 'others'>('self');
+  const [payerPhone, setPayerPhone] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPackage) return;
+    setErrorMsg('');
+
+    const payer = payerPhone.trim();
+    const recipient = buyFor === 'self' ? payer : recipientPhone.trim();
+
+    if (!payer) {
+      setErrorMsg('Please enter your Mobile Money payment number to deduct payment from.');
+      return;
+    }
+    if (buyFor === 'others' && !recipient) {
+      setErrorMsg('Please enter the recipient MTN phone number.');
+      return;
+    }
+
     setLoading(true);
 
-    // Simulate purchase
-    setTimeout(() => {
+    try {
+      const cleanPayer = payer.replace(/\D/g, '') || '0000000000';
+      const cleanRecipient = recipient.replace(/\D/g, '') || cleanPayer;
+
+      const response = await fetch('/api/paystack/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: `${cleanPayer}@quicknetdata.com`,
+          amount: selectedPackage.price,
+          phone: cleanPayer,
+          payer_phone: cleanPayer,
+          recipient_phone: cleanRecipient,
+          buy_for: buyFor,
+          service: 'data',
+          network: 'MTN',
+          planId: selectedPackage.id,
+          callbackUrl: `${window.location.origin}/buy`,
+        }),
+      });
+
+      const data = await response.json();
       setLoading(false);
-      setSuccess(true);
-      alert(`MTN UP2U order processed for ${phone}! Prompt sent.`);
-    }, 1500);
+
+      if (data.success && data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        setErrorMsg(data.message || 'Payment initiation failed. Please try again.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMsg('Connection error: ' + (err.message || 'Please check your internet connection'));
+    }
   };
 
   return (
@@ -76,10 +119,10 @@ export default function MtnUp2u() {
             >
               <span style={{ fontSize: '3rem' }}>📢</span>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', marginTop: '1rem', marginBottom: '0.75rem' }}>
-                MTN UP2U Price Updates
+                MTN UP2U Data Packages
               </h2>
               <p style={{ color: '#9CA3AF', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '2rem' }}>
-                Due to recent telecom wholesale rate changes, MTN UP2U data bundles have been updated to represent the latest discounted pricing. Please review the new rates. All bundles remain non-expiry.
+                Discounted MTN UP2U non-expiry data rates. You can buy for yourself or buy for other people. Payment is deducted directly from your MoMo number.
               </p>
               <button
                 onClick={() => setShowModal(false)}
@@ -100,7 +143,7 @@ export default function MtnUp2u() {
               MTN UP2U DATA MARKETPLACE
             </h1>
             <p style={{ color: '#9CA3AF', fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto' }}>
-              Buy special MTN UP2U data bundles at highly reduced prices. Instantly top up your account or load bundles for friends.
+              Buy special MTN UP2U data bundles at highly reduced prices. Top up your own line or load bundles for friends and family.
             </p>
           </div>
 
@@ -118,15 +161,16 @@ export default function MtnUp2u() {
               return (
                 <div key={pkg.id} style={{ display: 'contents' }}>
                   <div
-                    onClick={() => { setSelectedPackage(isSelected ? null : pkg); setSuccess(false); }}
+                    onClick={() => { setSelectedPackage(isSelected ? null : pkg); setErrorMsg(''); }}
                     style={{
-                      padding: '1.75rem 1.5rem',
                       backgroundColor: '#0F172A',
                       borderRadius: '20px',
-                      border: isSelected ? '2.5px solid #FACC15' : '1px solid rgba(255, 255, 255, 0.05)',
+                      padding: '1.5rem',
+                      border: isSelected ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.06)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
+                      justifyContent: 'space-between',
                       gap: '0.5rem',
                       transition: 'all 0.25s',
                       boxShadow: isSelected ? '0 10px 25px rgba(250, 204, 21, 0.1)' : 'none',
@@ -158,7 +202,7 @@ export default function MtnUp2u() {
                     </div>
                   </div>
 
-                  {/* Accordion Form - Displays directly under card if selected (No Name field!) */}
+                  {/* Accordion Form - Displays directly under card if selected */}
                   {isSelected && (
                     <div 
                       style={{ 
@@ -174,71 +218,144 @@ export default function MtnUp2u() {
                       }}
                     >
                       <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.25rem', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>⚡</span> Checkout Form - {pkg.displayName} ({pkg.capacity})
+                        <span>⚡</span> Checkout Form - {pkg.displayName} ({pkg.capacity}) — <span style={{ color: '#FACC15' }}>GH₵ {pkg.price.toFixed(2)}</span>
                       </h3>
-                      
-                      {success ? (
-                        <div style={{ padding: '1.5rem', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1.5px solid rgba(16, 185, 129, 0.2)', borderRadius: '16px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '2rem' }}>✅</span>
-                          <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#34D399', marginTop: '0.5rem' }}>UP2U Order Submitted!</h4>
-                          <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.25rem', lineHeight: '1.5' }}>
-                            We have initiated the MTN UP2U checkout request on **{phone}**. Please confirm the Mobile Money PIN prompt on your device.
-                          </p>
-                          <button 
-                            type="button" 
-                            onClick={() => { setSelectedPackage(null); setSuccess(false); }} 
-                            className="btn btn-secondary" 
-                            style={{ marginTop: '1.25rem', height: '2.5rem', padding: '0 1.5rem', fontSize: '0.85rem' }}
+
+                      {/* Myself vs Others toggle */}
+                      <div style={{ maxWidth: '480px', marginBottom: '1.25rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <button
+                            type="button"
+                            onClick={() => setBuyFor('self')}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: buyFor === 'self' ? '#FACC15' : 'transparent',
+                              color: buyFor === 'self' ? '#030712' : '#9CA3AF',
+                              fontWeight: 800,
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem',
+                            }}
                           >
-                            Close checkout
+                            <UserCheck size={15} /> Buying for Myself
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBuyFor('others')}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: buyFor === 'others' ? '#FACC15' : 'transparent',
+                              color: buyFor === 'others' ? '#030712' : '#9CA3AF',
+                              fontWeight: 800,
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem',
+                            }}
+                          >
+                            <Users size={15} /> Buying for Someone Else
                           </button>
                         </div>
-                      ) : (
-                        <form onSubmit={handleCheckoutSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
-                          
+                      </div>
+
+                      {errorMsg && (
+                        <div style={{ maxWidth: '480px', padding: '0.75rem 1rem', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', color: '#F87171', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                          ⚠️ {errorMsg}
+                        </div>
+                      )}
+
+                      <form onSubmit={handleCheckoutSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', maxWidth: '480px' }}>
+                        
+                        {buyFor === 'self' ? (
                           <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" style={{ color: '#E5E7EB' }}>Recipient Phone Number</label>
+                            <label className="form-label" style={{ color: '#E5E7EB' }}>Your MTN Phone Number (MoMo Payment & Data)</label>
                             <input
                               type="tel"
                               required
-                              pattern="^[0][0-9]{9}$"
                               placeholder="e.g. 0244123456"
                               className="form-input"
-                              style={{ maxWidth: '480px', backgroundColor: '#0F172A', borderColor: 'rgba(255,255,255,0.08)', letterSpacing: '0.05em' }}
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
+                              style={{ backgroundColor: '#0F172A', borderColor: 'rgba(250,204,21,0.3)' }}
+                              value={payerPhone}
+                              onChange={(e) => setPayerPhone(e.target.value)}
                             />
-                            <span style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '0.35rem', display: 'block' }}>Ensure the number is a valid MTN line.</span>
+                            <span style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.35rem', display: 'block' }}>
+                              Payment prompt will be sent here, and the data package loaded to this same line.
+                            </span>
                           </div>
+                        ) : (
+                          <>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                              <label className="form-label" style={{ color: '#E5E7EB' }}>Recipient MTN Phone Number (Receives Data)</label>
+                              <input
+                                type="tel"
+                                required
+                                placeholder="e.g. 0244123456"
+                                className="form-input"
+                                style={{ backgroundColor: '#0F172A', borderColor: 'rgba(255,255,255,0.08)' }}
+                                value={recipientPhone}
+                                onChange={(e) => setRecipientPhone(e.target.value)}
+                              />
+                            </div>
 
-                          <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedPackage(null)}
-                              className="btn btn-secondary"
-                              style={{ height: '3rem', padding: '0 2rem', fontSize: '0.9rem' }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className="btn btn-primary"
-                              disabled={loading}
-                              style={{ height: '3rem', padding: '0 2.5rem', fontSize: '0.9rem', color: '#030712' }}
-                            >
-                              {loading ? (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <Loader2 className="animate-spin" size={18} />
-                                  Initiating payment...
-                                </span>
-                              ) : (
-                                `Buy for GH₵ ${pkg.price.toFixed(2)}`
-                              )}
-                            </button>
-                          </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                              <label className="form-label" style={{ color: '#FACC15' }}>Your Mobile Money Number (To Deduct Payment)</label>
+                              <input
+                                type="tel"
+                                required
+                                placeholder="e.g. 0502515547"
+                                className="form-input"
+                                style={{ backgroundColor: '#0F172A', borderColor: 'rgba(250,204,21,0.4)' }}
+                                value={payerPhone}
+                                onChange={(e) => setPayerPhone(e.target.value)}
+                              />
+                              <span style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.35rem', display: 'block' }}>
+                                You will receive the MoMo prompt on this number to approve payment.
+                              </span>
+                            </div>
+                          </>
+                        )}
 
-                        </form>
-                      )}
+                        <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPackage(null)}
+                            className="btn btn-secondary"
+                            style={{ height: '3rem', padding: '0 1.5rem', fontSize: '0.9rem' }}
+                          >
+                            Cancel
+                          </button>
+                          
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn btn-primary"
+                            style={{ flex: 1, height: '3rem', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                          >
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                              <>
+                                <CreditCard size={18} />
+                                Deduct GH₵ {pkg.price.toFixed(2)} from MoMo
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
+
+                      <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#9CA3AF', fontSize: '0.75rem' }}>
+                        <ShieldCheck size={14} color="#10B981" />
+                        <span>Prompt sent directly to your phone · 100% Secure</span>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -4,10 +4,12 @@ import { WalletService } from '@/services/WalletService';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProviderAdapter';
 import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
+import { HubtelPaymentService } from '@/services/HubtelPaymentService';
 
 const walletService = new WalletService();
 const datamart = new DatamartGHProviderAdapter();
 const reseller = new ResellerXpressProviderAdapter();
+const hubtel = new HubtelPaymentService();
 
 export async function GET(request: Request) {
   try {
@@ -30,6 +32,9 @@ export async function GET(request: Request) {
       const targetWalletId = walletId || metadata.walletId;
       const refCode = metadata.referral_code;
 
+      const payerPhone = metadata.payer_phone || metadata.phone || 'Your MoMo account';
+      const recipientPhone = metadata.recipient_phone || metadata.account_number || metadata.phone;
+
       // 1. Credit wallet if wallet deposit
       if (targetWalletId) {
         try {
@@ -38,7 +43,7 @@ export async function GET(request: Request) {
             amount: amountInGHS,
             type: 'credit',
             reference,
-            description: `Paystack Deposit (Ref: ${reference})`,
+            description: `Paystack Deposit from ${payerPhone} (Ref: ${reference})`,
           });
         } catch (creditError: any) {
           if (!creditError.message?.includes('duplicate') && !creditError.message?.includes('unique')) {
@@ -47,16 +52,18 @@ export async function GET(request: Request) {
         }
       }
 
-      // 2. If guest order, dispatch service to recipient phone
+      // 2. If guest order, dispatch service to recipient
       let orderDispatched = false;
-      if (metadata.phone && (metadata.type === 'guest_order' || !targetWalletId)) {
+      let dispatchMessage = '';
+
+      if (recipientPhone && (metadata.type === 'guest_order' || !targetWalletId)) {
+        const serviceType = (metadata.service || 'data').toLowerCase();
+        const network = metadata.network || 'MTN';
+
         try {
-          const serviceType = metadata.service || 'data';
-          const network = metadata.network || 'MTN';
-          
           if (serviceType === 'data') {
             const dmRes = await datamart.recharge({
-              recipient: metadata.phone,
+              recipient: recipientPhone,
               amount: amountInGHS,
               network: network as any,
               serviceType: 'data',
@@ -65,28 +72,45 @@ export async function GET(request: Request) {
 
             if (dmRes.success || dmRes.status === 'processing') {
               orderDispatched = true;
+              dispatchMessage = `Data bundle dispatched to ${recipientPhone}`;
             } else {
               const rxRes = await reseller.recharge({
-                recipient: metadata.phone,
+                recipient: recipientPhone,
                 amount: amountInGHS,
                 network: network as any,
                 serviceType: 'data',
                 reference: `${reference}_RX`,
               });
               orderDispatched = rxRes.success || rxRes.status === 'processing';
+              dispatchMessage = orderDispatched 
+                ? `Data bundle dispatched to ${recipientPhone}`
+                : `Order pending dispatch to ${recipientPhone}`;
             }
           } else if (serviceType === 'airtime') {
             const airRes = await datamart.recharge({
-              recipient: metadata.phone,
+              recipient: recipientPhone,
               amount: amountInGHS,
               network: network as any,
               serviceType: 'airtime',
               reference,
             });
             orderDispatched = airRes.success || airRes.status === 'processing';
+            dispatchMessage = `Airtime recharge credited to ${recipientPhone}`;
+          } else if (serviceType === 'bills' || serviceType === 'bill' || serviceType === 'tv') {
+            const hRes = await hubtel.sendMoney({
+              amount: amountInGHS,
+              recipientName: `${network} Subscriber`,
+              recipientMsisdn: recipientPhone,
+              description: `Bill settlement for ${recipientPhone}`,
+              clientReference: reference,
+              callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com'}/api/hubtel/webhook`,
+            });
+            orderDispatched = hRes.success;
+            dispatchMessage = `Bill payment processed for account/meter ${recipientPhone}`;
           }
         } catch (dispatchErr) {
           console.warn('[Order Dispatch Notice]:', dispatchErr);
+          dispatchMessage = `Order placed for ${recipientPhone}`;
         }
       }
 
@@ -94,7 +118,6 @@ export async function GET(request: Request) {
       if (refCode && isSupabaseConfigured()) {
         try {
           const supabase = createAdminClient();
-          // Find agent with this referral code
           const { data: agent } = await supabase
             .from('users')
             .select('id, full_name, email')
@@ -102,7 +125,6 @@ export async function GET(request: Request) {
             .maybeSingle();
 
           if (agent) {
-            // Find agent's wallet
             const { data: agentWallet } = await supabase
               .from('wallets')
               .select('id, cached_balance')
@@ -110,7 +132,6 @@ export async function GET(request: Request) {
               .maybeSingle();
 
             if (agentWallet) {
-              // 5% commission on purchase
               const commissionAmount = Math.max(0.20, Number((amountInGHS * 0.05).toFixed(2)));
               
               await walletService.credit({
@@ -121,7 +142,6 @@ export async function GET(request: Request) {
                 description: `Referral commission from customer order (${reference})`,
               });
 
-              // Record in referral orders table if exists
               await supabase.from('referral_orders').insert({
                 agent_id: agent.id,
                 referral_code: refCode,
@@ -137,11 +157,17 @@ export async function GET(request: Request) {
         }
       }
 
+      const summary = payerPhone && payerPhone !== recipientPhone
+        ? `Payment of GH₵${amountInGHS.toFixed(2)} deducted from ${payerPhone}. Service delivered to ${recipientPhone}!`
+        : `Payment of GH₵${amountInGHS.toFixed(2)} deducted from ${payerPhone} and delivered!`;
+
       return NextResponse.json({
         success: true,
-        message: 'Payment verified and order processed successfully.',
+        message: summary,
         amount: amountInGHS,
         reference,
+        payerPhone,
+        recipientPhone,
         orderDispatched,
       });
     }
