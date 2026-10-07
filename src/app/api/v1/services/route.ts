@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { authenticateApiKey } from '@/lib/apiKeyAuth';
-import { allServices } from '@/lib/servicesData';
+import { allServices as servicesList } from '@/lib/servicesData';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   // Public or API Key authenticated
@@ -9,12 +11,12 @@ export async function GET(request: Request) {
   const typeFilter = searchParams.get('type');
   const networkFilter = searchParams.get('network');
 
-  let filtered = allServices;
+  let filtered = servicesList;
   if (typeFilter) {
-    filtered = filtered.filter(s => s.type.toLowerCase() === typeFilter.toLowerCase());
+    filtered = filtered.filter((s) => s.type.toLowerCase() === typeFilter.toLowerCase());
   }
   if (networkFilter) {
-    filtered = filtered.filter(s => s.network.toLowerCase() === networkFilter.toLowerCase());
+    filtered = filtered.filter((s) => s.network.toLowerCase() === networkFilter.toLowerCase());
   }
 
   return NextResponse.json({
