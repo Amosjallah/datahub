@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { User, Mail, Lock, Phone, Loader2, ArrowRight, Star, Copy, Check, Share2, MessageCircle } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-export default function Register() {
+function RegisterInner() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -654,5 +654,13 @@ export default function Register() {
       </section>
 
     </div>
+  );
+}
+
+export default function Register() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', backgroundColor: '#030712' }} />}>
+      <RegisterInner />
+    </Suspense>
   );
 }
