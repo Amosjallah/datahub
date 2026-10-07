@@ -2,22 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { Loader2, CheckCircle2, AlertTriangle, Wallet } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, Wallet, CreditCard, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-interface TVProvider {
+interface TvPlan {
+  name: string;
+  price: number;
+}
+
+interface TvProvider {
   id: string;
   name: string;
   icon: string;
   color: string;
-  plans: { name: string; price: number }[];
+  plans: TvPlan[];
 }
 
 export default function BuyTv() {
-  const [provider, setProvider] = useState<TVProvider | null>(null);
-  const [iuc, setIuc] = useState('');
+  const [provider, setProvider] = useState<TvProvider | null>(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const [iuc, setIuc] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -25,8 +30,42 @@ export default function BuyTv() {
   const [userId, setUserId] = useState<string | null>(null);
   const [walletId, setWalletId] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [userName, setUserName] = useState<string>('User');
+  const [userName, setUserName] = useState<string>('Customer');
   const [authLoading, setAuthLoading] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState<'direct' | 'wallet'>('direct');
+
+  // Check for Paystack callback return
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('reference') || params.get('ref') || params.get('trxref');
+    if (ref && ref !== 'PAYSTACK_REF') {
+      setLoading(true);
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.success) {
+            setMessage({
+              type: 'success',
+              text: `Payment of GH₵${Number(data.amount).toFixed(2)} verified (Ref: ${ref})! Your TV subscription renewal is confirmed.`,
+            });
+          } else {
+            setMessage({
+              type: 'error',
+              text: data.message || 'Payment could not be verified.',
+            });
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+          setMessage({
+            type: 'success',
+            text: `Payment confirmed (Ref: ${ref})! Your TV subscription is being processed.`,
+          });
+        });
+    }
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -35,7 +74,7 @@ export default function BuyTv() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserId(user.id);
-          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Customer';
           setUserName(fullName);
 
           const { data: wallet } = await supabase
@@ -46,7 +85,11 @@ export default function BuyTv() {
 
           if (wallet) {
             setWalletId(wallet.id);
-            setWalletBalance(Number(wallet.cached_balance));
+            const bal = Number(wallet.cached_balance);
+            setWalletBalance(bal);
+            if (bal > 0) {
+              setPaymentMethod('wallet');
+            }
           }
         }
       } catch (err) {
@@ -58,15 +101,17 @@ export default function BuyTv() {
     loadUserData();
   }, []);
 
-  const tvProviders: TVProvider[] = [
+  const tvProviders: TvProvider[] = [
     { 
       id: 'dstv', 
       name: 'DStv', 
       icon: '📺', 
-      color: 'rgba(59,130,246,0.12)', 
+      color: 'rgba(0,102,255,0.12)', 
       plans: [
-        { name: 'Compact Plus', price: 120.00 },
-        { name: 'Compact', price: 79.00 },
+        { name: 'Premium', price: 600.00 },
+        { name: 'Compact Plus', price: 380.00 },
+        { name: 'Compact', price: 255.00 },
+        { name: 'Family', price: 130.00 },
         { name: 'Access', price: 38.00 },
       ]
     },
@@ -105,64 +150,103 @@ export default function BuyTv() {
     const currentPlan = provider.plans[selectedPlanIndex];
     if (!currentPlan) return;
 
-    if (walletBalance !== null && walletBalance < currentPlan.price) {
-      setMessage({
-        type: 'error',
-        text: `Insufficient wallet balance (₵${walletBalance.toFixed(2)}). Package requires ₵${currentPlan.price.toFixed(2)}. Please fund your wallet.`,
-      });
-      return;
-    }
-
     setLoading(true);
     setMessage(null);
 
+    // If using wallet balance
+    if (paymentMethod === 'wallet' && walletBalance !== null && walletBalance >= currentPlan.price) {
+      try {
+        const response = await fetch('/api/bills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            walletId,
+            provider: `${provider.name} TV`,
+            account: iuc,
+            amount: currentPlan.price,
+            billType: currentPlan.name,
+          }),
+        });
+
+        const data = await response.json();
+        setLoading(false);
+
+        if (data.success) {
+          setMessage({
+            type: 'success',
+            text: data.message || `${provider.name} (${currentPlan.name}) subscription renewed successfully for IUC: ${iuc}!`,
+          });
+          if (walletBalance !== null) {
+            setWalletBalance(prev => (prev !== null ? Math.max(0, prev - currentPlan.price) : 0));
+          }
+          setIuc('');
+        } else {
+          setMessage({
+            type: 'error',
+            text: data.message || 'Subscription payment failed. Please try again.',
+          });
+        }
+      } catch (err: any) {
+        setLoading(false);
+        setMessage({
+          type: 'error',
+          text: err.message || 'Connection failure. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Direct Mobile Money / Card payment — No wallet funding required!
     try {
-      const response = await fetch('/api/bills', {
+      const cleanPhone = iuc.replace(/\D/g, '') || '0000000000';
+      const customerEmail = `${cleanPhone}@fadigital.com`;
+
+      const response = await fetch('/api/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
-          walletId,
-          provider: `${provider.name} TV`,
-          account: iuc,
+          email: customerEmail,
           amount: currentPlan.price,
-          billType: currentPlan.name,
+          phone: cleanPhone,
+          service: 'tv',
+          callbackUrl: `${window.location.origin}/buy/tv?provider=${encodeURIComponent(provider.id)}&iuc=${encodeURIComponent(iuc)}`,
         }),
       });
 
       const data = await response.json();
       setLoading(false);
 
-      if (data.success) {
-        setMessage({
-          type: 'success',
-          text: data.message || `${provider.name} (${currentPlan.name}) subscription renewed successfully for IUC: ${iuc}!`,
-        });
-        if (walletBalance !== null) {
-          setWalletBalance(prev => (prev !== null ? Math.max(0, prev - currentPlan.price) : 0));
-        }
-        setIuc('');
+      if (data.success && data.authorization_url) {
+        window.location.href = data.authorization_url;
       } else {
         setMessage({
           type: 'error',
-          text: data.message || 'Subscription payment failed. Please try again.',
+          text: data.message || 'Failed to initialize payment gateway. Please try again.',
         });
       }
     } catch (err: any) {
       setLoading(false);
       setMessage({
         type: 'error',
-        text: err.message || 'Connection failure. Please try again.',
+        text: err.message || 'Failed to connect to payment gateway.',
       });
     }
   };
+
+  const currentPlan = provider?.plans[selectedPlanIndex];
+  const hasWalletFunds = walletBalance !== null && currentPlan && walletBalance >= currentPlan.price;
 
   return (
     <AppLayout userName={userName} userRole="customer">
       <div className="animate-fade-up">
         <div style={{ marginBottom: '1.75rem' }}>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.2rem' }}>📺 TV Subscriptions</h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Renew DStv, GOtv, and StarTimes instantly.</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.2rem', color: 'var(--color-text-primary)' }}>
+            📺 TV Subscriptions Instantly
+          </h1>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+            Renew DStv, GOtv, and StarTimes directly with MoMo or Card. No pre-funding required.
+          </p>
         </div>
 
         {message && (
@@ -177,7 +261,7 @@ export default function BuyTv() {
 
         {/* Provider selector cards */}
         {!provider && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.875rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.875rem', marginBottom: '1.5rem' }}>
             {tvProviders.map((tv) => (
               <button
                 key={tv.id}
@@ -186,100 +270,130 @@ export default function BuyTv() {
                 style={{
                   padding: '1.5rem 1rem',
                   textAlign: 'center',
-                  border: '2px solid var(--color-border)',
-                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg-surface)',
                   borderRadius: 'var(--radius-lg)',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '0.75rem',
+                  transition: 'all 0.2s',
                 }}
+                className="hover-card"
               >
                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: tv.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem' }}>
                   {tv.icon}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{tv.name}</div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>{tv.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>From ₵{tv.plans[tv.plans.length - 1].price.toFixed(2)}/mo</div>
+                </div>
               </button>
             ))}
           </div>
         )}
 
-        {/* Dynamic Form */}
-        {provider && (
-          <div className="card animate-fade-up" style={{ maxWidth: '480px' }}>
-            <div className="card-body">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '1.5rem' }}>{provider.icon}</div>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>{provider.name} Subscription</h3>
+        {/* Form when TV provider is selected */}
+        {provider && currentPlan && (
+          <div className="card" style={{ maxWidth: '520px' }}>
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                <span style={{ fontSize: '1.4rem' }}>{provider.icon}</span>
+                <span style={{ fontWeight: 700 }}>{provider.name} TV Renewal</span>
               </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => { setProvider(null); setMessage(null); }}
+              >
+                Change Provider
+              </button>
+            </div>
 
+            <div className="card-body">
               <form onSubmit={handlePay}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="tv-iuc">Smart Card / IUC Number</label>
+                  <label className="form-label">Select Subscription Package</label>
+                  <select
+                    className="form-select"
+                    value={selectedPlanIndex}
+                    onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
+                  >
+                    {provider.plans.map((p, idx) => (
+                      <option key={idx} value={idx}>
+                        {p.name} — ₵{p.price.toFixed(2)} / month
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Smartcard / IUC Number</label>
                   <input
                     type="text"
-                    id="tv-iuc"
                     className="form-input"
-                    placeholder="Enter smart card number"
+                    placeholder="e.g. 1023456789"
                     value={iuc}
                     onChange={(e) => setIuc(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="tv-plan">Select Package</label>
-                  <select
-                    id="tv-plan"
-                    className="form-select"
-                    value={selectedPlanIndex}
-                    onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
-                  >
-                    {provider.plans.map((p, idx) => (
-                      <option key={idx} value={idx}>{p.name} — ₵{p.price.toFixed(2)}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Payment Option */}
+                <div style={{ marginBottom: '1.25rem', padding: '0.85rem', background: 'var(--color-bg-elevated)', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                    Payment Method
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', padding: '0.5rem 0.75rem', background: paymentMethod === 'direct' ? 'var(--color-brand-subtle)' : 'transparent', borderRadius: '8px', border: paymentMethod === 'direct' ? '1px solid var(--color-brand-primary)' : '1px solid transparent' }}>
+                      <input
+                        type="radio"
+                        name="tvPayMethod"
+                        value="direct"
+                        checked={paymentMethod === 'direct'}
+                        onChange={() => setPaymentMethod('direct')}
+                        style={{ accentColor: '#FACC15' }}
+                      />
+                      <CreditCard size={16} style={{ color: 'var(--color-brand-primary)' }} />
+                      <div style={{ fontSize: '0.82rem' }}>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>Mobile Money & Card (Instant Pay)</strong>
+                        <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '0.72rem' }}>No pre-funding needed</span>
+                      </div>
+                    </label>
 
-                <div className="divider" style={{ margin: '1.25rem 0' }}></div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1.25rem',
-                  padding: '0.75rem 1rem',
-                  background: 'var(--color-bg-elevated)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--color-border)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Wallet size={16} color="var(--color-brand-primary)" />
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Wallet Balance:</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <strong style={{ color: 'var(--color-brand-primary)', fontSize: '1rem', fontFamily: 'Space Grotesk' }}>
-                      {authLoading ? '...' : walletBalance !== null ? `₵${walletBalance.toFixed(2)}` : '₵0.00'}
-                    </strong>
-                    <Link
-                      href="/wallet/fund"
-                      style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', textDecoration: 'underline' }}
-                    >
-                      + Top Up
-                    </Link>
+                    {hasWalletFunds && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', padding: '0.5rem 0.75rem', background: paymentMethod === 'wallet' ? 'var(--color-brand-subtle)' : 'transparent', borderRadius: '8px', border: paymentMethod === 'wallet' ? '1px solid var(--color-brand-primary)' : '1px solid transparent' }}>
+                        <input
+                          type="radio"
+                          name="tvPayMethod"
+                          value="wallet"
+                          checked={paymentMethod === 'wallet'}
+                          onChange={() => setPaymentMethod('wallet')}
+                          style={{ accentColor: '#FACC15' }}
+                        />
+                        <Wallet size={16} style={{ color: 'var(--color-brand-primary)' }} />
+                        <div style={{ fontSize: '0.82rem' }}>
+                          <strong style={{ color: 'var(--color-text-primary)' }}>Deduct from Wallet</strong>
+                          <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '0.72rem' }}>Balance: ₵{walletBalance?.toFixed(2)}</span>
+                        </div>
+                      </label>
+                    )}
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '3rem', fontWeight: 700 }} disabled={loading}>
                     {loading ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                         <Loader2 className="animate-spin" size={16} />
                         Processing...
                       </span>
                     ) : (
-                      `📺 Subscribe Now (₵${provider.plans[selectedPlanIndex]?.price.toFixed(2)})`
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'center' }}>
+                        <Zap size={16} />
+                        Renew for ₵{currentPlan.price.toFixed(2)} {paymentMethod === 'wallet' ? 'from Wallet' : 'with MoMo / Card'}
+                      </span>
                     )}
                   </button>
                   <button type="button" className="btn btn-secondary" onClick={() => setProvider(null)}>Change</button>

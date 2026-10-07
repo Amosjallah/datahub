@@ -153,8 +153,8 @@ export default function Dashboard() {
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0.15rem 0', fontFamily: 'monospace' }}>
                 {showBalance ? (walletBalance !== null ? `GH₵${walletBalance.toFixed(2)}` : 'GH₵0.00') : '••••••'}
               </div>
-              <Link href="/wallet/fund" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                Fund your wallet &rarr;
+              <Link href="/transactions" style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                View history &rarr;
               </Link>
             </div>
           </div>

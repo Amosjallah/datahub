@@ -75,8 +75,6 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
 
   // Topbar wallet balance widget configurations (GHC currency symbol: GH₵)
   const walletBalanceText = (isAgent || isAdmin) ? 'GH₵125,680.50' : 'GH₵25,680.50';
-  const walletButtonLabel = (isAgent || isAdmin) ? 'Fund wallet' : 'Fund';
-  const walletButtonLink = (isAgent || isAdmin) ? '/agent/wallet' : '/wallet/fund';
 
   // Bottom card configs
   let promoTitle = 'Earn more with';
@@ -129,18 +127,11 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
             style={{
               display: 'flex', alignItems: 'center', gap: '0.75rem',
               background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
-              padding: '0.35rem 0.5rem 0.35rem 0.875rem', borderRadius: 'var(--radius-md)'
+              padding: '0.45rem 0.875rem', borderRadius: 'var(--radius-md)'
             }}
           >
             <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Wallet balance:</span>
             <span style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>{walletBalanceText}</span>
-            <Link 
-              href={walletButtonLink} 
-              className="btn btn-primary btn-sm" 
-              style={{ padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', boxShadow: 'none', backgroundColor: 'var(--color-brand-primary)', color: '#FFF' }}
-            >
-              {walletButtonLabel}
-            </Link>
           </div>
 
           {/* Notification Bell */}

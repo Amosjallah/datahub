@@ -86,9 +86,6 @@ export default function WalletIndex() {
             <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.2rem' }}>💳 My Wallet</h1>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Manage your balance and transaction history.</p>
           </div>
-          <Link href="/wallet/fund" className="btn btn-primary btn-sm">
-            + Add Funds
-          </Link>
         </div>
 
         {/* Wallet Balance Card */}
@@ -109,7 +106,6 @@ export default function WalletIndex() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <Link href="/wallet/fund" className="btn btn-primary btn-sm">Fund Wallet</Link>
             <Link href="/transactions" className="btn btn-secondary btn-sm">Full History</Link>
           </div>
         </div>
@@ -169,9 +165,6 @@ export default function WalletIndex() {
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
                 <Wallet size={36} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
                 <p style={{ margin: 0, fontSize: '0.875rem' }}>No wallet transactions yet.</p>
-                <Link href="/wallet/fund" className="btn btn-primary btn-sm" style={{ marginTop: '1rem', display: 'inline-block' }}>
-                  Fund Your Wallet
-                </Link>
               </div>
             )}
           </div>

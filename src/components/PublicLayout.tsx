@@ -63,11 +63,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           </div>
           
           <div className="nav-auth-desktop" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link href="/login" className="btn btn-secondary btn-sm" style={{ padding: '0.6rem 1.25rem', borderRadius: '10px', fontWeight: 600, transition: 'all 0.2s' }}>
-              Log in
+            <Link href="/buy" className="btn btn-primary btn-sm" style={{ padding: '0.6rem 1.25rem', borderRadius: '10px', fontWeight: 700, color: '#030712', background: '#FACC15', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem', border: 'none' }}>
+              ⚡ Buy Data & Airtime
             </Link>
-            <Link href="/register" className="btn btn-primary btn-sm" style={{ padding: '0.6rem 1.25rem', borderRadius: '10px', fontWeight: 600, color: '#FFFFFF', transition: 'all 0.2s' }}>
-              Create account
+            <Link href="/login" className="btn btn-secondary btn-sm" style={{ padding: '0.6rem 1.15rem', borderRadius: '10px', fontWeight: 600, transition: 'all 0.2s', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
+              Agent / Admin Portal
             </Link>
           </div>
           
@@ -132,11 +132,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           </Link>
         ))}
         <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column', marginTop: '1rem' }}>
-          <Link href="/login" onClick={() => setMenuOpen(false)} className="btn btn-secondary btn-full" style={{ borderRadius: '10px', fontWeight: 600, padding: '0.75rem', textAlign: 'center' }}>
-            Log in
+          <Link href="/buy" onClick={() => setMenuOpen(false)} className="btn btn-primary btn-full" style={{ borderRadius: '10px', color: '#030712', background: '#FACC15', fontWeight: 700, padding: '0.75rem', textAlign: 'center', border: 'none' }}>
+            ⚡ Buy Data & Airtime (Instant Checkout)
           </Link>
-          <Link href="/register" onClick={() => setMenuOpen(false)} className="btn btn-primary btn-full" style={{ borderRadius: '10px', color: '#FFF', fontWeight: 600, padding: '0.75rem', textAlign: 'center' }}>
-            Create account
+          <Link href="/login" onClick={() => setMenuOpen(false)} className="btn btn-secondary btn-full" style={{ borderRadius: '10px', fontWeight: 600, padding: '0.75rem', textAlign: 'center' }}>
+            Agent / Admin Portal
           </Link>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     { icon: <Facebook size={14} />, href: '#', label: 'Facebook' },
                     { icon: <Twitter size={14} />, href: '#', label: 'Twitter' },
                     { icon: <Instagram size={14} />, href: '#', label: 'Instagram' },
-                    { icon: <MessageCircle size={14} />, href: 'https://wa.me/233548519420', label: 'WhatsApp' },
+                    { icon: <MessageCircle size={14} />, href: 'https://wa.me/233502515547', label: 'WhatsApp' },
                   ].map((soc, idx) => (
                     <a
                       key={idx}
@@ -307,11 +307,11 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                 <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.84rem', color: '#6B7280' }}>
                     <Phone size={14} style={{ color: 'var(--color-brand-primary)', flexShrink: 0 }} />
-                    <a href="tel:+233591234567" style={{ color: 'inherit', textDecoration: 'none' }}>+233 59 123 4567</a>
+                    <a href="tel:+233502515547" style={{ color: 'inherit', textDecoration: 'none' }}>+233 50 251 5547</a>
                   </li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.84rem', color: '#6B7280' }}>
                     <MessageCircle size={14} style={{ color: 'var(--color-brand-primary)', flexShrink: 0 }} />
-                    <a href="https://wa.me/233548519420" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>+233 54 851 9420</a>
+                    <a href="https://wa.me/233502515547" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>+233 50 251 5547</a>
                   </li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.84rem', color: '#6B7280' }}>
                     <Mail size={14} style={{ color: 'var(--color-brand-primary)', flexShrink: 0 }} />

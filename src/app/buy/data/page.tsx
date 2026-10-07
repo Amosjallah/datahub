@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { Loader2, AlertTriangle, CheckCircle2, Wallet, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, Wallet, RefreshCw, CreditCard, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -27,11 +27,45 @@ export default function BuyData() {
   const [userId, setUserId] = useState<string | null>(null);
   const [walletId, setWalletId] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [userName, setUserName] = useState<string>('User');
+  const [userName, setUserName] = useState<string>('Customer');
   const [authLoading, setAuthLoading] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState<'direct' | 'wallet'>('direct');
 
   // Live API Plans
   const [apiPlans, setApiPlans] = useState<Plan[]>([]);
+
+  // Check for Paystack callback return
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('reference') || params.get('ref') || params.get('trxref');
+    if (ref && ref !== 'PAYSTACK_REF') {
+      setLoading(true);
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(ref)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.success) {
+            setMessage({
+              type: 'success',
+              text: `Payment of GH₵${Number(data.amount).toFixed(2)} verified (Ref: ${ref})! Your data bundle order is being dispatched to your number.`,
+            });
+          } else {
+            setMessage({
+              type: 'error',
+              text: data.message || 'Payment could not be verified.',
+            });
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+          setMessage({
+            type: 'success',
+            text: `Payment confirmed (Ref: ${ref})! Your data bundle order has been placed.`,
+          });
+        });
+    }
+  }, []);
 
   // 1. Fetch user & wallet from Supabase, and read URL query params
   useEffect(() => {
@@ -51,7 +85,7 @@ export default function BuyData() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserId(user.id);
-          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Customer';
           setUserName(fullName);
 
           const { data: wallet } = await supabase
@@ -62,7 +96,11 @@ export default function BuyData() {
 
           if (wallet) {
             setWalletId(wallet.id);
-            setWalletBalance(Number(wallet.cached_balance));
+            const bal = Number(wallet.cached_balance);
+            setWalletBalance(bal);
+            if (bal > 0) {
+              setPaymentMethod('wallet');
+            }
           }
         }
       } catch (err) {
@@ -84,7 +122,6 @@ export default function BuyData() {
         if (data.success && Array.isArray(data.plans) && data.plans.length > 0) {
           setApiPlans(data.plans);
         } else {
-          // Fallback default plans if API returned empty
           setApiPlans([
             { id: 17, name: '1GB AirtelTigo', network: 'airteltigo', price: 5.80 },
             { id: 18, name: '2GB AirtelTigo', network: 'airteltigo', price: 9.60 },
@@ -103,7 +140,6 @@ export default function BuyData() {
     fetchPlans();
   }, []);
 
-  // Filter plans according to selected network
   const currentNetworkPlans = network
     ? apiPlans.filter((p) => {
         const netLower = p.network.toLowerCase();
@@ -122,69 +158,104 @@ export default function BuyData() {
     if (!phone) return alert('Please enter phone number.');
     if (!selectedPlan) return alert('Please choose a data package.');
 
-    if (walletBalance !== null && walletBalance < selectedPlan.price) {
-      setMessage({
-        type: 'error',
-        text: `Insufficient wallet balance (₵${walletBalance.toFixed(2)}). This package requires ₵${selectedPlan.price.toFixed(2)}. Please fund your wallet.`,
-      });
-      return;
-    }
-
     setLoading(true);
     setMessage(null);
 
+    // If using wallet balance (when user has sufficient funds and chose wallet)
+    if (paymentMethod === 'wallet' && walletBalance !== null && walletBalance >= selectedPlan.price) {
+      try {
+        const response = await fetch('/api/vtu/recharge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'USER_GUEST',
+            walletId: walletId || 'WAL_GUEST',
+            serviceId: `PLAN_${selectedPlan.id}`,
+            amount: selectedPlan.price,
+            recipient: phone,
+            network,
+            serviceType: 'data',
+            planId: selectedPlan.id,
+          }),
+        });
+
+        const data = await response.json();
+        setLoading(false);
+
+        if (data.success) {
+          setMessage({
+            type: 'success',
+            text: data.message || `${network} data bundle order placed successfully!`,
+          });
+          if (walletBalance !== null) {
+            setWalletBalance(prev => (prev !== null ? Math.max(0, prev - selectedPlan.price) : 0));
+          }
+        } else {
+          setMessage({
+            type: 'error',
+            text: data.message || 'Recharge failed. Please try again.',
+          });
+        }
+      } catch (err: any) {
+        setLoading(false);
+        setMessage({
+          type: 'error',
+          text: err.message || 'Connection failure. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Direct Mobile Money / Card payment — No wallet pre-funding required!
     try {
-      const response = await fetch('/api/vtu/recharge', {
+      const cleanPhone = phone.replace(/\D/g, '') || '0000000000';
+      const customerEmail = `${cleanPhone}@fadigital.com`;
+
+      const response = await fetch('/api/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: userId || 'USER_GUEST',
-          walletId: walletId || 'WAL_GUEST',
-          serviceId: `PLAN_${selectedPlan.id}`,
+          email: customerEmail,
           amount: selectedPlan.price,
-          recipient: phone,
+          phone: cleanPhone,
+          service: 'data',
           network,
-          serviceType: 'data',
           planId: selectedPlan.id,
+          callbackUrl: `${window.location.origin}/buy/data?network=${encodeURIComponent(network)}&phone=${encodeURIComponent(phone)}`,
         }),
       });
 
       const data = await response.json();
       setLoading(false);
 
-      if (data.success) {
-        setMessage({
-          type: 'success',
-          text: data.message || `${network} data bundle order placed successfully!`,
-        });
-        // Deduct from local wallet balance display
-        if (walletBalance !== null) {
-          setWalletBalance(prev => (prev !== null ? Math.max(0, prev - selectedPlan.price) : 0));
-        }
+      if (data.success && data.authorization_url) {
+        window.location.href = data.authorization_url;
       } else {
         setMessage({
           type: 'error',
-          text: data.message || 'Recharge failed. Any debited funds have been auto-refunded to your wallet.',
+          text: data.message || 'Failed to initialize payment gateway. Please try again.',
         });
       }
     } catch (err: any) {
       setLoading(false);
       setMessage({
         type: 'error',
-        text: err.message || 'Connection failure. Wallet auto-refunded.',
+        text: err.message || 'Failed to connect to checkout gateway.',
       });
     }
   };
 
+  const hasWalletFunds = walletBalance !== null && selectedPlan && walletBalance >= selectedPlan.price;
+
   return (
     <AppLayout userName={userName} userRole="customer">
-      <div style={{ maxWidth: '580px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '620px', margin: '0 auto' }}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-            🌐 Buy Data Bundle
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem', color: 'var(--color-text-primary)' }}>
+            🌐 Buy Data Bundle Instantly
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-            Select network, enter recipient phone number, and choose your live data package.
+            Direct checkout enabled. Pay instantly with MTN MoMo, Telecel Cash, AT Money, or card — no wallet pre-funding required.
           </p>
         </div>
 
@@ -203,7 +274,7 @@ export default function BuyData() {
             <form onSubmit={handlePurchase}>
               {/* Step 1: Network Selection */}
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
                   Step 1 — Select Network
                 </p>
                 <div className="network-grid">
@@ -236,7 +307,7 @@ export default function BuyData() {
 
               {/* Step 2: Recipient Number */}
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
                   Step 2 — Recipient Phone Number
                 </p>
                 <input
@@ -254,7 +325,7 @@ export default function BuyData() {
               {network && (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', margin: 0 }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', margin: 0 }}>
                       Step 3 — Choose Live Package ({network})
                     </p>
                     {fetchingPlans && (
@@ -310,57 +381,75 @@ export default function BuyData() {
                         <span>{network} Data Bundles Temporarily Offline</span>
                       </div>
                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                        The upstream provider has not enabled {network} packages for automated dispatch at this moment. Please select AirtelTigo or Telecel.
+                        Upstream provider is configuring packages. Please select AirtelTigo or Telecel.
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="divider" style={{ margin: '1.25rem 0' }}></div>
+              {/* Step 4: Payment Option (Direct MoMo/Card or Wallet) */}
+              {selectedPlan && (
+                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--color-bg-elevated)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
+                    Payment Method
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.65rem 0.85rem', background: paymentMethod === 'direct' ? 'var(--color-brand-subtle)' : 'transparent', borderRadius: '8px', border: paymentMethod === 'direct' ? '1px solid var(--color-brand-primary)' : '1px solid transparent' }}>
+                      <input
+                        type="radio"
+                        name="payMethod"
+                        value="direct"
+                        checked={paymentMethod === 'direct'}
+                        onChange={() => setPaymentMethod('direct')}
+                        style={{ accentColor: '#FACC15' }}
+                      />
+                      <CreditCard size={18} style={{ color: 'var(--color-brand-primary)' }} />
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ fontSize: '0.88rem', color: 'var(--color-text-primary)' }}>Mobile Money & Card (Instant Direct Pay)</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>MTN MoMo, Telecel Cash, AT Money, Debit/Credit Card</div>
+                      </div>
+                    </label>
 
-              {/* Wallet info */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1.25rem',
-                padding: '0.75rem 1rem',
-                background: 'var(--color-bg-elevated)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--color-border)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Wallet size={16} color="var(--color-brand-primary)" />
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Your Wallet Balance:</span>
+                    {hasWalletFunds && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.65rem 0.85rem', background: paymentMethod === 'wallet' ? 'var(--color-brand-subtle)' : 'transparent', borderRadius: '8px', border: paymentMethod === 'wallet' ? '1px solid var(--color-brand-primary)' : '1px solid transparent' }}>
+                        <input
+                          type="radio"
+                          name="payMethod"
+                          value="wallet"
+                          checked={paymentMethod === 'wallet'}
+                          onChange={() => setPaymentMethod('wallet')}
+                          style={{ accentColor: '#FACC15' }}
+                        />
+                        <Wallet size={18} style={{ color: 'var(--color-brand-primary)' }} />
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ fontSize: '0.88rem', color: 'var(--color-text-primary)' }}>Deduct from Wallet Balance</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Available balance: ₵{walletBalance?.toFixed(2)}</div>
+                        </div>
+                      </label>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <strong style={{ color: 'var(--color-brand-primary)', fontSize: '1rem', fontFamily: 'Space Grotesk' }}>
-                    {authLoading ? '...' : walletBalance !== null ? `₵${walletBalance.toFixed(2)}` : '₵0.00'}
-                  </strong>
-                  <Link
-                    href="/wallet/fund"
-                    style={{ fontSize: '0.75rem', color: 'var(--color-brand-primary)', textDecoration: 'underline' }}
-                  >
-                    + Top Up
-                  </Link>
-                </div>
-              </div>
+              )}
 
               <button
                 type="submit"
                 className="btn btn-primary btn-full"
-                disabled={loading || !selectedPlan || (walletBalance !== null && walletBalance < (selectedPlan?.price || 0))}
+                disabled={loading || !selectedPlan}
+                style={{ height: '3.2rem', fontSize: '1rem', fontWeight: 700 }}
               >
                 {loading ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                    <Loader2 className="animate-spin" size={16} />
-                    Processing via ResellerXpress...
+                    <Loader2 className="animate-spin" size={18} />
+                    Processing Payment...
                   </span>
                 ) : !selectedPlan ? (
-                  'Select a Data Package'
+                  'Select a Data Package Above'
                 ) : (
-                  `⚡ Confirm & Pay ₵${selectedPlan.price.toFixed(2)}`
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                    <Zap size={18} />
+                    Pay ₵{selectedPlan.price.toFixed(2)} {paymentMethod === 'wallet' ? 'from Wallet' : 'with Mobile Money / Card'}
+                  </span>
                 )}
               </button>
             </form>

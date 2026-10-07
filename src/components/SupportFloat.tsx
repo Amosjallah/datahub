@@ -32,7 +32,7 @@ export default function SupportFloat() {
 
       {/* WhatsApp Support Float (Green) */}
       <a 
-        href="https://wa.me/233548519420" 
+        href="https://wa.me/233502515547" 
         target="_blank" 
         rel="noopener noreferrer"
         style={{ 

@@ -14,56 +14,43 @@ export default function HowToLoginTutorial() {
 
   const steps: Step[] = [
     {
-      title: '1. Navigate to Sign In',
-      desc: 'Click on the "Sign In" button in the top right corner of the homepage navbar, or toggle to it directly from the registration panel.',
+      title: '1. Access Agent / Admin Portal',
+      desc: 'Click on the "Agent / Admin Portal" button in the top navigation bar. Customers can skip login entirely and buy data directly.',
       mockUI: (
         <div style={{ padding: '1.5rem', backgroundColor: '#0B0F19', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 'bold', color: '#FFFFFF' }}>FA Digital</span>
           <div style={{ padding: '0.4rem 1rem', backgroundColor: '#FACC15', color: '#030712', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-            Sign In
+            Agent / Admin Portal
           </div>
         </div>
       )
     },
     {
-      title: '2. Input Credentials',
-      desc: 'Fill in your registered email address and secure password. Click "Sign In" to proceed to verification routing.',
+      title: '2. Input Agent / Admin Credentials',
+      desc: 'Enter your authorized agent or administrator email and password. Sign-in is direct without two-factor verification codes.',
       mockUI: (
         <div style={{ padding: '1.5rem', backgroundColor: '#0B0F19', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '320px', margin: '0 auto' }}>
-          <input disabled type="email" placeholder="name@domain.com" style={{ width: '100%', padding: '0.6rem', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.8rem', color: '#FFFFFF' }} />
+          <input disabled type="email" placeholder="agent@fadigital.com" style={{ width: '100%', padding: '0.6rem', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.8rem', color: '#FFFFFF' }} />
           <input disabled type="password" placeholder="••••••••" style={{ width: '100%', padding: '0.6rem', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.8rem', color: '#FFFFFF' }} />
           <div style={{ padding: '0.6rem', backgroundColor: '#FACC15', color: '#030712', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
-            Sign In
+            Sign In to Workspace
           </div>
         </div>
       )
     },
     {
-      title: '3. Verification Passcode',
-      desc: 'Input the 6-digit secure OTP passcode dispatched immediately to your email or SMS inbox. Press verify to unlock dashboard sessions.',
-      mockUI: (
-        <div style={{ padding: '1.5rem', backgroundColor: '#0B0F19', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '320px', margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>Enter code sent to email</span>
-          <input disabled type="text" placeholder="1 2 3 4 5 6" style={{ width: '100%', padding: '0.6rem', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '1.2rem', textAlign: 'center', color: '#FFFFFF', letterSpacing: '0.2em' }} />
-          <div style={{ padding: '0.6rem', backgroundColor: '#FACC15', color: '#030712', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-            Verify Passcode
-          </div>
-        </div>
-      )
-    },
-    {
-      title: '4. Explore Dashboard',
-      desc: 'Welcome to your ledger account portal! You can now fund your wallet, buy data bundles at reseller prices, and check transaction logs.',
+      title: '3. Access Management Dashboard',
+      desc: 'Instantly access your agent sales tools, wholesale bundle pricing, orders, and transaction history.',
       mockUI: (
         <div style={{ padding: '1.5rem', backgroundColor: '#0B0F19', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Wallet balance</span>
-            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#FACC15' }}>₵ 245.50</span>
+            <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Workspace Status</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#FACC15' }}>Active Agent</span>
           </div>
           <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem' }}>
-            <span style={{ color: '#FFFFFF' }}>MTN 10GB Data</span>
-            <span style={{ color: '#10B981' }}>Success</span>
+            <span style={{ color: '#FFFFFF' }}>Wholesale Bundles</span>
+            <span style={{ color: '#10B981' }}>Ready</span>
           </div>
         </div>
       )

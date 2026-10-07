@@ -11,17 +11,39 @@ export default function ResetPassword() {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'request' | 'sent'>('request');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleResetRequest = (e: React.FormEvent) => {
+  const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
 
-    // Simulate reset request
-    setTimeout(() => {
+    if (channel === 'phone') {
+      setErrorMsg('SMS recovery is not enabled yet. Use email recovery or contact support.');
       setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inputValue.trim() }),
+      });
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        setErrorMsg(result?.message || 'Unable to send the recovery email. Please try again.');
+        return;
+      }
+
       setStep('sent');
-    }, 1000);
+    } catch {
+      setErrorMsg('Unable to connect to the password recovery service. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,9 +94,15 @@ export default function ResetPassword() {
             </Link>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>Reset Password</h2>
             <p style={{ color: '#9CA3AF', fontSize: '0.9rem' }}>
-              Select option and enter details to dispatch your reset passcode.
+              Enter your email to receive a password reset link.
             </p>
           </div>
+
+          {errorMsg && (
+            <div style={{ padding: '0.85rem 1rem', marginBottom: '1.25rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#F87171', fontSize: '0.875rem' }}>
+              {errorMsg}
+            </div>
+          )}
 
           {step === 'request' ? (
             <form onSubmit={handleResetRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -115,7 +143,7 @@ export default function ResetPassword() {
                     transition: 'all 0.2s'
                   }}
                 >
-                  📞 Phone Recovery
+                  📞 Phone Recovery (Unavailable)
                 </button>
               </div>
 
@@ -172,7 +200,7 @@ export default function ResetPassword() {
               <div style={{ fontSize: '3rem' }}>✉️</div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>Reset Code Dispatched</h3>
               <p style={{ color: '#9CA3AF', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                We have sent a 6-digit recovery code to **{inputValue}**. Please verify your inbox or messages.
+                We have sent a password reset link to {inputValue}. Check your inbox and spam folder, then follow the link.
               </p>
               
               <button

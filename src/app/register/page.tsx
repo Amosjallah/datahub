@@ -50,7 +50,7 @@ export default function Register() {
         await supabase.auth.setSession(result.session);
         router.push('/dashboard');
       } else {
-        setSuccessMsg('Account created successfully! You can now sign in with your email and password.');
+        setSuccessMsg('Account created. Check your email and click the verification link before signing in.');
         setTimeout(() => router.push('/login'), 2500);
       }
     } catch (err: any) {
@@ -70,6 +70,11 @@ export default function Register() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!supabase) {
+      setErrorMsg('Google sign-in is unavailable because authentication is not configured.');
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -77,9 +82,15 @@ export default function Register() {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      if (error) throw error;
+      if (error) {
+        if (/unsupported provider|provider is not enabled/i.test(error.message)) {
+          setErrorMsg('Google sign-in is not enabled yet. Enable Google under Supabase Authentication > Providers, then try again.');
+          return;
+        }
+        throw error;
+      }
     } catch (err: any) {
-      alert(err.message || 'Failed to initialize Google login');
+      setErrorMsg(err.message || 'Failed to initialize Google login.');
     }
   };
 

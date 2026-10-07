@@ -150,14 +150,24 @@ export default function Contact() {
                 <p style={{ fontSize: '0.85rem', color: '#9CA3AF', lineHeight: '1.5', marginBottom: '1rem' }}>
                   Text our 24/7 automated support bot on WhatsApp for instant assistance and order updates.
                 </p>
-                <a 
-                  href="https://whatsapp.com/channel/0029Vb6zDvaGzzKTwCWszC1Z" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FACC15', textDecoration: 'none' }}
-                >
-                  Join WhatsApp Channel →
-                </a>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <a 
+                    href="https://wa.me/233502515547" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ fontSize: '0.88rem', fontWeight: 700, color: '#10B981', textDecoration: 'none' }}
+                  >
+                    💬 Chat on WhatsApp (+233 50 251 5547) &rarr;
+                  </a>
+                  <a 
+                    href="https://whatsapp.com/channel/0029Vb6zDvaGzzKTwCWszC1Z" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ fontSize: '0.82rem', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none' }}
+                  >
+                    Join Updates Channel &rarr;
+                  </a>
+                </div>
               </div>
             </div>
 

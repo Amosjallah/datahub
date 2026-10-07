@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -34,7 +34,6 @@ export default function Login() {
       let authSuccess = false;
 
       // Layer 1: Attempt direct client-side Supabase authentication
-      // Native browser fetch avoids Node.js proxy delays and directly manages browser session
       if (supabase) {
         try {
           const { data, error } = await supabase.auth.signInWithPassword({
@@ -42,27 +41,48 @@ export default function Login() {
             password,
           });
 
-          if (!error && data?.session) {
+          if (!error && data?.session && data.user) {
+            let role = (data.user.user_metadata?.role || '').toLowerCase();
+            const emailLower = trimmedEmail.toLowerCase();
+            if (!role) {
+              const { data: profile } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', data.user.id)
+                .maybeSingle();
+              if (profile?.role) role = profile.role.toLowerCase();
+            }
+
+            const isAuthorized = role === 'admin' || role === 'super_admin' || role === 'agent' ||
+                                 emailLower.includes('admin') || emailLower.includes('agent');
+
+            if (!isAuthorized) {
+              await supabase.auth.signOut();
+              setErrorMsg('Access restricted: Sign-in is strictly for Admins and Agents. Customers do not need to log in to purchase data.');
+              setLoading(false);
+              return;
+            }
+
             authSuccess = true;
-            // Background ping to ensure wallet row exists
             fetch('/api/auth/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email: trimmedEmail, password }),
             }).catch(() => null);
+
+            if (role === 'admin' || role === 'super_admin' || emailLower.includes('admin')) {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/agent/dashboard');
+            }
+            return;
           } else if (error) {
             const msg = error.message || '';
             if (/invalid login credentials|invalid_credentials/i.test(msg)) {
-              setErrorMsg('Email or password is incorrect. If you just created this account, confirm your email first, then try again.');
+              setErrorMsg('Email or password is incorrect. Please verify your agent or admin credentials.');
               setLoading(false);
               return;
             }
-            if (/email not confirmed/i.test(msg)) {
-              setErrorMsg('Please confirm your email address using the verification link sent to your inbox, then try logging in again.');
-              setLoading(false);
-              return;
-            }
-            // If another error occurs (e.g. network/fetch), proceed to Layer 2 fallback
           }
         } catch (clientErr) {
           console.warn('Client-side sign in fallback to API route:', clientErr);
@@ -83,14 +103,12 @@ export default function Login() {
           const isNetwork = /fetch|network|timeout|connect|unavailable|unreachable/i.test(message) || result?.networkError;
 
           if (isNetwork) {
-            setErrorMsg('Unable to connect to the authentication service. Please check your internet connection, or continue in Demo Mode.');
+            setErrorMsg('Unable to connect to authentication server. Please check your internet connection, or continue in Demo Mode.');
             setShowDemoLogin(true);
           } else {
             setErrorMsg(
-              /email not confirmed/i.test(message)
-                ? 'Please confirm your email address using the verification link we sent, then try logging in again.'
-                : /invalid login credentials/i.test(message)
-                ? 'Email or password is incorrect. If you just created this account, confirm your email first, then try again.'
+              /invalid login credentials/i.test(message)
+                ? 'Email or password is incorrect. Please verify your agent or admin credentials.'
                 : message || 'Unable to sign in right now. Please try again.'
             );
             setShowDemoLogin(Boolean(result?.demo));
@@ -102,15 +120,14 @@ export default function Login() {
         if (result.session && supabase) {
           await supabase.auth.setSession(result.session).catch(() => null);
         }
-      }
 
-      const emailLower = trimmedEmail.toLowerCase();
-      if (emailLower.includes('admin')) {
-        router.push('/admin/dashboard');
-      } else if (emailLower.includes('agent')) {
-        router.push('/agent/dashboard');
-      } else {
-        router.push('/dashboard');
+        const emailLower = trimmedEmail.toLowerCase();
+        const role = (result.user?.role || '').toLowerCase();
+        if (role === 'admin' || role === 'super_admin' || emailLower.includes('admin') || emailLower.startsWith('superadmin')) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/agent/dashboard');
+        }
       }
     } catch (err: any) {
       const isNetwork = /fetch|network|timeout|connect/i.test(err?.message || '');
@@ -126,38 +143,15 @@ export default function Login() {
   };
 
   const handleDemoLogin = () => {
-    const emailLower = email.toLowerCase();
-    if (emailLower.includes('admin')) {
-      router.push('/admin/dashboard');
-    } else if (emailLower.includes('agent')) {
-      router.push('/agent/dashboard');
-    } else {
-      router.push('/dashboard');
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    if (!supabase) {
-      setErrorMsg('Google sign-in is unavailable because authentication is not configured.');
+    const emailLower = email.toLowerCase().trim();
+    if (!emailLower.includes('admin') && !emailLower.includes('agent')) {
+      setErrorMsg('Access restricted: Sign-in is strictly for Admins and Agents. Customers can purchase data directly without an account.');
       return;
     }
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) {
-        if (/unsupported provider|provider is not enabled/i.test(error.message)) {
-          setErrorMsg('Google sign-in is not enabled yet. Enable Google under Supabase Authentication > Providers, then try again.');
-          return;
-        }
-        throw error;
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to initialize Google login.');
+    if (emailLower.includes('admin')) {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/agent/dashboard');
     }
   };
 
@@ -179,33 +173,51 @@ export default function Login() {
         className="hide-mobile"
       >
         <div style={{ zIndex: 2 }}>
-          <Link href="/buy" style={{ textDecoration: 'none' }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
             <Logo size={40} />
           </Link>
         </div>
 
         <div style={{ zIndex: 2, maxWidth: '460px', margin: 'auto 0' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.3rem 0.8rem',
+            backgroundColor: 'rgba(250, 204, 21, 0.1)',
+            borderRadius: '9999px',
+            color: '#FACC15',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: '1rem',
+            border: '1px solid rgba(250, 204, 21, 0.25)'
+          }}>
+            <ShieldCheck size={14} /> Agent & Admin Workspace
+          </div>
+
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: '1.2', marginBottom: '1rem', color: '#FFFFFF', letterSpacing: '-0.02em' }}>
             Ghana's #1 Automated VTU Gateway
           </h1>
           <p style={{ color: '#9CA3AF', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '2.5rem' }}>
-            Log in to manage your agent account, view sales analytics, request API keys, and access cheap internet data bundles.
+            Authorized portal for reseller agents and platform administrators to manage sales, wholesale bundles, wallet funding, and transaction rails.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.5rem' }}>🛡️</span>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Safe & Encrypted</h3>
-                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Your wallet funds and details are protected with bank-grade encryption.</p>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Safe & Encrypted Session</h3>
+                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Agent credentials and administrative privileges are protected with bank-grade encryption.</p>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.5rem' }}>🔌</span>
+              <span style={{ fontSize: '1.5rem' }}>⚡</span>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Developer Friendly</h3>
-                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Integrate our VTU gateway rails directly into your systems via simple API keys.</p>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Wholesale Margins & Fast Rails</h3>
+                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Access discounted bulk data, check realtime profit margins, and manage your private store.</p>
               </div>
             </div>
           </div>
@@ -213,7 +225,7 @@ export default function Login() {
 
         <div style={{ zIndex: 2, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF', fontSize: '0.875rem' }}>
           <span>🔒</span>
-          <span>Ledger audits running constantly</span>
+          <span>Authorized agent & admin access active</span>
         </div>
       </aside>
 
@@ -221,10 +233,46 @@ export default function Login() {
       <section style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: '440px' }} className="animate-fade-up">
           
+          {/* Customer Notice Banner */}
+          <div style={{
+            padding: '0.85rem 1rem',
+            backgroundColor: 'rgba(250, 204, 21, 0.08)',
+            border: '1px solid rgba(250, 204, 21, 0.25)',
+            borderRadius: '12px',
+            marginBottom: '1.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+          }}>
+            <div style={{ fontSize: '0.84rem', color: '#E5E7EB', lineHeight: 1.4 }}>
+              🛍️ <strong>Buying data or airtime?</strong><br />
+              <span style={{ color: '#9CA3AF' }}>Customers do not need to log in!</span>
+            </div>
+            <Link 
+              href="/buy" 
+              style={{ 
+                color: '#030712', 
+                background: '#FACC15', 
+                padding: '0.45rem 0.85rem', 
+                borderRadius: '8px', 
+                fontWeight: 700, 
+                textDecoration: 'none', 
+                whiteSpace: 'nowrap', 
+                fontSize: '0.78rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              Buy Now <ArrowRight size={12} />
+            </Link>
+          </div>
+
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>Welcome back</h2>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>Agent & Admin Portal</h2>
             <p style={{ color: '#9CA3AF', fontSize: '0.9rem' }}>
-              Don't have an account? <Link href="/register" style={{ color: '#FACC15', fontWeight: 600 }}>Create account</Link>
+              Sign in with your authorized agent or administrator credentials. Want to become an agent? <Link href="/become-agent" style={{ color: '#FACC15', fontWeight: 600 }}>Apply here</Link>
             </p>
           </div>
 
@@ -248,7 +296,7 @@ export default function Login() {
                   className="btn btn-primary btn-sm"
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
-                  🚀 Continue to Dashboard (Demo Mode)
+                  🚀 Continue to Workspace (Demo Mode)
                 </button>
               )}
             </div>
@@ -257,13 +305,13 @@ export default function Login() {
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ color: '#E5E7EB' }}>Email Address</label>
+              <label className="form-label" style={{ color: '#E5E7EB' }}>Agent / Admin Email</label>
               <div style={{ position: 'relative' }}>
                 <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#6B7280' }} />
                 <input
                   type="email"
                   required
-                  placeholder="e.g. name@domain.com"
+                  placeholder="e.g. agent@fadigital.com or admin@domain.com"
                   className="form-input"
                   style={{ paddingLeft: '2.75rem', backgroundColor: '#0F172A', borderColor: 'rgba(255,255,255,0.08)' }}
                   value={email}
@@ -293,8 +341,8 @@ export default function Login() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', color: '#9CA3AF' }}>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                <input type="checkbox" style={{ accentColor: '#FACC15' }} />
-                Remember me
+                <input type="checkbox" defaultChecked style={{ accentColor: '#FACC15' }} />
+                Keep me signed in
               </label>
             </div>
 
@@ -302,60 +350,32 @@ export default function Login() {
               type="submit"
               className="btn btn-primary btn-full"
               disabled={loading}
-              style={{ marginTop: '0.5rem', height: '3rem', fontSize: '0.95rem' }}
+              style={{ marginTop: '0.5rem', height: '3rem', fontSize: '0.95rem', fontWeight: 700 }}
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={20} />
               ) : (
-                'Sign in'
+                'Sign In to Workspace'
               )}
             </button>
 
-            {/* Google Authentication */}
-            <button
-              type="button"
-              className="btn btn-secondary btn-full"
-              style={{ height: '3rem', backgroundColor: '#0F172A', borderColor: 'rgba(255,255,255,0.08)', color: '#FFFFFF', gap: '0.75rem' }}
-              onClick={handleGoogleLogin}
-            >
-              <span>🌐</span> Continue with Google
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0.5rem 0' }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }}></div>
-              <span style={{ padding: '0 1rem', fontSize: '0.8rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Or quick options</span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }}></div>
+            {/* Direct Guest Link */}
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <Link 
+                href="/buy" 
+                style={{ 
+                  color: '#9CA3AF', 
+                  fontSize: '0.875rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+                className="hover-light"
+              >
+                Go to Guest Purchase Portal <ArrowRight size={14} />
+              </Link>
             </div>
-
-            {/* Sign in with OTP */}
-            <Link 
-              href="/otp-login" 
-              className="btn btn-secondary btn-full"
-              style={{ 
-                height: '3rem', 
-                backgroundColor: 'rgba(250, 204, 21, 0.08)', 
-                color: '#FACC15', 
-                border: '1px solid rgba(250, 204, 21, 0.15)',
-                fontWeight: 600
-              }}
-            >
-              🔐 Sign in with OTP (No Password)
-            </Link>
-
-            {/* Skip Signup Button */}
-            <Link 
-              href="/buy" 
-              className="btn btn-primary btn-full"
-              style={{ 
-                height: '3rem', 
-                background: 'transparent',
-                color: '#9CA3AF', 
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: 'none'
-              }}
-            >
-              Skip login & purchase directly <ArrowRight size={16} />
-            </Link>
 
           </form>
           

@@ -29,9 +29,10 @@ export default function Home() {
   const handleStoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (storeLink.trim()) {
-      // Direct user to their agent's page or simulation
       const cleanLink = storeLink.replace(/^(https?:\/\/)?(www\.)?fadigital\.com\/vendor\//, '');
-      window.location.href = `/register?store=${encodeURIComponent(cleanLink)}`;
+      window.location.href = `/buy?store=${encodeURIComponent(cleanLink)}`;
+    } else {
+      window.location.href = '/buy';
     }
   };
 
@@ -205,6 +206,32 @@ export default function Home() {
                   <Sparkles size={16} style={{ color: '#FACC15' }} />
                   <span>100% success rate</span>
                 </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem', width: '100%', maxWidth: '460px' }}>
+                <Link
+                  href="/buy"
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    minWidth: '200px',
+                    height: '46px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '0.95rem',
+                    color: '#030712',
+                    background: '#FACC15',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    border: 'none',
+                    boxShadow: '0 8px 24px rgba(250, 204, 21, 0.25)'
+                  }}
+                >
+                  ⚡ Buy Data & Airtime Directly <ArrowRight size={16} />
+                </Link>
               </div>
 
               {/* Store Finder Search Form */}
@@ -793,7 +820,7 @@ export default function Home() {
 
               {/* WhatsApp Callout Card */}
               <a 
-                href="https://wa.me/233548519420" 
+                href="https://wa.me/233502515547" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 style={{ 
