@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicLayout from '@/components/PublicLayout';
-import { Terminal, Shield, Copy, Check, ExternalLink, Cpu } from 'lucide-react';
+import { Terminal, Shield, Copy, Check, ExternalLink, Cpu, Zap, Database, PhoneCall, Receipt, ArrowRight } from 'lucide-react';
 
 export default function ApiDocs() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -15,240 +15,334 @@ export default function ApiDocs() {
   };
 
   const codeBlocks = {
-    auth: `curl -X GET https://api.fadigitalservices.com/v1/wallet/balance \\
-  -H "Authorization: Bearer fa_sec_live_5x8a92..."`,
+    authHeader: `Authorization: Bearer fa_sec_live_your_api_key_here`,
+    servicesCurl: `curl -X GET https://quicknetdata.com/api/v1/services \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here"`,
+    servicesResponse: `{
+  "status": "success",
+  "count": 22,
+  "data": [
+    {
+      "id": "MTN_5GB",
+      "name": "MTN Data 5GB",
+      "type": "data",
+      "network": "MTN",
+      "volume": "5GB",
+      "retail_price": 23.00,
+      "agent_price": 21.00,
+      "api_price": 20.20,
+      "validity": "Non-Expiry",
+      "status": "available"
+    },
+    {
+      "id": "AIRTIME_MTN",
+      "name": "MTN Airtime Top-Up",
+      "type": "airtime",
+      "network": "MTN",
+      "retail_price": 1.00,
+      "agent_price": 0.97,
+      "api_price": 0.96,
+      "status": "available"
+    }
+  ]
+}`,
+    balanceCurl: `curl -X GET https://quicknetdata.com/api/v1/wallet/balance \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here"`,
     balanceResponse: `{
   "status": "success",
   "data": {
-    "balance": 1845.50,
+    "account_name": "QuickNet Partner",
+    "role": "api_partner",
+    "wallet_id": "wal_892b1",
+    "balance": "1450.00",
     "currency": "GHS",
-    "updated_at": "2026-07-08T12:00:00Z"
+    "timestamp": "2026-10-07T17:30:00Z"
   }
 }`,
-    purchaseRequest: `curl -X POST https://api.fadigitalservices.com/v1/transaction/purchase \\
-  -H "Authorization: Bearer fa_sec_live_5x8a92..." \\
+    purchaseDataCurl: `curl -X POST https://quicknetdata.com/api/v1/data \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "service_id": 102,
+    "service_id": "MTN_10GB",
     "recipient": "0241234567",
-    "request_id": "tx_unique_req_99824"
-  }'`
+    "network": "MTN",
+    "request_id": "TXN_CLIENT_99218"
+  }'`,
+    purchaseAirtimeCurl: `curl -X POST https://quicknetdata.com/api/v1/airtime \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "recipient": "0559876543",
+    "amount": 20.00,
+    "network": "MTN",
+    "request_id": "TXN_AIR_55412"
+  }'`,
+    purchaseBillCurl: `curl -X POST https://quicknetdata.com/api/v1/bills \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "account_number": "14120938491",
+    "amount": 50.00,
+    "network": "ECG",
+    "request_id": "TXN_ECG_88201"
+  }'`,
+    purchaseResponse: `{
+  "status": "success",
+  "data": {
+    "reference": "TXN_CLIENT_99218",
+    "provider_reference": "DMG_ORD_449102",
+    "service": "MTN Data 10GB",
+    "network": "MTN",
+    "recipient": "0241234567",
+    "amount_debited": 38.00,
+    "currency": "GHS",
+    "transaction_status": "delivered",
+    "message": "Data bundle dispatched successfully",
+    "created_at": "2026-10-07T17:30:05Z"
+  }
+}`,
+    statusCurl: `curl -X GET https://quicknetdata.com/api/v1/transaction/status/TXN_CLIENT_99218 \\
+  -H "Authorization: Bearer fa_sec_live_your_api_key_here"`,
+    statusResponse: `{
+  "status": "success",
+  "data": {
+    "reference": "TXN_CLIENT_99218",
+    "status": "delivered",
+    "provider_reference": "DMG_ORD_449102",
+    "success": true
+  }
+}`
   };
 
   return (
     <PublicLayout>
       {/* Header */}
-      <section style={{ padding: '6.5rem 0 3.5rem', background: 'radial-gradient(120% 120% at 50% -20%, rgba(0, 102, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%)', textAlign: 'center' }}>
-        <div className="container animate-fade-up" style={{ maxWidth: '800px' }}>
-          <span className="badge badge-blue" style={{ textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>Developer Portal</span>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
-            Automate with <span className="text-gradient">REST APIs & SDKs</span>
+      <section style={{ padding: '6.5rem 0 3.5rem', background: '#030712', textAlign: 'center' }}>
+        <div className="container animate-fade-up" style={{ maxWidth: '850px' }}>
+          <span style={{ color: '#FACC15', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.12em', display: 'block', marginBottom: '0.75rem' }}>
+            ⚡ Developer Documentation
+          </span>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3.2rem)', fontWeight: 900, marginBottom: '1rem', color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+            Integrate all services with our <span className="text-gradient">REST API</span>
           </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.05rem', lineHeight: '1.6' }}>
-            Build custom digital payment platforms. Connect directly to our carrier transaction rails with average latency under 150ms.
+          <p style={{ color: '#9CA3AF', fontSize: '1.05rem', lineHeight: '1.6' }}>
+            Direct access to data bundles, airtime, ECG electricity, Ghana Water, and DStv/GOtv subscriptions. Dual carrier routing with 99.9% uptime.
           </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+            <span style={{ padding: '0.4rem 1rem', background: 'rgba(250, 204, 21, 0.1)', color: '#FACC15', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700 }}>
+              MTN · Telecel · AirtelTigo
+            </span>
+            <span style={{ padding: '0.4rem 1rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700 }}>
+              ECG & GWCL Utilities
+            </span>
+            <span style={{ padding: '0.4rem 1rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700 }}>
+              Cable TV (DStv, GOtv, StarTimes)
+            </span>
+          </div>
         </div>
       </section>
 
       {/* Main Grid Docs */}
-      <section style={{ padding: '2rem 0 5rem' }}>
-        <div className="container hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2.5rem', alignItems: 'start' }}>
+      <section style={{ padding: '2rem 0 5rem', backgroundColor: '#030712' }}>
+        <div className="container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
           
-          {/* Left Column: API documentation */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+          {/* Section 1: Authentication */}
+          <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <Shield size={24} style={{ color: '#FACC15' }} />
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>API Key Authentication</h2>
+            </div>
+            <p style={{ fontSize: '0.92rem', lineHeight: '1.65', color: '#9CA3AF', marginBottom: '1.25rem' }}>
+              Authenticate your requests by including your secret API key in the <code style={{ color: '#FACC15' }}>Authorization: Bearer &lt;API_KEY&gt;</code> or <code style={{ color: '#FACC15' }}>x-api-key: &lt;API_KEY&gt;</code> HTTP header.
+            </p>
             
-            {/* Authentications */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Shield size={20} style={{ color: 'var(--color-brand-primary)' }} />
-                <h2 style={{ fontSize: '1.45rem', fontWeight: 800 }}>Authentication</h2>
+            <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>AUTHORIZATION HEADER</span>
+                <button
+                  onClick={() => handleCopy(codeBlocks.authHeader, 'auth_header')}
+                  style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                >
+                  {copiedKey === 'auth_header' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                  {copiedKey === 'auth_header' ? 'Copied' : 'Copy'}
+                </button>
               </div>
-              <p style={{ fontSize: '0.92rem', lineHeight: '1.65', color: 'var(--color-text-secondary)', marginBottom: '1.25rem' }}>
-                Authenticate your API requests by including your Secret API Key as a Bearer token in the request HTTP header. Keep keys secure; do not share them in frontend repositories or client applications.
-              </p>
-              
-              <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
-                {/* Header of code block */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#0B132B', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontFamily: 'monospace' }}>AUTHORIZATION HEADER EXAMPLE</span>
+              <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                <code style={{ color: '#FACC15', fontSize: '0.88rem', fontFamily: 'monospace' }}>{codeBlocks.authHeader}</code>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Services Catalog */}
+          <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', fontFamily: 'monospace' }}>GET</span>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>List Available Services & Wholesale Pricing</h2>
+            </div>
+            <p style={{ fontSize: '0.92rem', color: '#9CA3AF', marginBottom: '1.25rem' }}>
+              Endpoint: <code style={{ color: '#FACC15' }}>/api/v1/services</code>. Query all packages with retail, agent, and API partner rates. Filters: <code style={{ color: '#9CA3AF' }}>?type=data</code>, <code style={{ color: '#9CA3AF' }}>?network=MTN</code>.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+              <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>CURL REQUEST</span>
                   <button
-                    onClick={() => handleCopy('Authorization: Bearer fa_sec_live_...', 'auth_header')}
-                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}
+                    onClick={() => handleCopy(codeBlocks.servicesCurl, 'svc_curl')}
+                    style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
                   >
-                    {copiedKey === 'auth_header' ? <Check size={12} style={{ color: '#10B981' }} /> : <Copy size={12} />}
-                    {copiedKey === 'auth_header' ? 'Copied' : 'Copy'}
+                    {copiedKey === 'svc_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                    {copiedKey === 'svc_curl' ? 'Copied' : 'Copy'}
                   </button>
                 </div>
                 <div style={{ padding: '1rem', overflowX: 'auto' }}>
-                  <code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace', whiteSpace: 'pre' }}>
-                    Authorization: Bearer fa_sec_live_...
-                  </code>
+                  <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.servicesCurl}</code></pre>
+                </div>
+              </div>
+
+              <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ padding: '0.5rem 1rem', background: '#1E293B', fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>SAMPLE JSON RESPONSE</div>
+                <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                  <pre style={{ margin: 0 }}><code style={{ color: '#38BDF8', fontSize: '0.82rem', fontFamily: 'monospace' }}>{codeBlocks.servicesResponse}</code></pre>
                 </div>
               </div>
             </div>
-
-            {/* Endpoint 1: Balance */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '0.3rem 0.6rem', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', fontFamily: 'monospace' }}>GET</span>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Retrieve Wallet Balance</h2>
-              </div>
-              <p style={{ fontSize: '0.92rem', lineHeight: '1.65', color: 'var(--color-text-secondary)', marginBottom: '1.25rem' }}>
-                Fetch current ledger cash balances of your reseller partner profile.
-              </p>
-              
-              <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#0B132B', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontFamily: 'monospace' }}>API ENDPOINT REQUEST</span>
-                  <button
-                    onClick={() => handleCopy(codeBlocks.auth, 'auth_curl')}
-                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}
-                  >
-                    {copiedKey === 'auth_curl' ? <Check size={12} style={{ color: '#10B981' }} /> : <Copy size={12} />}
-                    {copiedKey === 'auth_curl' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div style={{ padding: '1.25rem 1rem', overflowX: 'auto' }}>
-                  <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.auth}</code></pre>
-                </div>
-              </div>
-
-              <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#0B132B', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontFamily: 'monospace' }}>HTTP 200 SUCCESS RESPONSE JSON</span>
-                  <button
-                    onClick={() => handleCopy(codeBlocks.balanceResponse, 'bal_resp')}
-                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}
-                  >
-                    {copiedKey === 'bal_resp' ? <Check size={12} style={{ color: '#10B981' }} /> : <Copy size={12} />}
-                    {copiedKey === 'bal_resp' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div style={{ padding: '1.25rem 1rem', overflowX: 'auto' }}>
-                  <pre style={{ margin: 0 }}><code style={{ color: '#38BDF8', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.balanceResponse}</code></pre>
-                </div>
-              </div>
-            </div>
-
-            {/* Endpoint 2: Purchase */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '0.3rem 0.6rem', borderRadius: '8px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', fontFamily: 'monospace' }}>POST</span>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Purchase Utilities</h2>
-              </div>
-              <p style={{ fontSize: '0.92rem', lineHeight: '1.65', color: 'var(--color-text-secondary)', marginBottom: '1.25rem' }}>
-                Initiate a data bundle purchase, voice top-up, or educational check pin generation transaction.
-              </p>
-              
-              <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#0B132B', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontFamily: 'monospace' }}>API ENDPOINT REQUEST</span>
-                  <button
-                    onClick={() => handleCopy(codeBlocks.purchaseRequest, 'purch_req')}
-                    style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}
-                  >
-                    {copiedKey === 'purch_req' ? <Check size={12} style={{ color: '#10B981' }} /> : <Copy size={12} />}
-                    {copiedKey === 'purch_req' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div style={{ padding: '1.25rem 1rem', overflowX: 'auto' }}>
-                  <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.purchaseRequest}</code></pre>
-                </div>
-              </div>
-
-              {/* Endpoint Parameters Table */}
-              <div className="card" style={{ padding: '1.5rem', border: '1px solid var(--color-border)' }}>
-                <h4 style={{ fontWeight: 800, marginBottom: '1rem', fontSize: '0.95rem' }}>POST PAYLOAD PARAMETERS</h4>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-                        <th style={{ padding: '0.5rem' }}>Key</th>
-                        <th style={{ padding: '0.5rem' }}>Type</th>
-                        <th style={{ padding: '0.5rem' }}>Status</th>
-                        <th style={{ padding: '0.5rem' }}>Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                        <td style={{ padding: '0.65rem 0.5rem', fontFamily: 'monospace', fontWeight: 700 }}>service_id</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: '#8B5CF6' }}>integer</td>
-                        <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#EF4444' }}>REQUIRED</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: 'var(--color-text-secondary)' }}>ID of the bundle or bill product. See services list.</td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                        <td style={{ padding: '0.65rem 0.5rem', fontFamily: 'monospace', fontWeight: 700 }}>recipient</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: '#8B5CF6' }}>string</td>
-                        <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#EF4444' }}>REQUIRED</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: 'var(--color-text-secondary)' }}>Carrier phone number (+233 format) or utility meter account ID.</td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-                        <td style={{ padding: '0.65rem 0.5rem', fontFamily: 'monospace', fontWeight: 700 }}>request_id</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: '#8B5CF6' }}>string</td>
-                        <td style={{ padding: '0.65rem 0.5rem', fontWeight: 700, color: '#EF4444' }}>REQUIRED</td>
-                        <td style={{ padding: '0.65rem 0.5rem', color: 'var(--color-text-secondary)' }}>Unique reference string for idempotency audits to prevent duplicates.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
           </div>
 
-          {/* Right Column: API context & details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* Base Configuration details */}
-            <div className="card glass-panel" style={{ padding: '2rem 1.5rem', border: '1px solid var(--color-border)', borderRadius: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <Terminal size={18} style={{ color: 'var(--color-brand-primary)' }} />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Gateway Details</h3>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.85rem' }}>
-                <div>
-                  <span style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Base API URL</span>
-                  <code style={{ fontSize: '0.82rem', color: 'var(--color-brand-primary)', fontFamily: 'monospace', fontWeight: 700 }}>https://api.fadigitalservices.com/v1</code>
-                </div>
-                
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                  <span style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Response Format</span>
-                  <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>JSON (Content-Type: application/json)</span>
-                </div>
+          {/* Section 3: Wallet Balance */}
+          <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', fontFamily: 'monospace' }}>GET</span>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>Check Partner Wallet Balance</h2>
+            </div>
+            <p style={{ fontSize: '0.92rem', color: '#9CA3AF', marginBottom: '1.25rem' }}>
+              Endpoint: <code style={{ color: '#FACC15' }}>/api/v1/wallet/balance</code>. Returns your developer wallet balance in Ghanaian Cedis (GHS).
+            </p>
 
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                  <span style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>API Rate Limiting</span>
-                  <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>120 requests per minute</span>
+            <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>CURL REQUEST</span>
+                <button
+                  onClick={() => handleCopy(codeBlocks.balanceCurl, 'bal_curl')}
+                  style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                >
+                  {copiedKey === 'bal_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                  {copiedKey === 'bal_curl' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.balanceCurl}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Purchase Services */}
+          <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#3B82F6', fontFamily: 'monospace' }}>POST</span>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>Unified Purchase Endpoints</h2>
+            </div>
+            <p style={{ fontSize: '0.92rem', color: '#9CA3AF', marginBottom: '1.5rem' }}>
+              Purchase any telecom package or utility service. Debits your developer wallet at API wholesale partner pricing.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Purchase Data */}
+              <div>
+                <h4 style={{ color: '#FACC15', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem' }}>1. Data Bundle Recharge (<code style={{ color: '#FFFFFF' }}>/api/v1/data</code> or <code style={{ color: '#FFFFFF' }}>/api/v1/transaction/purchase</code>)</h4>
+                <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>BUY DATA BUNDLE</span>
+                    <button
+                      onClick={() => handleCopy(codeBlocks.purchaseDataCurl, 'data_curl')}
+                      style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      {copiedKey === 'data_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                      {copiedKey === 'data_curl' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                    <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.purchaseDataCurl}</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Airtime */}
+              <div>
+                <h4 style={{ color: '#FACC15', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem' }}>2. Airtime Top-Up (<code style={{ color: '#FFFFFF' }}>/api/v1/airtime</code>)</h4>
+                <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>BUY AIRTIME</span>
+                    <button
+                      onClick={() => handleCopy(codeBlocks.purchaseAirtimeCurl, 'air_curl')}
+                      style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      {copiedKey === 'air_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                      {copiedKey === 'air_curl' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                    <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.purchaseAirtimeCurl}</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Bills */}
+              <div>
+                <h4 style={{ color: '#FACC15', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem' }}>3. Electricity, Water & Cable TV (<code style={{ color: '#FFFFFF' }}>/api/v1/bills</code>)</h4>
+                <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>PAY BILL</span>
+                    <button
+                      onClick={() => handleCopy(codeBlocks.purchaseBillCurl, 'bill_curl')}
+                      style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      {copiedKey === 'bill_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                      {copiedKey === 'bill_curl' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                    <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.purchaseBillCurl}</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Response */}
+              <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ padding: '0.5rem 1rem', background: '#1E293B', fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>PURCHASE SUCCESS RESPONSE</div>
+                <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                  <pre style={{ margin: 0 }}><code style={{ color: '#38BDF8', fontSize: '0.82rem', fontFamily: 'monospace' }}>{codeBlocks.purchaseResponse}</code></pre>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* SDK CTA box */}
-            <div className="card glass-panel" style={{ padding: '2rem 1.5rem', borderRadius: '20px', border: '1px solid rgba(0, 102, 255, 0.1)', background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Cpu size={18} style={{ color: 'var(--color-brand-primary)' }} />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Need SDK access?</h3>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: '1.5', marginBottom: '1.5rem' }}>
-                Download official wrapper scripts for Node.js, PHP, and Python to integrate inside your project with three lines of code.
-              </p>
-              
-              <Link 
-                href="/contact" 
-                className="btn btn-primary btn-sm hover-scale" 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  color: '#FFFFFF', 
-                  borderRadius: '10px',
-                  fontWeight: 700
-                }}
-              >
-                Request SDK Keys <ExternalLink size={14} />
-              </Link>
+          {/* Section 5: Transaction Status */}
+          <div className="card" style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', fontFamily: 'monospace' }}>GET</span>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>Check Transaction Status</h2>
             </div>
+            <p style={{ fontSize: '0.92rem', color: '#9CA3AF', marginBottom: '1.25rem' }}>
+              Endpoint: <code style={{ color: '#FACC15' }}>/api/v1/transaction/status/[reference]</code>. Query the live fulfillment status across carrier gateways.
+            </p>
 
+            <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 1rem', background: '#1E293B', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontFamily: 'monospace' }}>QUERY STATUS</span>
+                <button
+                  onClick={() => handleCopy(codeBlocks.statusCurl, 'stat_curl')}
+                  style={{ background: 'none', border: 'none', color: '#FACC15', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}
+                >
+                  {copiedKey === 'stat_curl' ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                  {copiedKey === 'stat_curl' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <div style={{ padding: '1rem', overflowX: 'auto' }}>
+                <pre style={{ margin: 0 }}><code style={{ color: '#E2E8F0', fontSize: '0.85rem', fontFamily: 'monospace' }}>{codeBlocks.statusCurl}</code></pre>
+              </div>
+            </div>
           </div>
 
         </div>

@@ -39,44 +39,45 @@ export default function AgentDashboard() {
   };
 
   const recentSales = [
-    { id: '1234567890', customer: '0803 123 4567', service: 'MTN 10GB', amount: 'GH₵4,500.00', status: 'success', date: 'May 20, 2024 10:45 AM' },
-    { id: '1234567889', customer: '0701 234 5678', service: 'Airtime GH₵1,000', amount: 'GH₵1,000.00', status: 'success', date: 'May 20, 2024 10:42 AM' },
-    { id: '1234567888', customer: '0806 345 6789', service: 'Glo 5GB', amount: 'GH₵2,200.00', status: 'processing', date: 'May 19, 2024 09:15 PM' },
-    { id: '1234567887', customer: '0908 765 4321', service: 'Dstv Compact', amount: 'GH₵7,200.00', status: 'success', date: 'May 19, 2024 08:11 PM' },
-    { id: '1234567886', customer: '0812 345 6789', service: 'Airtime GH₵500', amount: 'GH₵500.00', status: 'reversed', date: 'May 18, 2024 07:30 PM' },
+    { id: '1234567890', customer: '0244 123 456', service: 'MTN 10GB', amount: 'GH₵43.00', status: 'success', date: 'Oct 07, 2026 10:45 AM' },
+    { id: '1234567889', customer: '0502 515 547', service: 'Airtime GH₵50.00', amount: 'GH₵50.00', status: 'success', date: 'Oct 07, 2026 10:42 AM' },
+    { id: '1234567888', customer: '0558 345 678', service: 'Telecel 5GB', amount: 'GH₵20.00', status: 'processing', date: 'Oct 06, 2026 09:15 PM' },
+    { id: '1234567887', customer: '0201 765 432', service: 'Dstv Compact', amount: 'GH₵220.00', status: 'success', date: 'Oct 06, 2026 08:11 PM' },
+    { id: '1234567886', customer: '0277 345 678', service: 'MTN 5GB', amount: 'GH₵23.00', status: 'success', date: 'Oct 05, 2026 07:30 PM' },
   ];
 
   const pricingTiers = [
-    { service: 'MTN 10GB', retail: 'GH₵4,500', agent: 'GH₵4,050', margin: 'GH₵450' },
-    { service: 'Airtime GH₵1,000', retail: 'GH₵1,000', agent: 'GH₵950', margin: 'GH₵50' },
-    { service: 'Glo 5GB', retail: 'GH₵2,500', agent: 'GH₵2,200', margin: 'GH₵300' },
-    { service: 'Dstv Compact', retail: 'GH₵7,900', agent: 'GH₵7,200', margin: 'GH₵700' },
+    { service: 'MTN 10GB', retail: 'GH₵43.00', agent: 'GH₵39.50', margin: 'GH₵3.50' },
+    { service: 'MTN 5GB', retail: 'GH₵23.00', agent: 'GH₵21.00', margin: 'GH₵2.00' },
+    { service: 'Telecel 10GB', retail: 'GH₵38.50', agent: 'GH₵35.00', margin: 'GH₵3.50' },
+    { service: 'Airtime GH₵100', retail: 'GH₵100.00', agent: 'GH₵97.00', margin: 'GH₵3.00' },
+    { service: 'Dstv Compact', retail: 'GH₵220.00', agent: 'GH₵215.00', margin: 'GH₵5.00' },
   ];
 
   const commissionHistory = [
-    { date: 'May 20, 2024', orderId: '1234567890', customer: '0803 123 4567', service: 'MTN 10GB', commission: 'GH₵450.00' },
-    { date: 'May 20, 2024', orderId: '1234567889', customer: '0701 234 5678', service: 'Airtime GH₵1,000', commission: 'GH₵50.00' },
-    { date: 'May 19, 2024', orderId: '1234567888', customer: '0806 345 6789', service: 'Glo 5GB', commission: 'GH₵300.00' },
-    { date: 'May 19, 2024', orderId: '1234567887', customer: '0908 765 4321', service: 'Dstv Compact', commission: 'GH₵700.00' },
-    { date: 'May 18, 2024', orderId: '1234567886', customer: '0812 345 6789', service: 'Airtime GH₵500', commission: 'GH₵25.00' },
+    { date: 'Oct 07, 2026', orderId: '1234567890', customer: '0244 123 456', service: 'MTN 10GB', commission: 'GH₵3.50' },
+    { date: 'Oct 07, 2026', orderId: '1234567889', customer: '0502 515 547', service: 'Airtime GH₵50.00', commission: 'GH₵1.50' },
+    { date: 'Oct 06, 2026', orderId: '1234567888', customer: '0558 345 678', service: 'Telecel 5GB', commission: 'GH₵2.00' },
+    { date: 'Oct 06, 2026', orderId: '1234567887', customer: '0201 765 432', service: 'Dstv Compact', commission: 'GH₵5.00' },
+    { date: 'Oct 05, 2026', orderId: '1234567886', customer: '0277 345 678', service: 'MTN 5GB', commission: 'GH₵2.00' },
   ];
 
   const referrals = [
-    { name: 'John Okafor', phone: '0803 123 4567', type: 'Sub-agent', orders: 56, status: 'active', joined: 'May 10, 2024' },
-    { name: 'Alice Johnson', phone: '0701 234 5678', type: 'Customer', orders: 23, status: 'active', joined: 'May 12, 2024' },
-    { name: 'David Amadi', phone: '0806 345 6789', type: 'Sub-agent', orders: 41, status: 'active', joined: 'May 15, 2024' },
-    { name: 'Sarah Ibrahim', phone: '0908 765 4321', type: 'Customer', orders: 12, status: 'new', joined: 'May 19, 2024' },
-    { name: 'Mike Okechukwu', phone: '0812 345 6789', type: 'Customer', orders: 8, status: 'new', joined: 'May 20, 2024' },
+    { name: 'Kofi Mensah', phone: '0244 123 456', type: 'Sub-agent', orders: 56, status: 'active', joined: 'Oct 01, 2026' },
+    { name: 'Ama Osei', phone: '0502 515 547', type: 'Customer', orders: 23, status: 'active', joined: 'Oct 02, 2026' },
+    { name: 'Kwabena Appiah', phone: '0558 345 678', type: 'Sub-agent', orders: 41, status: 'active', joined: 'Oct 03, 2026' },
+    { name: 'Akua Boateng', phone: '0201 765 432', type: 'Customer', orders: 12, status: 'new', joined: 'Oct 05, 2026' },
+    { name: 'Yaw Frimpong', phone: '0277 345 678', type: 'Customer', orders: 8, status: 'new', joined: 'Oct 06, 2026' },
   ];
 
   const chartData = [
-    { label: 'May 14', value: '150px', amount: 'GH₵150K' },
-    { label: 'May 15', value: '190px', amount: 'GH₵200K' },
-    { label: 'May 16', value: '240px', amount: 'GH₵270K' },
-    { label: 'May 17', value: '140px', amount: 'GH₵135K' },
-    { label: 'May 18', value: '180px', amount: 'GH₵180K' },
-    { label: 'May 19', value: '175px', amount: 'GH₵175K' },
-    { label: 'May 20', value: '130px', amount: 'GH₵120K' },
+    { label: 'Oct 01', value: '150px', amount: 'GH₵1,500' },
+    { label: 'Oct 02', value: '190px', amount: 'GH₵2,100' },
+    { label: 'Oct 03', value: '240px', amount: 'GH₵2,850' },
+    { label: 'Oct 04', value: '140px', amount: 'GH₵1,400' },
+    { label: 'Oct 05', value: '180px', amount: 'GH₵1,950' },
+    { label: 'Oct 06', value: '175px', amount: 'GH₵1,800' },
+    { label: 'Oct 07', value: '130px', amount: 'GH₵1,350' },
   ];
 
   return (

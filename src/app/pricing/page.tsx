@@ -10,12 +10,25 @@ export default function Pricing() {
   const [monthlySpend, setMonthlySpend] = useState<number>(2000);
 
   const fallbackServices = [
-    { network: 'MTN', name: 'MTN CG Data 5GB', retail: 20.00, agent: 18.50, api: 18.00 },
-    { network: 'MTN', name: 'MTN CG Data 10GB', retail: 40.00, agent: 37.00, api: 36.00 },
-    { network: 'Telecel', name: 'Telecel Data 5GB', retail: 18.00, agent: 17.00, api: 16.50 },
-    { network: 'Telecel', name: 'Telecel Data 10GB', retail: 35.00, agent: 33.00, api: 32.00 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 5GB', retail: 15.00, agent: 14.00, api: 13.50 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 10GB', retail: 28.00, agent: 26.00, api: 25.00 },
+    // MTN Data
+    { network: 'MTN', name: 'MTN Data 1GB (Non-Expiry)', retail: 4.20, agent: 3.80, api: 3.60 },
+    { network: 'MTN', name: 'MTN Data 2GB (Non-Expiry)', retail: 9.00, agent: 8.20, api: 7.90 },
+    { network: 'MTN', name: 'MTN Data 3GB (Non-Expiry)', retail: 13.50, agent: 12.30, api: 11.90 },
+    { network: 'MTN', name: 'MTN Data 5GB (Non-Expiry)', retail: 23.00, agent: 21.00, api: 20.20 },
+    { network: 'MTN', name: 'MTN Data 10GB (Non-Expiry)', retail: 43.00, agent: 39.50, api: 38.00 },
+    { network: 'MTN', name: 'MTN Data 20GB (Non-Expiry)', retail: 82.00, agent: 76.00, api: 73.50 },
+    // Telecel Data
+    { network: 'Telecel', name: 'Telecel Data 1GB', retail: 4.00, agent: 3.60, api: 3.50 },
+    { network: 'Telecel', name: 'Telecel Data 2GB', retail: 8.50, agent: 7.70, api: 7.40 },
+    { network: 'Telecel', name: 'Telecel Data 5GB', retail: 20.00, agent: 18.00, api: 17.50 },
+    { network: 'Telecel', name: 'Telecel Data 10GB', retail: 38.50, agent: 35.00, api: 34.00 },
+    { network: 'Telecel', name: 'Telecel Data 20GB', retail: 74.00, agent: 68.00, api: 66.00 },
+    // AirtelTigo Data
+    { network: 'AirtelTigo', name: 'AirtelTigo Data 1GB', retail: 4.00, agent: 3.50, api: 3.40 },
+    { network: 'AirtelTigo', name: 'AirtelTigo Data 2GB', retail: 8.50, agent: 7.50, api: 7.20 },
+    { network: 'AirtelTigo', name: 'AirtelTigo Data 5GB', retail: 19.00, agent: 17.00, api: 16.50 },
+    { network: 'AirtelTigo', name: 'AirtelTigo Data 10GB', retail: 36.00, agent: 32.50, api: 31.50 },
+    { network: 'AirtelTigo', name: 'AirtelTigo Data 20GB', retail: 70.00, agent: 64.00, api: 62.00 },
   ];
 
   const filteredServices = selectedNetwork === 'All'

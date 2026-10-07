@@ -4,7 +4,7 @@ import { paystackService } from '@/lib/paystack';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, amount, walletId, userId, callbackUrl, phone, service, planId, network } = body;
+    const { email, amount, walletId, userId, callbackUrl, phone, service, planId, network, referral_code, referralCode } = body;
 
     const numAmount = Number(amount);
     if (!numAmount || isNaN(numAmount) || numAmount <= 0) {
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const assignedRefCode = referral_code || referralCode || null;
     const reference = walletId 
       ? `WAL_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`
       : `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       email,
       amount: numAmount,
       reference,
-      callbackUrl: callbackUrl || `${request.headers.get('origin') || 'http://localhost:3000'}/wallet/fund?ref=${reference}`,
+      callbackUrl: callbackUrl || `${request.headers.get('origin') || 'https://quicknetdata.com'}/buy?reference=${reference}`,
       metadata: {
         userId: userId || null,
         walletId: walletId || null,
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
         planId: planId || null,
         network: network || null,
         phone: phone || null,
+        referral_code: assignedRefCode,
       },
     });
 
