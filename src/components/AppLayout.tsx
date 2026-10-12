@@ -42,10 +42,12 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
   // Agent navigation
   const agentLinks = [
     { href: '/agent/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/agent/bulk', label: 'Bulk purchase', icon: Globe },
-    { href: '/agent/sales', label: 'Sales reports', icon: FileText },
+    { href: '/buy/data', label: 'Buy Data & Airtime', icon: Globe },
+    { href: '/agent/bulk', label: 'Bulk purchase', icon: Database },
+    { href: '/buy/bills', label: 'Pay Bills & TV', icon: FileText },
+    { href: '/agent/sales', label: 'Sales reports', icon: History },
     { href: '/agent/commissions', label: 'Commission & earnings', icon: TrendingUp },
-    { href: '/agent/referrals', label: 'My referrals', icon: Users },
+    { href: '/agent/referrals', label: 'Store Link & Referrals', icon: Users },
     { href: '/agent/wallet', label: 'Agent wallet', icon: Wallet },
     { href: '/support', label: 'Support', icon: LifeBuoy },
     { href: '/profile', label: 'Profile', icon: User },

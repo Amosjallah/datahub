@@ -45,7 +45,7 @@ const initialPackages: Package[] = [
 ];
 
 export default function Buy() {
-  const [activeService, setActiveService] = useState<'data' | 'airtime' | 'bills' | 'tv'>('data');
+  const [activeService, setActiveService] = useState<'data' | 'airtime' | 'bills' | 'tv' | 'bulk'>('data');
   const [activeNetwork, setActiveNetwork] = useState<'YELLO' | 'TELECEL' | 'AT_PREMIUM'>('YELLO');
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentRef, setAgentRef] = useState<string | null>(null);
@@ -63,6 +63,11 @@ export default function Buy() {
   const [billProvider, setBillProvider] = useState('ECG Prepaid');
   const [tvProvider, setTvProvider] = useState('DSTV');
   const [tvPlan, setTvPlan] = useState('DSTV Compact (GH₵ 220)');
+
+  // Bulk Purchase Fields for customer/corporate ordering
+  const [bulkNumbersInput, setBulkNumbersInput] = useState('');
+  const [bulkPackage, setBulkPackage] = useState<Package | null>(null);
+  const [bulkNetwork, setBulkNetwork] = useState<'YELLO' | 'TELECEL' | 'AT_PREMIUM'>('YELLO');
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -310,7 +315,51 @@ export default function Buy() {
     });
   };
 
+  // 5. BULK PURCHASE SUBMISSION (For customers / business clients ordering for multiple numbers)
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkPackage) {
+      alert('Please select a data bundle package for your bulk order.');
+      return;
+    }
+
+    const payer = payerPhone.trim();
+    if (!payer) {
+      alert('Please enter your Mobile Money payment phone number.');
+      return;
+    }
+
+    // Parse recipient phone numbers from textarea
+    const rawNumbers = bulkNumbersInput
+      .split(/[\n,;]+/)
+      .map(n => n.trim().replace(/\D/g, ''))
+      .filter(n => n.length >= 9);
+
+    if (rawNumbers.length === 0) {
+      alert('Please enter at least one valid Ghanaian phone number (e.g. 0244123456).');
+      return;
+    }
+
+    const totalCost = rawNumbers.length * bulkPackage.price;
+    const net = bulkPackage.network === 'YELLO' ? 'MTN' : bulkPackage.network === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
+
+    await processPayment({
+      payAmount: totalCost,
+      deductFromPhone: payer,
+      deliverToPhone: rawNumbers[0], // primary recipient, full list recorded in description
+      buyFor: 'others',
+      description: `Bulk purchase of ${bulkPackage.capacity} for ${rawNumbers.length} recipients. Total GH₵ ${totalCost.toFixed(2)}. Deducted from ${payer}.`,
+      broadcastInfo: {
+        name: customerName || 'Corporate Client',
+        network: net,
+        bundle: `Bulk ${rawNumbers.length}x ${bulkPackage.capacity}`,
+        amountStr: `GH₵ ${totalCost.toFixed(2)}`,
+      },
+    });
+  };
+
   const filteredPackages = initialPackages.filter(p => p.network === activeNetwork);
+  const filteredBulkPackages = initialPackages.filter(p => p.network === bulkNetwork);
 
   return (
     <PublicLayout>
@@ -358,12 +407,13 @@ export default function Buy() {
           </div>
 
           {/* Service Tabs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.35rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.35rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '2.5rem' }}>
             {[
               { id: 'data', label: 'Buy Data', icon: Database },
               { id: 'airtime', label: 'Buy Airtime', icon: PhoneCall },
               { id: 'bills', label: 'Electricity & Water', icon: Receipt },
-              { id: 'tv', label: 'TV Subscription', icon: Tv }
+              { id: 'tv', label: 'TV Subscription', icon: Tv },
+              { id: 'bulk', label: 'Bulk Purchase', icon: Users },
             ].map((srv) => {
               const isActive = activeService === srv.id;
               const Icon = srv.icon;
@@ -1006,6 +1056,131 @@ export default function Buy() {
                       style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
                       {loading ? <Loader2 size={18} className="animate-spin" /> : '📺 Deduct from MoMo & Renew TV'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* TAB 5: BULK PURCHASE (FOR MULTIPLE RECIPIENTS / GROUPS) */}
+              {activeService === 'bulk' && (
+                <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.35rem' }}>
+                      Bulk Purchase & Multi-Number Top-up
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>
+                      Distribute data bundles or airtime to multiple staff, family, or church members in one single payment transaction.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleBulkSubmit}>
+                    {/* Choose Network */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                        1. Select Network
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                        {[
+                          { id: 'YELLO', label: 'MTN', color: '#FACC15' },
+                          { id: 'TELECEL', label: 'Telecel', color: '#EF4444' },
+                          { id: 'AT_PREMIUM', label: 'AirtelTigo', color: '#3B82F6' },
+                        ].map((net) => (
+                          <button
+                            key={net.id}
+                            type="button"
+                            onClick={() => { setBulkNetwork(net.id as any); setBulkPackage(null); }}
+                            style={{
+                              padding: '0.65rem',
+                              borderRadius: '10px',
+                              border: bulkNetwork === net.id ? `2px solid ${net.color}` : '1px solid rgba(255,255,255,0.1)',
+                              backgroundColor: bulkNetwork === net.id ? 'rgba(255,255,255,0.08)' : '#030712',
+                              color: '#FFF',
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {net.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Choose Package */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                        2. Select Bundle Package per Number
+                      </label>
+                      <select
+                        value={bulkPackage?.id || ''}
+                        onChange={(e) => {
+                          const pkg = initialPackages.find(p => p.id === e.target.value);
+                          setBulkPackage(pkg || null);
+                        }}
+                        required
+                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
+                      >
+                        <option value="">-- Choose Data Package --</option>
+                        {filteredBulkPackages.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.displayName} — GH₵ {p.price.toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Numbers List */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                        3. Recipient Phone Numbers (One per line or comma-separated)
+                      </label>
+                      <textarea
+                        rows={4}
+                        required
+                        placeholder="0244123456&#10;0558345678&#10;0502515547"
+                        value={bulkNumbersInput}
+                        onChange={(e) => setBulkNumbersInput(e.target.value)}
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none', fontFamily: 'monospace' }}
+                      />
+                      <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
+                        Recipient count: <strong style={{ color: '#FACC15' }}>
+                          {bulkNumbersInput.split(/[\n,;]+/).map(n => n.trim().replace(/\D/g, '')).filter(n => n.length >= 9).length}
+                        </strong> numbers detected
+                      </div>
+                    </div>
+
+                    {/* Payer Phone */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                        4. Your Mobile Money Number (To Deduct Payment)
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 0244123456"
+                        value={payerPhone}
+                        onChange={(e) => setPayerPhone(e.target.value)}
+                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                      />
+                    </div>
+
+                    {/* Total cost summary */}
+                    {bulkPackage && (
+                      <div style={{ padding: '0.85rem 1rem', background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.2)', borderRadius: '10px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>Total Order Amount:</span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FACC15', fontFamily: 'monospace' }}>
+                          GH₵ {(bulkNumbersInput.split(/[\n,;]+/).map(n => n.trim().replace(/\D/g, '')).filter(n => n.length >= 9).length * bulkPackage.price).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="btn btn-primary"
+                      style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      {loading ? <Loader2 size={18} className="animate-spin" /> : '📦 Pay via MoMo & Dispatch Bulk Order'}
                     </button>
                   </form>
                 </div>
