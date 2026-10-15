@@ -5,6 +5,7 @@ export interface RechargeRequest {
   serviceType: 'data' | 'airtime' | 'bill';
   reference: string;
   planId?: number | string;
+  capacity?: string | number;
 }
 
 export interface RechargeResponse {

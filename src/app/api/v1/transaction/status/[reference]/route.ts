@@ -25,26 +25,32 @@ export async function GET(
 
   try {
     let result = await datamart.queryStatus(reference);
-    if (!result.success) {
+    if (!result.success && result.status !== 'processing') {
       result = await reseller.queryStatus(reference);
     }
+
+    const finalStatus = result.status === 'success' 
+      ? 'SUCCESS' 
+      : (result.status === 'failed' ? 'FAILED' : 'PENDING');
 
     return NextResponse.json({
       status: 'success',
       data: {
         reference,
-        status: result.status || 'delivered',
+        status: finalStatus,
         provider_reference: result.providerReference || reference,
-        success: result.success !== false,
+        success: result.status === 'success',
+        errorMessage: result.errorMessage || null,
       },
     });
   } catch (err: any) {
+    console.error(`[Status Query Error] Reference=${reference}:`, err.message);
     return NextResponse.json({
       status: 'success',
       data: {
         reference,
-        status: 'delivered',
-        message: 'Order status query returned active status',
+        status: 'PENDING',
+        message: 'Order status query in progress. Transaction status is pending.',
       },
     });
   }

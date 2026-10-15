@@ -4,10 +4,11 @@ export interface DatamartGHPlan {
   id: string | number;
   name: string;
   network: string;
-  volume?: string;
+  volume: string;
+  capacity: string;
   price: number;
-  type: 'data' | 'airtime';
-  validity?: string;
+  type: 'data';
+  inStock: boolean;
 }
 
 export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
@@ -16,21 +17,23 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
 
   /** In-memory plan cache */
   private cachedPlans: DatamartGHPlan[] | null = null;
+  private lastPlansFetch = 0;
 
   constructor(apiKey?: string, baseUrl?: string) {
     this.apiKey = apiKey || process.env.DATAMARTGH_API_KEY || '';
-    this.baseUrl = baseUrl || process.env.DATAMARTGH_BASE_URL || 'https://szhjqivcywijzdusueob.supabase.co/functions/v1';
+    this.baseUrl = (baseUrl || process.env.DATAMARTGH_BASE_URL || 'https://api.datamartgh.shop/api/developer').replace(/\/+$/, '');
   }
 
-  private get headers() {
+  private get headers(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'x-api-key': this.apiKey,
+      'Accept': 'application/json',
+      'X-API-Key': this.apiKey,
     };
   }
 
   private isMockMode(): boolean {
-    return !this.apiKey || this.apiKey.includes('placeholder');
+    return !this.apiKey || this.apiKey.includes('placeholder') || this.apiKey.startsWith('test_');
   }
 
   /**
@@ -41,182 +44,241 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
     if (cleaned.startsWith('233') && cleaned.length === 12) {
       cleaned = '0' + cleaned.substring(3);
     }
+    if (cleaned.length === 9 && !cleaned.startsWith('0')) {
+      cleaned = '0' + cleaned;
+    }
     return cleaned;
   }
 
   /**
-   * Map internal network names to DatamartGH network identifiers
+   * Mask phone number for safe server-side logging (e.g. 024****456)
    */
-  private mapNetwork(network: string): string {
-    const map: Record<string, string> = {
-      MTN: 'MTN',
-      Telecel: 'TELECEL',
-      TELECEL: 'TELECEL',
-      AirtelTigo: 'AIRTELTIGO',
-      AIRTELTIGO: 'AIRTELTIGO',
-    };
-    return map[network] || network.toUpperCase();
+  private maskPhone(phone: string): string {
+    if (phone.length <= 5) return '***';
+    return `${phone.substring(0, 3)}****${phone.substring(phone.length - 3)}`;
   }
 
   /**
-   * Fetch available data bundles from DatamartGH API.
-   * Endpoint: GET /api-bundles
+   * Map internal network names to DataMart network identifiers:
+   * MTN -> YELLO
+   * Telecel -> TELECEL
+   * AirtelTigo -> at
+   */
+  private mapNetwork(network: string): string {
+    const norm = (network || '').toUpperCase().trim();
+    if (norm.includes('MTN') || norm.includes('YELLO')) return 'YELLO';
+    if (norm.includes('TELECEL') || norm.includes('VODA')) return 'TELECEL';
+    if (norm.includes('AIRTEL') || norm.includes('TIGO') || norm === 'AT') return 'at';
+    return norm;
+  }
+
+  /**
+   * Map DataMart network code back to user-friendly name
+   */
+  private mapNetworkToFriendly(code: string): string {
+    const upper = (code || '').toUpperCase();
+    if (upper === 'YELLO' || upper.includes('MTN')) return 'MTN';
+    if (upper === 'TELECEL') return 'Telecel';
+    if (upper === 'AT' || upper.includes('AIRTEL')) return 'AirtelTigo';
+    return code;
+  }
+
+  /**
+   * Fetch live data packages from DataMart API.
+   * Endpoint: GET /data-packages
    */
   async getPlans(): Promise<DatamartGHPlan[]> {
     if (this.isMockMode()) {
       return [
-        { id: 'DMG_MTN_1GB', name: '1GB MTN (30 days)', network: 'MTN', volume: '1GB', price: 7.00, type: 'data', validity: '30 days' },
-        { id: 'DMG_MTN_2GB', name: '2GB MTN (30 days)', network: 'MTN', volume: '2GB', price: 13.00, type: 'data', validity: '30 days' },
-        { id: 'DMG_MTN_5GB', name: '5GB MTN (30 days)', network: 'MTN', volume: '5GB', price: 30.00, type: 'data', validity: '30 days' },
-        { id: 'DMG_TELECEL_1GB', name: '1GB Telecel (30 days)', network: 'Telecel', volume: '1GB', price: 6.00, type: 'data', validity: '30 days' },
-        { id: 'DMG_TELECEL_2GB', name: '2GB Telecel (30 days)', network: 'Telecel', volume: '2GB', price: 11.00, type: 'data', validity: '30 days' },
-        { id: 'DMG_AT_1GB', name: '1GB AirtelTigo (30 days)', network: 'AirtelTigo', volume: '1GB', price: 5.80, type: 'data', validity: '30 days' },
+        { id: 'DMG_MTN_1GB', name: '1GB MTN', network: 'MTN', volume: '1GB', capacity: '1', price: 4.20, type: 'data', inStock: true },
+        { id: 'DMG_MTN_2GB', name: '2GB MTN', network: 'MTN', volume: '2GB', capacity: '2', price: 9.00, type: 'data', inStock: true },
+        { id: 'DMG_MTN_5GB', name: '5GB MTN', network: 'MTN', volume: '5GB', capacity: '5', price: 23.00, type: 'data', inStock: true },
+        { id: 'DMG_TEL_5GB', name: '5GB Telecel', network: 'Telecel', volume: '5GB', capacity: '5', price: 20.00, type: 'data', inStock: true },
+        { id: 'DMG_AT_1GB', name: '1GB AirtelTigo', network: 'AirtelTigo', volume: '1GB', capacity: '1', price: 4.00, type: 'data', inStock: true },
       ];
     }
 
-    if (this.cachedPlans && this.cachedPlans.length > 0) {
+    // Cache plans for 60 seconds
+    const now = Date.now();
+    if (this.cachedPlans && this.cachedPlans.length > 0 && now - this.lastPlansFetch < 60000) {
       return this.cachedPlans;
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/api-bundles`, {
+      const response = await fetch(`${this.baseUrl}/data-packages`, {
         method: 'GET',
         headers: this.headers,
       });
 
       if (response.ok) {
-        const raw = await response.json();
-        // Normalize: API may return array or keyed object
-        const items: any[] = Array.isArray(raw) ? raw : Object.values(raw);
+        const body = await response.json();
+        const catalog = body?.data || {};
+        const plans: DatamartGHPlan[] = [];
 
-        const plans: DatamartGHPlan[] = items.map((item: any) => ({
-          id: item.id || item.bundle_id || item.plan_id,
-          name: item.name || item.bundle_name || `${item.volume || ''} ${item.network || ''}`.trim(),
-          network: item.network || item.provider || '',
-          volume: item.volume || item.data_volume || item.size,
-          price: parseFloat(item.price || item.amount || '0'),
-          type: 'data',
-          validity: item.validity || item.duration,
-        }));
+        for (const [netCode, items] of Object.entries(catalog)) {
+          if (!Array.isArray(items)) continue;
+          const friendlyNet = this.mapNetworkToFriendly(netCode);
 
-        this.cachedPlans = plans;
-        return plans;
+          for (const item of items) {
+            const cap = String(item.capacity || item.cap || '').trim();
+            const price = parseFloat(item.price || item.cost || '0');
+            if (!cap || isNaN(price) || price <= 0) continue;
+
+            plans.push({
+              id: `DMG_${netCode.toUpperCase()}_${cap}GB`,
+              name: `${cap}GB ${friendlyNet}`,
+              network: friendlyNet,
+              volume: `${cap}GB`,
+              capacity: cap,
+              price,
+              type: 'data',
+              inStock: item.inStock !== false,
+            });
+          }
+        }
+
+        if (plans.length > 0) {
+          this.cachedPlans = plans;
+          this.lastPlansFetch = now;
+          return plans;
+        }
+      } else {
+        console.warn(`[DatamartGH] getPlans returned HTTP ${response.status}`);
       }
-
-      console.error('[DatamartGH] getPlans failed, status:', response.status);
-    } catch (err) {
-      console.error('[DatamartGH] getPlans error:', err);
+    } catch (err: any) {
+      console.error('[DatamartGH] getPlans network failure:', err.message);
     }
 
     return this.cachedPlans || [];
   }
 
   /**
-   * Find the best matching plan ID for a given network + amount.
+   * Resolve capacity string (e.g. '1', '2', '5') from planId, capacity, or amount
    */
-  private async resolvePlanId(network: string, amount: number): Promise<string | number | null> {
-    const plans = await this.getPlans();
-    const networkUpper = network.toUpperCase().replace('AIRTELTIGO', 'AIRTELTIGO');
+  async resolveCapacity(network: string, amount: number, planId?: string | number, directCapacity?: string | number): Promise<string | null> {
+    if (directCapacity) {
+      const cleaned = String(directCapacity).replace(/[^0-9.]/g, '').trim();
+      if (cleaned) return cleaned;
+    }
 
-    const networkPlans = plans
-      .filter((p) => p.network.toUpperCase().replace('AIRTELTIGO', 'AIRTELTIGO') === networkUpper)
+    if (planId) {
+      const planStr = String(planId);
+      // If planId has pattern like DMG_YELLO_5GB or MTN_5GB
+      const match = planStr.match(/(\d+(?:\.\d+)?)\s*(?:GB|mb)?/i);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    // Match best package from live catalog by price
+    const plans = await this.getPlans();
+    const friendlyNet = this.mapNetworkToFriendly(this.mapNetwork(network));
+    const netPlans = plans
+      .filter((p) => p.network.toUpperCase() === friendlyNet.toUpperCase() && p.inStock)
       .sort((a, b) => a.price - b.price);
 
-    if (networkPlans.length === 0) {
-      console.warn(`[DatamartGH] No plans found for network: ${network}`);
+    if (netPlans.length === 0) {
       return null;
     }
 
-    // Best plan whose price <= requested amount, else cheapest
-    let best = networkPlans[0];
-    for (const plan of networkPlans) {
-      if (plan.price <= amount) {
-        best = plan;
+    let matched = netPlans[0];
+    for (const p of netPlans) {
+      if (p.price <= amount) {
+        matched = p;
       }
     }
 
-    return best.id;
+    return matched.capacity;
   }
 
   /**
-   * Execute a VTU data/airtime recharge via DatamartGH API.
-   * Endpoint: POST /api-purchase
+   * Execute a VTU recharge via DataMart Ghana Developer API.
+   * Endpoint: POST /purchase
    */
   async recharge(request: RechargeRequest): Promise<RechargeResponse> {
     const formattedPhone = this.formatPhoneNumber(request.recipient);
-    const networkMapped = this.mapNetwork(request.network);
+    const maskedPhone = this.maskPhone(formattedPhone);
 
     if (this.isMockMode()) {
-      console.log(`[DatamartGH Mock] ${request.network} ${request.serviceType} for ${formattedPhone}`);
-      await new Promise((r) => setTimeout(r, 500));
-
-      if (formattedPhone.startsWith('0244000')) {
-        return { success: false, errorMessage: 'DatamartGH: Recipient rejected by upstream', status: 'failed' };
-      }
-
+      console.log(`[DatamartGH Mock] Dispatching ${request.network} ${request.serviceType} for ${maskedPhone}`);
+      await new Promise((r) => setTimeout(r, 400));
       return {
         success: true,
-        providerReference: `DMG_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        providerReference: `DMG_MOCK_${Date.now()}`,
         status: 'success',
       };
     }
 
+    if (request.serviceType === 'airtime') {
+      return {
+        success: false,
+        errorMessage: 'Direct airtime top-up is not supported by DataMart provider. Please choose a data bundle.',
+        status: 'failed',
+      };
+    }
+
+    const networkMapped = this.mapNetwork(request.network);
+    const capacity = await this.resolveCapacity(request.network, request.amount, request.planId, request.capacity);
+
+    if (!capacity) {
+      return {
+        success: false,
+        errorMessage: `Could not resolve a valid data capacity for ${request.network} at GH₵${request.amount}`,
+        status: 'failed',
+      };
+    }
+
+    const payload = {
+      phoneNumber: formattedPhone,
+      network: networkMapped,
+      capacity: String(capacity),
+      gateway: 'wallet',
+      ref: request.reference,
+    };
+
+    console.log(`[DatamartGH] Outgoing recharge ref=${request.reference} network=${networkMapped} cap=${capacity} recipient=${maskedPhone}`);
+
     try {
-      let body: Record<string, any>;
-
-      if (request.serviceType === 'airtime') {
-        body = {
-          network: networkMapped,
-          phone: formattedPhone,
-          amount: request.amount,
-          request_id: request.reference,
-          type: 'airtime',
-        };
-      } else {
-        // Data bundle purchase
-        const planId = request.planId || await this.resolvePlanId(request.network, request.amount);
-
-        if (!planId) {
-          return {
-            success: false,
-            errorMessage: `No data bundle available for ${request.network} at GH₵${request.amount}`,
-            status: 'failed',
-          };
-        }
-
-        body = {
-          network: networkMapped,
-          phone: formattedPhone,
-          bundle_id: planId,
-          request_id: request.reference,
-          type: 'data',
-        };
-      }
-
-      const response = await fetch(`${this.baseUrl}/api-purchase`, {
+      const response = await fetch(`${this.baseUrl}/purchase`, {
         method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(body),
+        headers: {
+          ...this.headers,
+          'X-Idempotency-Key': request.reference,
+        },
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json().catch(() => null);
+      console.log(`[DatamartGH] Response HTTP ${response.status} ref=${request.reference} status=${data?.status || data?.data?.orderStatus}`);
 
       if (response.ok || response.status === 201 || response.status === 202) {
-        const ref = data?.reference || data?.order_id || data?.transaction_id || request.reference;
-        const status = data?.status === 'success' || data?.status === 'completed' ? 'success' : 'processing';
-        return { success: true, providerReference: ref, status };
+        const orderData = data?.data || data || {};
+        const orderRef = orderData.orderReference || orderData.reference || orderData.orderId || request.reference;
+        const rawStatus = (orderData.orderStatus || data?.status || '').toLowerCase();
+        
+        const isSuccess = rawStatus === 'completed' || rawStatus === 'success' || rawStatus === 'delivered';
+        const isProcessing = rawStatus === 'processing' || rawStatus === 'pending' || !rawStatus;
+
+        return {
+          success: true,
+          providerReference: orderRef,
+          status: isSuccess ? 'success' : isProcessing ? 'processing' : 'processing',
+        };
       }
+
+      const errMsg = data?.message || data?.error || `DataMart API error (HTTP ${response.status})`;
+      console.warn(`[DatamartGH Purchase Failed]: HTTP ${response.status} ref=${request.reference} message=${errMsg}`);
 
       return {
         success: false,
-        errorMessage: data?.message || data?.error || `DatamartGH API Error (HTTP ${response.status})`,
+        errorMessage: errMsg,
         status: 'failed',
       };
     } catch (error: any) {
-      console.error('[DatamartGH recharge error]:', error);
+      console.error('[DatamartGH recharge network exception]:', error.message);
       return {
         success: false,
-        errorMessage: error.message || 'Failed to connect to DatamartGH VTU gateway',
+        errorMessage: error.message || 'Failed to connect to DataMart VTU gateway',
         status: 'failed',
       };
     }
@@ -224,7 +286,7 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
 
   /**
    * Query status of an existing order.
-   * Endpoint: GET /api-orders?reference=...
+   * Endpoint: GET /order-status/:reference
    */
   async queryStatus(providerReference: string): Promise<RechargeResponse> {
     if (this.isMockMode()) {
@@ -233,54 +295,69 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/api-orders?reference=${encodeURIComponent(providerReference)}`,
+        `${this.baseUrl}/order-status/${encodeURIComponent(providerReference)}`,
         { method: 'GET', headers: this.headers }
       );
 
       const data = await response.json().catch(() => null);
 
       if (response.ok && data) {
-        const st = data.status || data.order?.status;
-        const isSuccess = st === 'success' || st === 'completed' || st === 'delivered';
-        const isFailed = st === 'failed' || st === 'cancelled';
+        const orderData = data?.data || data;
+        const rawStatus = (orderData.orderStatus || orderData.status || '').toLowerCase();
+
+        const isSuccess = rawStatus === 'completed' || rawStatus === 'success' || rawStatus === 'delivered';
+        const isFailed = rawStatus === 'failed' || rawStatus === 'cancelled' || rawStatus === 'rejected';
+
         return {
           success: isSuccess,
-          providerReference,
-          errorMessage: isFailed ? (data.message || 'Order failed') : undefined,
+          providerReference: orderData.orderReference || providerReference,
+          errorMessage: isFailed ? (data.message || 'Order failed upstream') : undefined,
           status: isSuccess ? 'success' : isFailed ? 'failed' : 'processing',
         };
       }
 
-      return { success: false, providerReference, errorMessage: 'Cannot query DatamartGH order status', status: 'processing' };
+      return {
+        success: false,
+        providerReference,
+        errorMessage: data?.message || 'Unable to query order status from DataMart',
+        status: 'processing',
+      };
     } catch (error: any) {
-      return { success: false, providerReference, errorMessage: error.message, status: 'processing' };
+      console.error('[DatamartGH status query exception]:', error.message);
+      return {
+        success: false,
+        providerReference,
+        errorMessage: error.message,
+        status: 'processing',
+      };
     }
   }
 
   /**
-   * Query upstream wallet balance.
-   * Endpoint: GET /api-wallet-balance
+   * Query upstream DataMart wallet balance.
+   * Endpoint: GET /balance
    */
   async getWalletBalance(): Promise<{ balance: number; currency: string }> {
     if (this.isMockMode()) {
-      return { balance: 10000.00, currency: 'GHS' };
+      return { balance: 5000.00, currency: 'GHS' };
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/api-wallet-balance`, {
+      const response = await fetch(`${this.baseUrl}/balance`, {
         method: 'GET',
         headers: this.headers,
       });
 
       if (response.ok) {
         const data = await response.json();
+        const balData = data?.data || data;
         return {
-          balance: parseFloat(data.balance || data.wallet_balance || data.amount || '0'),
-          currency: data.currency || 'GHS',
+          balance: parseFloat(balData.balance ?? '0'),
+          currency: balData.currency || 'GHS',
         };
       }
-    } catch (err) {
-      console.error('[DatamartGH] getWalletBalance error:', err);
+    } catch (err: any) {
+      console.error('[DatamartGH getWalletBalance error]:', err.message);
     }
 
     return { balance: 0, currency: 'GHS' };

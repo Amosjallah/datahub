@@ -12,6 +12,8 @@ interface CreateTransactionPayload {
   network: 'MTN' | 'Telecel' | 'AirtelTigo' | 'ECG' | 'GWCL' | string;
   serviceType: 'data' | 'airtime' | 'bill';
   planId?: number | string;
+  capacity?: string | number;
+  reference?: string;
 }
 
 export class VtuTransactionService {
@@ -27,7 +29,7 @@ export class VtuTransactionService {
    * Process a VTU recharge from start to finish.
    */
   async processTransaction(payload: CreateTransactionPayload) {
-    const reference = `VTU_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const reference = payload.reference || `VTU_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     let recordId = reference;
 
@@ -95,6 +97,7 @@ export class VtuTransactionService {
         serviceType: payload.serviceType,
         reference,
         planId: payload.planId,
+        capacity: payload.capacity,
       });
 
       if (response.success && (response.status === 'success' || response.status === 'processing')) {

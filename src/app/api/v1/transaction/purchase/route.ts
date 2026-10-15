@@ -97,6 +97,8 @@ export async function POST(request: Request) {
           network: finalNetwork as any,
           serviceType: 'data',
           reference,
+          planId: service?.id || service_id,
+          capacity: body.capacity,
         });
 
         if (dmRes.success || dmRes.status === 'processing') {
@@ -111,6 +113,8 @@ export async function POST(request: Request) {
             network: finalNetwork as any,
             serviceType: 'data',
             reference: `${reference}_RX`,
+            planId: service?.id || service_id,
+            capacity: body.capacity,
           });
 
           if (rxRes.success || rxRes.status === 'processing') {

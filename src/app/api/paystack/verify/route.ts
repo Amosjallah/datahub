@@ -55,10 +55,13 @@ export async function GET(request: Request) {
       // 2. If guest order, dispatch service to recipient
       let orderDispatched = false;
       let dispatchMessage = '';
+      let providerRef = reference;
 
       if (recipientPhone && (metadata.type === 'guest_order' || !targetWalletId)) {
         const serviceType = (metadata.service || 'data').toLowerCase();
         const network = metadata.network || 'MTN';
+        const planId = metadata.planId || metadata.plan_id;
+        const capacity = metadata.capacity;
 
         try {
           if (serviceType === 'data') {
@@ -68,25 +71,40 @@ export async function GET(request: Request) {
               network: network as any,
               serviceType: 'data',
               reference,
+              planId,
+              capacity,
             });
 
             if (dmRes.success || dmRes.status === 'processing') {
               orderDispatched = true;
-              dispatchMessage = `Data bundle dispatched to ${recipientPhone}`;
+              providerRef = dmRes.providerReference || reference;
+              dispatchMessage = dmRes.status === 'success' 
+                ? `Data bundle successfully delivered to ${recipientPhone}`
+                : `Data bundle order submitted to network for ${recipientPhone}`;
             } else {
+              // Try fallback provider
               const rxRes = await reseller.recharge({
                 recipient: recipientPhone,
                 amount: amountInGHS,
                 network: network as any,
                 serviceType: 'data',
                 reference: `${reference}_RX`,
+                planId,
+                capacity,
               });
-              orderDispatched = rxRes.success || rxRes.status === 'processing';
-              dispatchMessage = orderDispatched 
-                ? `Data bundle dispatched to ${recipientPhone}`
-                : `Order pending dispatch to ${recipientPhone}`;
+
+              if (rxRes.success || rxRes.status === 'processing') {
+                orderDispatched = true;
+                providerRef = rxRes.providerReference || reference;
+                dispatchMessage = `Data bundle order submitted via secondary gateway for ${recipientPhone}`;
+              } else {
+                orderDispatched = false;
+                dispatchMessage = dmRes.errorMessage || rxRes.errorMessage || 'Data delivery pending network availability';
+                console.warn(`[Paystack Verify Dispatch Failed] Ref=${reference} Reason=${dispatchMessage}`);
+              }
             }
           } else if (serviceType === 'airtime') {
+            // For airtime, attempt Datamart then report status accurately
             const airRes = await datamart.recharge({
               recipient: recipientPhone,
               amount: amountInGHS,
@@ -94,8 +112,15 @@ export async function GET(request: Request) {
               serviceType: 'airtime',
               reference,
             });
-            orderDispatched = airRes.success || airRes.status === 'processing';
-            dispatchMessage = `Airtime recharge credited to ${recipientPhone}`;
+
+            if (airRes.success || airRes.status === 'processing') {
+              orderDispatched = true;
+              providerRef = airRes.providerReference || reference;
+              dispatchMessage = `Airtime recharge credited to ${recipientPhone}`;
+            } else {
+              orderDispatched = false;
+              dispatchMessage = airRes.errorMessage || 'Airtime dispatch pending network processing';
+            }
           } else if (serviceType === 'bills' || serviceType === 'bill' || serviceType === 'tv') {
             const hRes = await hubtel.sendMoney({
               amount: amountInGHS,
@@ -106,11 +131,15 @@ export async function GET(request: Request) {
               callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com'}/api/hubtel/webhook`,
             });
             orderDispatched = hRes.success;
-            dispatchMessage = `Bill payment processed for account/meter ${recipientPhone}`;
+            providerRef = hRes.transactionId || reference;
+            dispatchMessage = hRes.success 
+              ? `Bill payment processed for account ${recipientPhone}`
+              : (hRes.errorMessage || 'Bill payment pending processing');
           }
-        } catch (dispatchErr) {
-          console.warn('[Order Dispatch Notice]:', dispatchErr);
-          dispatchMessage = `Order placed for ${recipientPhone}`;
+        } catch (dispatchErr: any) {
+          console.warn('[Order Dispatch Notice]:', dispatchErr.message);
+          orderDispatched = false;
+          dispatchMessage = `Order placed. Service fulfillment in progress for ${recipientPhone}`;
         }
       }
 
@@ -159,18 +188,25 @@ export async function GET(request: Request) {
         }
       }
 
-      const summary = payerPhone && payerPhone !== recipientPhone
-        ? `Payment of GH₵${amountInGHS.toFixed(2)} deducted from ${payerPhone}. Service delivered to ${recipientPhone}!`
-        : `Payment of GH₵${amountInGHS.toFixed(2)} deducted from ${payerPhone} and delivered!`;
+      let summary: string;
+      if (targetWalletId) {
+        summary = `Payment of GH₵${amountInGHS.toFixed(2)} confirmed. Your wallet has been credited!`;
+      } else if (orderDispatched) {
+        summary = `Payment confirmed. ${dispatchMessage}!`;
+      } else {
+        summary = `Payment of GH₵${amountInGHS.toFixed(2)} received. Delivery status: ${dispatchMessage}. Ref: ${reference}.`;
+      }
 
       return NextResponse.json({
         success: true,
         message: summary,
         amount: amountInGHS,
         reference,
+        providerReference: providerRef,
         payerPhone,
         recipientPhone,
         orderDispatched,
+        status: targetWalletId ? 'success' : (orderDispatched ? 'delivered' : 'pending'),
       });
     }
 

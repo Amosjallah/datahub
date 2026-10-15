@@ -7,10 +7,11 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 interface Plan {
-  id: number;
+  id: string | number;
   name: string;
   network: string;
   volume?: string;
+  capacity?: string;
   price: number;
   type?: string;
 }
@@ -18,10 +19,10 @@ interface Plan {
 export default function BuyData() {
   const [network, setNetwork] = useState<'MTN' | 'Telecel' | 'AirtelTigo' | ''>('');
   const [phone, setPhone] = useState('');
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingPlans, setFetchingPlans] = useState(true);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // User & Wallet state
   const [userId, setUserId] = useState<string | null>(null);
@@ -46,9 +47,10 @@ export default function BuyData() {
         .then((data) => {
           setLoading(false);
           if (data.success) {
+            const isDelivered = data.orderDispatched || data.status === 'delivered';
             setMessage({
-              type: 'success',
-              text: `Payment of GH₵${Number(data.amount).toFixed(2)} verified (Ref: ${ref})! Your data bundle order is being dispatched to your number.`,
+              type: isDelivered ? 'success' : 'info',
+              text: data.message || `Payment verified (Ref: ${ref})! Your data bundle order has been placed.`,
             });
           } else {
             setMessage({
@@ -60,8 +62,8 @@ export default function BuyData() {
         .catch(() => {
           setLoading(false);
           setMessage({
-            type: 'success',
-            text: `Payment confirmed (Ref: ${ref})! Your data bundle order has been placed.`,
+            type: 'info',
+            text: `Payment received (Ref: ${ref}). Order fulfillment status is being confirmed with the carrier.`,
           });
         });
     }
@@ -123,12 +125,12 @@ export default function BuyData() {
           setApiPlans(data.plans);
         } else {
           setApiPlans([
-            { id: 17, name: '1GB AirtelTigo', network: 'airteltigo', price: 5.80 },
-            { id: 18, name: '2GB AirtelTigo', network: 'airteltigo', price: 9.60 },
-            { id: 19, name: '3GB AirtelTigo', network: 'airteltigo', price: 13.50 },
-            { id: 28, name: '10GB Telecel', network: 'telecel', price: 39.00 },
-            { id: 29, name: '15GB Telecel', network: 'telecel', price: 55.00 },
-            { id: 30, name: '20GB Telecel', network: 'telecel', price: 74.00 },
+            { id: 'DMG_MTN_1GB', name: '1GB MTN', network: 'MTN', price: 4.20, capacity: '1' },
+            { id: 'DMG_MTN_2GB', name: '2GB MTN', network: 'MTN', price: 9.00, capacity: '2' },
+            { id: 'DMG_MTN_5GB', name: '5GB MTN', network: 'MTN', price: 23.00, capacity: '5' },
+            { id: 'DMG_TEL_5GB', name: '5GB Telecel', network: 'Telecel', price: 19.50, capacity: '5' },
+            { id: 'DMG_AT_1GB', name: '1GB AirtelTigo', network: 'AirtelTigo', price: 3.80, capacity: '1' },
+            { id: 'DMG_AT_2GB', name: '2GB AirtelTigo', network: 'AirtelTigo', price: 7.60, capacity: '2' },
           ]);
         }
       } catch (err) {
@@ -158,6 +160,8 @@ export default function BuyData() {
     if (!phone) return alert('Please enter phone number.');
     if (!selectedPlan) return alert('Please choose a data package.');
 
+    const resolvedCapacity = selectedPlan.capacity || String(selectedPlan.name).match(/(\d+(?:\.\d+)?)\s*GB/i)?.[1] || '';
+
     setLoading(true);
     setMessage(null);
 
@@ -176,6 +180,7 @@ export default function BuyData() {
             network,
             serviceType: 'data',
             planId: selectedPlan.id,
+            capacity: resolvedCapacity,
           }),
         });
 
@@ -221,6 +226,7 @@ export default function BuyData() {
           service: 'data',
           network,
           planId: selectedPlan.id,
+          capacity: resolvedCapacity,
           callbackUrl: `${window.location.origin}/buy/data?network=${encodeURIComponent(network)}&phone=${encodeURIComponent(phone)}`,
         }),
       });

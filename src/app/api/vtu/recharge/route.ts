@@ -61,7 +61,7 @@ const vtuService = new VtuTransactionService(dualProvider);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    let { userId, walletId, serviceId, amount, recipient, network, serviceType, planId } = body;
+    let { userId, walletId, serviceId, amount, recipient, network, serviceType, planId, capacity, reference } = body;
 
     if (!amount || !recipient || !network || !serviceType) {
       return NextResponse.json(
@@ -98,6 +98,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const maskedPhone = recipient.length > 5 
+      ? `${recipient.substring(0, 3)}****${recipient.substring(recipient.length - 3)}`
+      : '***';
+    console.log(`[VTU Recharge Route] Processing recharge for ${maskedPhone} network=${network} type=${serviceType} amount=${amount}`);
+
     const result = await vtuService.processTransaction({
       userId,
       walletId,
@@ -106,7 +111,9 @@ export async function POST(request: Request) {
       recipient,
       network,
       serviceType,
-      planId: planId ? Number(planId) : undefined,
+      planId,
+      capacity,
+      reference,
     });
 
     if (result.success) {
@@ -114,7 +121,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         status: result.status || 'processing',
-        provider: 'DatamartGH + ResellerXpress',
+        provider: 'DatamartGH',
         message: isProcessing
           ? `${network} ${serviceType.toUpperCase()} order for ${recipient} placed and is being dispatched!`
           : `${network} ${serviceType.toUpperCase()} recharge completed successfully!`,
@@ -130,7 +137,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   } catch (error: any) {
-    console.error('[VTU Recharge Error]:', error);
+    console.error('[VTU Recharge Error]:', error.message);
     return NextResponse.json(
       { success: false, message: error.message || 'Internal server error processing VTU recharge' },
       { status: 500 }
@@ -147,15 +154,22 @@ export async function GET() {
       new ResellerXpressProviderAdapter().getWalletBalance(),
     ]);
 
+    const dmPlansList = datamartPlans.status === 'fulfilled' ? datamartPlans.value : [];
+    const rxPlansList = rxPlans.status === 'fulfilled' ? rxPlans.value : [];
+
+    // Prioritize active DataMart plans, fallback to ResellerXpress
+    const activePlans = dmPlansList.length > 0 ? dmPlansList : rxPlansList;
+
     return NextResponse.json({
       success: true,
+      plans: activePlans,
       providers: {
         datamartGH: {
-          plans: datamartPlans.status === 'fulfilled' ? datamartPlans.value : [],
+          plans: dmPlansList,
           balance: datamartBalance.status === 'fulfilled' ? datamartBalance.value : null,
         },
         resellerXpress: {
-          plans: rxPlans.status === 'fulfilled' ? rxPlans.value : [],
+          plans: rxPlansList,
           balance: rxBalance.status === 'fulfilled' ? rxBalance.value : null,
         },
       },
