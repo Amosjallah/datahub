@@ -55,6 +55,7 @@ export default function Buy() {
   const [airtimeBuyFor, setAirtimeBuyFor] = useState<'self' | 'others'>('self');
 
   // Form Fields: Payer MoMo number (where money is deducted from) & Recipient number (where service goes)
+  const [paymentGateway, setPaymentGateway] = useState<'paystack' | 'hubtel'>('paystack');
   const [payerPhone, setPayerPhone] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -97,26 +98,34 @@ export default function Buy() {
       if (stored) setAgentRef(stored);
     }
 
-    // 2. Check for Paystack callback return
+    // 2. Check for Paystack or Hubtel callback return
     const payRef = params.get('reference') || params.get('trxref') || (isPaymentRef ? refParam : null);
+    const gatewayParam = params.get('gateway');
+    
     if (payRef && payRef !== 'PAYSTACK_REF') {
       setLoading(true);
-      fetch(`/api/paystack/verify?reference=${encodeURIComponent(payRef)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setLoading(false);
-          if (data.success) {
+      if (gatewayParam === 'hubtel' || payRef.startsWith('HCHK_') || payRef.startsWith('HMOMO_')) {
+        setLoading(false);
+        setSuccess(true);
+        setMessage(`Payment via Hubtel (Ref: ${payRef}) received! Your order is being fulfilled.`);
+      } else {
+        fetch(`/api/paystack/verify?reference=${encodeURIComponent(payRef)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setLoading(false);
+            if (data.success) {
+              setSuccess(true);
+              setMessage(data.message || `Payment of GH₵${Number(data.amount).toFixed(2)} confirmed! Your order has been placed and is being dispatched.`);
+            } else {
+              setMessage(data.message || 'Payment could not be verified.');
+            }
+          })
+          .catch(() => {
+            setLoading(false);
             setSuccess(true);
-            setMessage(data.message || `Payment of GH₵${Number(data.amount).toFixed(2)} confirmed! Your order has been placed and is being dispatched.`);
-          } else {
-            setMessage(data.message || 'Payment could not be verified.');
-          }
-        })
-        .catch(() => {
-          setLoading(false);
-          setSuccess(true);
-          setMessage(`Payment verified (Ref: ${payRef}). Your order is being dispatched!`);
-        });
+            setMessage(`Payment verified (Ref: ${payRef}). Your order is being dispatched!`);
+          });
+      }
     }
   }, []);
 
@@ -143,6 +152,49 @@ export default function Buy() {
     try {
       const cleanPayer = deductFromPhone.replace(/\D/g, '') || '0000000000';
       const cleanRecipient = deliverToPhone.replace(/\D/g, '') || cleanPayer;
+      const targetNet = activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
+
+      // ROUTE A: HUBTEL CHECKOUT
+      if (paymentGateway === 'hubtel') {
+        const response = await fetch('/api/hubtel/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: payAmount,
+            description: `${activeService.toUpperCase()} order for ${cleanRecipient}`,
+            phone: cleanPayer,
+            payer_phone: cleanPayer,
+            recipient_phone: cleanRecipient,
+            service: activeService,
+            network: targetNet,
+            planId: selectedPackage?.id,
+            capacity: selectedPackage?.capacity,
+            returnUrl: `${window.location.origin}/buy?gateway=hubtel`,
+          }),
+        });
+
+        const data = await response.json();
+        setLoading(false);
+
+        if (data.success && data.checkoutUrl) {
+          if (broadcastInfo) {
+            broadcastTransaction({
+              name: broadcastInfo.name.trim() || 'Customer',
+              network: broadcastInfo.network,
+              bundle: broadcastInfo.bundle,
+              amount: broadcastInfo.amountStr,
+            });
+          }
+          window.location.href = data.checkoutUrl;
+          return;
+        } else {
+          setLoading(false);
+          alert('Hubtel Checkout initialization failed: ' + (data.message || 'Please try again'));
+          return;
+        }
+      }
+
+      // ROUTE B: PAYSTACK CHECKOUT
       const customerEmail = `${cleanPayer}@quicknetdata.com`;
 
       const response = await fetch('/api/paystack/initialize', {
@@ -157,7 +209,7 @@ export default function Buy() {
           account_number: accountNum,
           buy_for: buyFor,
           service: activeService,
-          network: activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo',
+          network: targetNet,
           referral_code: agentRef || undefined,
           callbackUrl: `${window.location.origin}/buy`,
         }),
@@ -708,6 +760,55 @@ export default function Buy() {
                             </div>
                           </>
                         )}
+
+                        {/* Payment Gateway Selector */}
+                        <div style={{ marginBottom: '1.25rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.45rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Payment Processing Gateway
+                          </label>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentGateway('paystack')}
+                              style={{
+                                padding: '0.65rem 0.5rem',
+                                borderRadius: '10px',
+                                border: paymentGateway === 'paystack' ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
+                                backgroundColor: paymentGateway === 'paystack' ? 'rgba(250,204,21,0.1)' : '#030712',
+                                color: paymentGateway === 'paystack' ? '#FACC15' : '#9CA3AF',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <span>⚡ Paystack (MoMo / Card)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentGateway('hubtel')}
+                              style={{
+                                padding: '0.65rem 0.5rem',
+                                borderRadius: '10px',
+                                border: paymentGateway === 'hubtel' ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
+                                backgroundColor: paymentGateway === 'hubtel' ? 'rgba(250,204,21,0.1)' : '#030712',
+                                color: paymentGateway === 'hubtel' ? '#FACC15' : '#9CA3AF',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <span>📱 Hubtel Ghana MoMo</span>
+                            </button>
+                          </div>
+                        </div>
 
                         <div style={{ marginBottom: '1.5rem' }}>
                           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.35rem' }}>

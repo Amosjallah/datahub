@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { HubtelPaymentService } from '@/services/HubtelPaymentService';
 
 const hubtelService = new HubtelPaymentService();
@@ -19,6 +20,16 @@ export async function POST(request: Request) {
       merchantAccountNumber,
       returnUrl,
       cancellationUrl,
+      walletId,
+      userId,
+      service,
+      planId,
+      capacity,
+      network,
+      phone,
+      payer_phone,
+      recipient_phone,
+      referral_code,
     } = body;
 
     const numAmount = Number(amount);
@@ -32,12 +43,33 @@ export async function POST(request: Request) {
     const clientReference = `HCHK_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const appBase = process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com';
 
+    const effectivePayer = (payer_phone || phone || '').trim();
+    const effectiveRecipient = (recipient_phone || phone || '').trim();
+
+    // If Supabase is available, create pending record with metadata for guest order or wallet top-up
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('transaction_records').insert({
+          user_id: userId || null,
+          service_id: service ? `HUBTEL_${String(service).toUpperCase()}` : 'HUBTEL_CHECKOUT',
+          amount: numAmount,
+          recipient: effectiveRecipient || effectivePayer || 'Hubtel Customer',
+          status: 'pending',
+          provider_reference: clientReference,
+        });
+      } catch (insertErr) {
+        console.warn('[Hubtel Checkout Record Insert Warning]:', insertErr);
+      }
+    }
+
+    const defaultReturnUrl = `${appBase}/buy?reference=${clientReference}&gateway=hubtel`;
+
     const result = await hubtelService.initiateCheckout({
       totalAmount: numAmount,
-      description: description || `Wallet top-up of GH₵${numAmount.toFixed(2)}`,
+      description: description || `Payment of GH₵${numAmount.toFixed(2)}`,
       callbackUrl: `${appBase}/api/hubtel/webhook`,
-      returnUrl: returnUrl || `${appBase}/wallet?status=success`,
-      cancellationUrl: cancellationUrl || `${appBase}/wallet?status=cancelled`,
+      returnUrl: returnUrl || defaultReturnUrl,
+      cancellationUrl: cancellationUrl || `${appBase}/buy?status=cancelled`,
       merchantAccountNumber: merchantAccountNumber || process.env.HUBTEL_CLIENT_ID || '',
       clientReference,
     });

@@ -2,14 +2,9 @@ import { NextResponse } from 'next/server';
 import { paystackService } from '@/lib/paystack';
 import { WalletService } from '@/services/WalletService';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
-import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProviderAdapter';
-import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
-import { HubtelPaymentService } from '@/services/HubtelPaymentService';
+import { dispatchTelecomService } from '@/lib/dispatcher';
 
 const walletService = new WalletService();
-const datamart = new DatamartGHProviderAdapter();
-const reseller = new ResellerXpressProviderAdapter();
-const hubtel = new HubtelPaymentService();
 
 export async function GET(request: Request) {
   try {
@@ -63,84 +58,19 @@ export async function GET(request: Request) {
         const planId = metadata.planId || metadata.plan_id;
         const capacity = metadata.capacity;
 
-        try {
-          if (serviceType === 'data') {
-            const dmRes = await datamart.recharge({
-              recipient: recipientPhone,
-              amount: amountInGHS,
-              network: network as any,
-              serviceType: 'data',
-              reference,
-              planId,
-              capacity,
-            });
+        const result = await dispatchTelecomService({
+          recipient: recipientPhone,
+          amount: amountInGHS,
+          serviceType: serviceType as any,
+          network,
+          reference,
+          planId,
+          capacity,
+        });
 
-            if (dmRes.success || dmRes.status === 'processing') {
-              orderDispatched = true;
-              providerRef = dmRes.providerReference || reference;
-              dispatchMessage = dmRes.status === 'success' 
-                ? `Data bundle successfully delivered to ${recipientPhone}`
-                : `Data bundle order submitted to network for ${recipientPhone}`;
-            } else {
-              // Try fallback provider
-              const rxRes = await reseller.recharge({
-                recipient: recipientPhone,
-                amount: amountInGHS,
-                network: network as any,
-                serviceType: 'data',
-                reference: `${reference}_RX`,
-                planId,
-                capacity,
-              });
-
-              if (rxRes.success || rxRes.status === 'processing') {
-                orderDispatched = true;
-                providerRef = rxRes.providerReference || reference;
-                dispatchMessage = `Data bundle order submitted via secondary gateway for ${recipientPhone}`;
-              } else {
-                orderDispatched = false;
-                dispatchMessage = dmRes.errorMessage || rxRes.errorMessage || 'Data delivery pending network availability';
-                console.warn(`[Paystack Verify Dispatch Failed] Ref=${reference} Reason=${dispatchMessage}`);
-              }
-            }
-          } else if (serviceType === 'airtime') {
-            // For airtime, attempt Datamart then report status accurately
-            const airRes = await datamart.recharge({
-              recipient: recipientPhone,
-              amount: amountInGHS,
-              network: network as any,
-              serviceType: 'airtime',
-              reference,
-            });
-
-            if (airRes.success || airRes.status === 'processing') {
-              orderDispatched = true;
-              providerRef = airRes.providerReference || reference;
-              dispatchMessage = `Airtime recharge credited to ${recipientPhone}`;
-            } else {
-              orderDispatched = false;
-              dispatchMessage = airRes.errorMessage || 'Airtime dispatch pending network processing';
-            }
-          } else if (serviceType === 'bills' || serviceType === 'bill' || serviceType === 'tv') {
-            const hRes = await hubtel.sendMoney({
-              amount: amountInGHS,
-              recipientName: `${network} Subscriber`,
-              recipientMsisdn: recipientPhone,
-              description: `Bill settlement for ${recipientPhone}`,
-              clientReference: reference,
-              callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com'}/api/hubtel/webhook`,
-            });
-            orderDispatched = hRes.success;
-            providerRef = hRes.transactionId || reference;
-            dispatchMessage = hRes.success 
-              ? `Bill payment processed for account ${recipientPhone}`
-              : (hRes.errorMessage || 'Bill payment pending processing');
-          }
-        } catch (dispatchErr: any) {
-          console.warn('[Order Dispatch Notice]:', dispatchErr.message);
-          orderDispatched = false;
-          dispatchMessage = `Order placed. Service fulfillment in progress for ${recipientPhone}`;
-        }
+        orderDispatched = result.success;
+        providerRef = result.providerReference;
+        dispatchMessage = result.message;
       }
 
       // 3. Process agent referral commission

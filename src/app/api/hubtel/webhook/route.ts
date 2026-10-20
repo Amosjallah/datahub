@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { WalletService } from '@/services/WalletService';
+import { dispatchTelecomService } from '@/lib/dispatcher';
 
 const walletService = new WalletService();
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     // Find the pending transaction by provider_reference (clientReference)
     const { data: txRecord, error: findError } = await supabase
       .from('transaction_records')
-      .select('id, user_id, amount, status')
+      .select('id, user_id, amount, status, service_id, recipient')
       .eq('provider_reference', clientReference)
       .maybeSingle();
 
@@ -70,12 +71,11 @@ export async function POST(request: Request) {
     }
 
     if (isSuccess) {
-      // Credit user wallet
       const creditAmount = amount || txRecord.amount;
 
-      if (txRecord.user_id && creditAmount > 0) {
+      // Case A: User wallet top-up
+      if (txRecord.user_id && (txRecord.service_id === 'HUBTEL_MOMO_COLLECTION' || !txRecord.service_id?.startsWith('HUBTEL_DATA') && !txRecord.service_id?.startsWith('HUBTEL_AIRTIME'))) {
         try {
-          // Find the user's wallet
           const { data: wallet } = await supabase
             .from('wallets')
             .select('id')
@@ -93,6 +93,24 @@ export async function POST(request: Request) {
           }
         } catch (creditErr: any) {
           console.error('[Hubtel Webhook] Failed to credit wallet:', creditErr.message);
+        }
+      }
+
+      // Case B: Direct Guest Service Fulfillment (Airtime, Data, Bills)
+      if (txRecord.recipient && txRecord.service_id && txRecord.service_id !== 'HUBTEL_MOMO_COLLECTION') {
+        const rawService = txRecord.service_id.replace(/^HUBTEL_/, '').toLowerCase();
+        const serviceType = rawService.includes('airtime') ? 'airtime' : rawService.includes('bill') || rawService.includes('tv') ? 'bill' : 'data';
+        
+        try {
+          await dispatchTelecomService({
+            recipient: txRecord.recipient,
+            amount: creditAmount,
+            serviceType: serviceType as any,
+            network: 'MTN',
+            reference: `HB_FULFILL_${clientReference}`,
+          });
+        } catch (fulfillErr: any) {
+          console.error('[Hubtel Webhook Direct Fulfillment Error]:', fulfillErr.message);
         }
       }
 
