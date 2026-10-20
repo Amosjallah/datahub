@@ -126,7 +126,7 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
 
   // 2. AIRTIME TOP-UP
   if (normType === 'airtime') {
-    // Tier 1: DatamartGH
+    // Tier 1: DatamartGH (note: DatamartGH does not support airtime — will return failure immediately)
     try {
       const dmRes = await datamart.recharge({
         recipient: params.recipient,
@@ -145,12 +145,36 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
           message: `Airtime recharge credited to ${params.recipient}`,
         };
       }
-      console.warn(`[Dispatcher] DatamartGH airtime failed: ${dmRes.errorMessage}. Trying Hubtel airtime gateway...`);
+      console.warn(`[Dispatcher] DatamartGH airtime unavailable: ${dmRes.errorMessage}. Trying ResellerXpress...`);
     } catch (err: any) {
       console.warn(`[Dispatcher] DatamartGH airtime exception: ${err.message}`);
     }
 
-    // Tier 2: Hubtel direct airtime / disbursement
+    // Tier 2: ResellerXpress airtime attempt
+    try {
+      const rxRes = await reseller.recharge({
+        recipient: params.recipient,
+        amount: params.amount,
+        network,
+        serviceType: 'airtime',
+        reference: `${params.reference}_RX`,
+      });
+
+      if (rxRes.success || rxRes.status === 'processing') {
+        return {
+          success: true,
+          provider: 'ResellerXpress',
+          providerReference: rxRes.providerReference || params.reference,
+          status: rxRes.status,
+          message: `Airtime recharge submitted for ${params.recipient}`,
+        };
+      }
+      console.warn(`[Dispatcher] ResellerXpress airtime unavailable: ${rxRes.errorMessage}.`);
+    } catch (err: any) {
+      console.error(`[Dispatcher] ResellerXpress airtime exception: ${err.message}`);
+    }
+
+    // Tier 3: Hubtel airtime (requires Commission Services license — fallback attempt)
     try {
       const hbRes = await hubtel.recharge({
         recipient: params.recipient,
@@ -169,6 +193,7 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
           message: `Airtime recharge credited via Hubtel to ${params.recipient}`,
         };
       }
+      console.warn(`[Dispatcher] Hubtel airtime unavailable: ${hbRes.errorMessage}`);
     } catch (err: any) {
       console.error(`[Dispatcher] Hubtel airtime exception: ${err.message}`);
     }
@@ -178,7 +203,7 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
       provider: 'None',
       providerReference: params.reference,
       status: 'failed',
-      message: 'Airtime dispatch failed across all active providers',
+      message: 'Airtime top-up is temporarily unavailable. Your wallet has been refunded. Please try again or contact support.',
     };
   }
 

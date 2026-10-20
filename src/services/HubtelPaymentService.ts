@@ -207,35 +207,57 @@ export class HubtelPaymentService {
     }
 
     try {
+      const payload = {
+        totalAmount: request.totalAmount,
+        description: request.description,
+        callbackUrl: request.callbackUrl,
+        returnUrl: request.returnUrl,
+        cancellationUrl: request.cancellationUrl,
+        merchantAccountNumber: request.merchantAccountNumber,
+        clientReference: request.clientReference,
+        items: request.items || [
+          {
+            name: request.description,
+            quantity: 1,
+            unitPrice: request.totalAmount,
+          },
+        ],
+      };
+
+      console.log('[Hubtel Checkout] Initiating checkout:', {
+        url: this.checkoutUrl,
+        clientId: this.clientId ? `${this.clientId.substring(0, 3)}***` : 'MISSING',
+        merchantAccountNumber: request.merchantAccountNumber,
+        amount: request.totalAmount,
+        clientReference: request.clientReference,
+      });
+
       const response = await fetch(this.checkoutUrl, {
         method: 'POST',
         headers: this.baseHeaders,
-        body: JSON.stringify({
-          totalAmount: request.totalAmount,
-          description: request.description,
-          callbackUrl: request.callbackUrl,
-          returnUrl: request.returnUrl,
-          cancellationUrl: request.cancellationUrl,
-          merchantAccountNumber: request.merchantAccountNumber,
-          clientReference: request.clientReference,
-          items: request.items || [
-            {
-              name: request.description,
-              quantity: 1,
-              unitPrice: request.totalAmount,
-            },
-          ],
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json().catch(() => null);
+      // Handle non-JSON responses (HTML error pages from gateway)
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await response.json().catch(() => null);
+      } else {
+        const text = await response.text().catch(() => '');
+        console.warn('[Hubtel Checkout] Non-JSON response:', response.status, text.substring(0, 300));
+        data = { message: `HTTP ${response.status}: ${text.substring(0, 200)}` };
+      }
+
       if (!response.ok) {
         console.error('[Hubtel Checkout Failed]:', {
           status: response.status,
           statusText: response.statusText,
           responseBody: data,
           clientId: this.clientId ? `${this.clientId.substring(0, 3)}***` : 'MISSING',
+          secretProvided: !!this.clientSecret,
           merchantAccountNumber: request.merchantAccountNumber,
+          checkoutUrl: this.checkoutUrl,
         });
       }
 
@@ -253,7 +275,7 @@ export class HubtelPaymentService {
 
       return {
         success: false,
-        errorMessage: data?.message || data?.Message || `Hubtel checkout error (HTTP ${response.status}): ${JSON.stringify(data || '')}`,
+        errorMessage: data?.message || data?.Message || `Hubtel checkout error (HTTP ${response.status})`,
         rawData: data,
       };
     } catch (error: any) {

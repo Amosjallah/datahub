@@ -31,12 +31,24 @@ export class HubtelProviderAdapter implements ProviderAdapterInterface {
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com'}/api/hubtel/webhook`;
 
     try {
-      if (request.serviceType === 'airtime' || request.serviceType === 'bill') {
+      if (request.serviceType === 'airtime') {
+        // NOTE: Hubtel's sendMoney API disburses cash to MoMo wallets — it does NOT top up airtime.
+        // Hubtel Commission Services API handles airtime but requires a separate licensed endpoint
+        // not available in the standard API plan. Return failure to let caller handle properly.
+        console.warn(`[HubtelProvider] Airtime dispatch not available — Hubtel Commission Services endpoint not configured.`);
+        return {
+          success: false,
+          errorMessage: 'Hubtel airtime Commission Services not configured. Cannot dispatch airtime via Hubtel.',
+          status: 'failed',
+        };
+      }
+
+      if (request.serviceType === 'bill') {
         const result = await this.hubtel.sendMoney({
           amount: request.amount,
-          recipientName: `${request.network} ${request.serviceType.toUpperCase()} Customer`,
+          recipientName: `${request.network} Bill Customer`,
           recipientMsisdn: targetPhone,
-          description: `${request.network} ${request.serviceType} fulfillment for ${request.recipient}`,
+          description: `${request.network} bill payment for ${request.recipient}`,
           clientReference: request.reference,
           callbackUrl,
         });
@@ -51,7 +63,7 @@ export class HubtelProviderAdapter implements ProviderAdapterInterface {
 
         return {
           success: false,
-          errorMessage: result.errorMessage || `Hubtel ${request.serviceType} delivery declined`,
+          errorMessage: result.errorMessage || `Hubtel bill payment declined`,
           status: 'failed',
         };
       }

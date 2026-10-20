@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     // Find the pending transaction by provider_reference (clientReference)
     const { data: txRecord, error: findError } = await supabase
       .from('transaction_records')
-      .select('id, user_id, amount, status, service_id, recipient')
+      .select('id, user_id, amount, status, service_id, recipient, metadata')
       .eq('provider_reference', clientReference)
       .maybeSingle();
 
@@ -73,8 +73,29 @@ export async function POST(request: Request) {
     if (isSuccess) {
       const creditAmount = amount || txRecord.amount;
 
-      // Case A: User wallet top-up
-      if (txRecord.user_id && (txRecord.service_id === 'HUBTEL_MOMO_COLLECTION' || !txRecord.service_id?.startsWith('HUBTEL_DATA') && !txRecord.service_id?.startsWith('HUBTEL_AIRTIME'))) {
+      // Parse fulfillment metadata stored at checkout time
+      let fulfillMeta: any = {};
+      try {
+        if (txRecord.metadata) {
+          fulfillMeta = typeof txRecord.metadata === 'string'
+            ? JSON.parse(txRecord.metadata)
+            : txRecord.metadata;
+        }
+      } catch (_) {}
+
+      const fulfillNetwork = fulfillMeta.network || 'MTN';
+      const fulfillPlanId = fulfillMeta.planId || undefined;
+      const fulfillCapacity = fulfillMeta.capacity || undefined;
+
+      // Case A: User wallet top-up (no service-specific service_id)
+      const isWalletTopUp =
+        txRecord.service_id === 'HUBTEL_MOMO_COLLECTION' ||
+        txRecord.service_id === 'HUBTEL_CHECKOUT' ||
+        (!txRecord.service_id?.startsWith('HUBTEL_DATA') &&
+          !txRecord.service_id?.startsWith('HUBTEL_AIRTIME') &&
+          !txRecord.service_id?.startsWith('HUBTEL_BILL'));
+
+      if (txRecord.user_id && isWalletTopUp) {
         try {
           const { data: wallet } = await supabase
             .from('wallets')
@@ -97,17 +118,23 @@ export async function POST(request: Request) {
       }
 
       // Case B: Direct Guest Service Fulfillment (Airtime, Data, Bills)
-      if (txRecord.recipient && txRecord.service_id && txRecord.service_id !== 'HUBTEL_MOMO_COLLECTION') {
+      if (txRecord.recipient && txRecord.service_id && !isWalletTopUp) {
         const rawService = txRecord.service_id.replace(/^HUBTEL_/, '').toLowerCase();
-        const serviceType = rawService.includes('airtime') ? 'airtime' : rawService.includes('bill') || rawService.includes('tv') ? 'bill' : 'data';
-        
+        const serviceType = rawService.includes('airtime')
+          ? 'airtime'
+          : rawService.includes('bill') || rawService.includes('tv')
+          ? 'bill'
+          : 'data';
+
         try {
           await dispatchTelecomService({
-            recipient: txRecord.recipient,
+            recipient: fulfillMeta.recipient_phone || txRecord.recipient,
             amount: creditAmount,
             serviceType: serviceType as any,
-            network: 'MTN',
+            network: fulfillNetwork,
             reference: `HB_FULFILL_${clientReference}`,
+            planId: fulfillPlanId,
+            capacity: fulfillCapacity,
           });
         } catch (fulfillErr: any) {
           console.error('[Hubtel Webhook Direct Fulfillment Error]:', fulfillErr.message);

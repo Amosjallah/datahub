@@ -49,13 +49,23 @@ export async function POST(request: Request) {
     // If Supabase is available, create pending record with metadata for guest order or wallet top-up
     if (isSupabaseConfigured()) {
       try {
+        const serviceId = service ? `HUBTEL_${String(service).toUpperCase()}` : 'HUBTEL_CHECKOUT';
         await supabase.from('transaction_records').insert({
           user_id: userId || null,
-          service_id: service ? `HUBTEL_${String(service).toUpperCase()}` : 'HUBTEL_CHECKOUT',
+          service_id: serviceId,
           amount: numAmount,
           recipient: effectiveRecipient || effectivePayer || 'Hubtel Customer',
           status: 'pending',
           provider_reference: clientReference,
+          // Store fulfillment metadata so webhook can dispatch correctly
+          metadata: JSON.stringify({
+            network: network || 'MTN',
+            planId: planId || null,
+            capacity: capacity || null,
+            payer_phone: effectivePayer,
+            recipient_phone: effectiveRecipient,
+            service,
+          }),
         });
       } catch (insertErr) {
         console.warn('[Hubtel Checkout Record Insert Warning]:', insertErr);
