@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       callbackUrl: `${appBase}/api/hubtel/webhook`,
       returnUrl: returnUrl || defaultReturnUrl,
       cancellationUrl: cancellationUrl || `${appBase}/buy?status=cancelled`,
-      merchantAccountNumber: merchantAccountNumber || process.env.HUBTEL_CLIENT_ID || '',
+      merchantAccountNumber: merchantAccountNumber || process.env.HUBTEL_MERCHANT_ACCOUNT_NUMBER || process.env.HUBTEL_MERCHANT || process.env.HUBTEL_CLIENT_ID || '',
       clientReference,
     });
 
