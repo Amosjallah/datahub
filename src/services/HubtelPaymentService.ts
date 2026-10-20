@@ -229,6 +229,15 @@ export class HubtelPaymentService {
       });
 
       const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        console.error('[Hubtel Checkout Failed]:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseBody: data,
+          clientId: this.clientId ? `${this.clientId.substring(0, 3)}***` : 'MISSING',
+          merchantAccountNumber: request.merchantAccountNumber,
+        });
+      }
 
       if (response.ok && data) {
         const checkoutUrl = data.data?.checkoutUrl || data.checkoutUrl || data.paylinkUrl;
@@ -244,7 +253,7 @@ export class HubtelPaymentService {
 
       return {
         success: false,
-        errorMessage: data?.message || data?.Message || `Hubtel checkout error (HTTP ${response.status})`,
+        errorMessage: data?.message || data?.Message || `Hubtel checkout error (HTTP ${response.status}): ${JSON.stringify(data || '')}`,
         rawData: data,
       };
     } catch (error: any) {

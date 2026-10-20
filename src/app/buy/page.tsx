@@ -210,6 +210,8 @@ export default function Buy() {
           buy_for: buyFor,
           service: activeService,
           network: targetNet,
+          planId: selectedPackage?.id,
+          capacity: selectedPackage?.capacity,
           referral_code: agentRef || undefined,
           callbackUrl: `${window.location.origin}/buy`,
         }),

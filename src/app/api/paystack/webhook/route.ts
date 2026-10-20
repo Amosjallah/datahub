@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { paystackService } from '@/lib/paystack';
 import { WalletService } from '@/services/WalletService';
+import { dispatchTelecomService } from '@/lib/dispatcher';
 
 const walletService = new WalletService();
 
@@ -37,6 +38,30 @@ export async function POST(request: Request) {
           });
         } catch (err: any) {
           console.warn('[Paystack Webhook Credit Warning]:', err.message);
+        }
+      } else {
+        // Direct Guest Order: fulfill data/airtime/bill order if not already processed
+        const metadata = data.metadata || {};
+        const recipientPhone = metadata.recipient_phone || metadata.account_number || metadata.phone;
+        const serviceType = (metadata.service || 'data').toLowerCase();
+        const network = metadata.network || 'MTN';
+        const planId = metadata.planId || metadata.plan_id;
+        const capacity = metadata.capacity;
+
+        if (recipientPhone && reference) {
+          try {
+            await dispatchTelecomService({
+              recipient: recipientPhone,
+              amount: amountInGHS,
+              serviceType: serviceType as any,
+              network,
+              reference,
+              planId,
+              capacity,
+            });
+          } catch (dispatchErr: any) {
+            console.error('[Paystack Webhook Dispatch Error]:', dispatchErr.message);
+          }
         }
       }
     }
