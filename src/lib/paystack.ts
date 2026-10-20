@@ -41,6 +41,22 @@ export interface PaystackVerifyResponse {
   };
 }
 
+export interface PaystackRefundResponse {
+  status: boolean;
+  message: string;
+  data?: {
+    id: number;
+    transaction: {
+      id: number;
+      reference: string;
+    };
+    amount: number;
+    currency: string;
+    status: 'pending' | 'success' | 'failed' | string;
+    refunded_at?: string;
+  };
+}
+
 export class PaystackService {
   private secretKey: string;
   private publicKey: string;
@@ -155,6 +171,62 @@ export class PaystackService {
       return {
         status: false,
         message: error.message || 'Failed to verify transaction with Paystack',
+      };
+    }
+  }
+
+
+
+  /**
+   * Refund a transaction via Paystack Refund API
+   * POST https://api.paystack.co/refund
+   */
+  async refundTransaction(params: {
+    reference: string;
+    amountInPesewas?: number;
+    reason?: string;
+  }): Promise<PaystackRefundResponse> {
+    const key = this.getSecretKey();
+    if (!key || key.includes('placeholder')) {
+      console.log(`[Paystack Mock Mode] Refunding transaction ${params.reference}`);
+      return {
+        status: true,
+        message: 'Refund queued successfully (Mock Sandbox)',
+        data: {
+          id: Math.floor(Math.random() * 100000),
+          transaction: { id: 123456, reference: params.reference },
+          amount: params.amountInPesewas || 100,
+          currency: 'GHS',
+          status: 'pending',
+        },
+      };
+    }
+
+    try {
+      const payload: Record<string, any> = {
+        transaction: params.reference,
+        customer_note: params.reason || 'Auto-refund for unfulfilled service delivery',
+      };
+      if (params.amountInPesewas) {
+        payload.amount = params.amountInPesewas;
+      }
+
+      const response = await fetch('https://api.paystack.co/refund', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error('[Paystack Refund Error]:', error.message);
+      return {
+        status: false,
+        message: error.message || 'Failed to communicate with Paystack Refund gateway',
       };
     }
   }

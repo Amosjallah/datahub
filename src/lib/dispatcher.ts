@@ -59,12 +59,38 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
             : `Data bundle submitted to network for ${params.recipient}`,
         };
       }
-      console.warn(`[Dispatcher] DatamartGH failed for ${params.reference}: ${dmRes.errorMessage}. Falling back to ResellerXpress...`);
+      console.warn(`[Dispatcher] DatamartGH rejected ${params.reference}: ${dmRes.errorMessage}. Falling back to secondary provider...`);
     } catch (err: any) {
-      console.warn(`[Dispatcher] DatamartGH exception: ${err.message}. Falling back...`);
+      console.warn(`[Dispatcher] DatamartGH network exception for ${params.reference}: ${err.message}. Checking status before fallback...`);
+      // Protect against duplicate dispatch on timeout: verify order status first
+      try {
+        const queryRes = await datamart.queryStatus(params.reference);
+        if (queryRes.success || queryRes.status === 'processing') {
+          return {
+            success: true,
+            provider: 'DatamartGH',
+            providerReference: queryRes.providerReference || params.reference,
+            status: queryRes.status,
+            message: `Data bundle order in progress on network for ${params.recipient}`,
+          };
+        }
+        // If explicitly confirmed failed by provider, log and allow fallback
+        console.warn(`[Dispatcher] DatamartGH status query confirmed order did not succeed: ${queryRes.errorMessage}. Proceeding to secondary provider.`);
+      } catch (queryErr: any) {
+        // Critical: Outcome is uncertain because provider could not be reached to verify.
+        // NEVER switch providers while the original purchase outcome remains uncertain!
+        console.error(`[Dispatcher] DatamartGH status query failed (${queryErr.message}). Holding in processing to prevent duplicate provider charges.`);
+        return {
+          success: true,
+          provider: 'DatamartGH',
+          providerReference: params.reference,
+          status: 'processing',
+          message: `Data bundle submitted to DatamartGH; confirmation is currently pending verification.`,
+        };
+      }
     }
 
-    // Tier 2: ResellerXpress fallback
+    // Tier 2: ResellerXpress fallback (only when primary provider confirmed unavailable)
     try {
       const rxRes = await reseller.recharge({
         recipient: params.recipient,
@@ -82,15 +108,38 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
           provider: 'ResellerXpress',
           providerReference: rxRes.providerReference || params.reference,
           status: rxRes.status,
-          message: `Data bundle order submitted via secondary gateway for ${params.recipient}`,
+          message: `Data bundle order submitted via ResellerXpress for ${params.recipient}`,
         };
       }
-      console.warn(`[Dispatcher] ResellerXpress failed for ${params.reference}: ${rxRes.errorMessage}. Falling back to Hubtel...`);
+      console.warn(`[Dispatcher] ResellerXpress rejected ${params.reference}: ${rxRes.errorMessage}. Trying Hubtel fallback...`);
     } catch (err: any) {
-      console.warn(`[Dispatcher] ResellerXpress exception: ${err.message}. Falling back to Hubtel...`);
+      console.warn(`[Dispatcher] ResellerXpress network exception for ${params.reference}: ${err.message}`);
+      try {
+        const queryRes = await reseller.queryStatus(`${params.reference}_RX`);
+        if (queryRes.success || queryRes.status === 'processing') {
+          return {
+            success: true,
+            provider: 'ResellerXpress',
+            providerReference: queryRes.providerReference || params.reference,
+            status: queryRes.status,
+            message: `Data bundle order in progress on secondary network for ${params.recipient}`,
+          };
+        }
+        console.warn(`[Dispatcher] ResellerXpress status query confirmed order failed. Proceeding to Hubtel fallback.`);
+      } catch (queryErr: any) {
+        // Outcome is uncertain: do NOT fall back to Tier 3!
+        console.error(`[Dispatcher] ResellerXpress status query failed (${queryErr.message}). Holding in processing.`);
+        return {
+          success: true,
+          provider: 'ResellerXpress',
+          providerReference: `${params.reference}_RX`,
+          status: 'processing',
+          message: `Data bundle submitted to ResellerXpress; confirmation is pending verification.`,
+        };
+      }
     }
 
-    // Tier 3: Hubtel fallback
+    // Tier 3: Hubtel Commission Services fallback (Data top-up)
     try {
       const hbRes = await hubtel.recharge({
         recipient: params.recipient,
@@ -108,9 +157,10 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
           provider: 'Hubtel',
           providerReference: hbRes.providerReference || params.reference,
           status: hbRes.status,
-          message: `Data bundle order submitted via Hubtel gateway for ${params.recipient}`,
+          message: `Data bundle order submitted via Hubtel Commission Services for ${params.recipient}`,
         };
       }
+      console.warn(`[Dispatcher] Hubtel data rejected: ${hbRes.errorMessage}`);
     } catch (err: any) {
       console.error(`[Dispatcher] Hubtel data fallback exception: ${err.message}`);
     }
@@ -120,68 +170,21 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
       provider: 'None',
       providerReference: params.reference,
       status: 'failed',
-      message: 'All telecom data providers failed or are temporarily unavailable',
+      message: 'All active telecom data providers failed or are temporarily unavailable',
     };
   }
 
   // 2. AIRTIME TOP-UP
   if (normType === 'airtime') {
-    // Tier 1: DatamartGH (note: DatamartGH does not support airtime — will return failure immediately)
-    try {
-      const dmRes = await datamart.recharge({
-        recipient: params.recipient,
-        amount: params.amount,
-        network,
-        serviceType: 'airtime',
-        reference: params.reference,
-      });
-
-      if (dmRes.success || dmRes.status === 'processing') {
-        return {
-          success: true,
-          provider: 'DatamartGH',
-          providerReference: dmRes.providerReference || params.reference,
-          status: dmRes.status,
-          message: `Airtime recharge credited to ${params.recipient}`,
-        };
-      }
-      console.warn(`[Dispatcher] DatamartGH airtime unavailable: ${dmRes.errorMessage}. Trying ResellerXpress...`);
-    } catch (err: any) {
-      console.warn(`[Dispatcher] DatamartGH airtime exception: ${err.message}`);
-    }
-
-    // Tier 2: ResellerXpress airtime attempt
-    try {
-      const rxRes = await reseller.recharge({
-        recipient: params.recipient,
-        amount: params.amount,
-        network,
-        serviceType: 'airtime',
-        reference: `${params.reference}_RX`,
-      });
-
-      if (rxRes.success || rxRes.status === 'processing') {
-        return {
-          success: true,
-          provider: 'ResellerXpress',
-          providerReference: rxRes.providerReference || params.reference,
-          status: rxRes.status,
-          message: `Airtime recharge submitted for ${params.recipient}`,
-        };
-      }
-      console.warn(`[Dispatcher] ResellerXpress airtime unavailable: ${rxRes.errorMessage}.`);
-    } catch (err: any) {
-      console.error(`[Dispatcher] ResellerXpress airtime exception: ${err.message}`);
-    }
-
-    // Tier 3: Hubtel airtime (requires Commission Services license — fallback attempt)
+    // Airtime top-up is routed exclusively to Hubtel Commission Services.
+    // (DatamartGH and ResellerXpress are strictly data-bundle providers and do not support airtime).
     try {
       const hbRes = await hubtel.recharge({
         recipient: params.recipient,
         amount: params.amount,
         network,
         serviceType: 'airtime',
-        reference: `${params.reference}_HB`,
+        reference: params.reference,
       });
 
       if (hbRes.success || hbRes.status === 'processing') {
@@ -190,21 +193,28 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
           provider: 'Hubtel',
           providerReference: hbRes.providerReference || params.reference,
           status: hbRes.status,
-          message: `Airtime recharge credited via Hubtel to ${params.recipient}`,
+          message: `Airtime top-up of GH₵${params.amount.toFixed(2)} dispatched to ${params.recipient}`,
         };
       }
-      console.warn(`[Dispatcher] Hubtel airtime unavailable: ${hbRes.errorMessage}`);
+
+      console.warn(`[Dispatcher] Hubtel airtime rejected for ${params.reference}: ${hbRes.errorMessage}`);
+      return {
+        success: false,
+        provider: 'Hubtel',
+        providerReference: params.reference,
+        status: 'failed',
+        message: hbRes.errorMessage || 'Hubtel airtime delivery rejected by telecom network',
+      };
     } catch (err: any) {
       console.error(`[Dispatcher] Hubtel airtime exception: ${err.message}`);
+      return {
+        success: false,
+        provider: 'Hubtel',
+        providerReference: params.reference,
+        status: 'failed',
+        message: err.message || 'Hubtel airtime gateway connection failed',
+      };
     }
-
-    return {
-      success: false,
-      provider: 'None',
-      providerReference: params.reference,
-      status: 'failed',
-      message: 'Airtime top-up is temporarily unavailable. Your wallet has been refunded. Please try again or contact support.',
-    };
   }
 
   // 3. BILLS & TV
@@ -218,7 +228,7 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
     });
 
     return {
-      success: hbRes.success,
+      success: hbRes.success || hbRes.status === 'processing',
       provider: 'Hubtel',
       providerReference: hbRes.providerReference || params.reference,
       status: hbRes.status,
@@ -232,7 +242,7 @@ export async function dispatchTelecomService(params: DispatchParams): Promise<Di
       provider: 'Hubtel',
       providerReference: params.reference,
       status: 'failed',
-      message: err.message || 'Bill payment settlement error',
+      message: err.message || 'Bill payment gateway error',
     };
   }
 }

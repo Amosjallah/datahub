@@ -1,12 +1,13 @@
 import { ProviderAdapterInterface, RechargeRequest, RechargeResponse } from './ProviderAdapterInterface';
-import { HubtelPaymentService } from '../HubtelPaymentService';
+import { HubtelPaymentService, HUBTEL_COMMISSION_SERVICE_IDS } from '../HubtelPaymentService';
 
 /**
  * HubtelProviderAdapter
  * Enables Hubtel to act as a VTU / service fulfillment provider for:
- * - Airtime dispatch (via direct Hubtel disbursement / airtime fulfillment rails)
- * - Bills & Utilities
- * - Fallback fulfillment when DatamartGH or other upstream providers run out of stock or balance
+ * - Airtime dispatch via Hubtel Commission Services API
+ * - Data bundle dispatch via Hubtel Commission Services API
+ * - Bills & Utilities (ECG, GWCL, DSTV, GOtv, StarTimes) via Hubtel Commission Services API
+ * NOTE: Never uses sendMoney (MoMo cash disbursement) for airtime or data purchases.
  */
 export class HubtelProviderAdapter implements ProviderAdapterInterface {
   private hubtel: HubtelPaymentService;
@@ -16,79 +17,105 @@ export class HubtelProviderAdapter implements ProviderAdapterInterface {
   }
 
   /**
-   * Format phone number to international Ghanaian format (233XXXXXXXXX) or local 10-digit
+   * Format phone number to international Ghanaian format (233XXXXXXXXX)
    */
   private formatPhoneNumber(phone: string): string {
     let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('0') && cleaned.length === 10) {
       cleaned = '233' + cleaned.substring(1);
     }
+    if (cleaned.length === 9) {
+      cleaned = '233' + cleaned;
+    }
     return cleaned;
+  }
+
+  /**
+   * Resolve Hubtel Commission ServiceID by service type and telecom network
+   */
+  private resolveServiceId(serviceType: string, network: string): string | null {
+    const normNet = (network || '').toUpperCase();
+
+    if (serviceType === 'airtime') {
+      if (normNet.includes('MTN') || normNet.includes('YELLO')) {
+        return HUBTEL_COMMISSION_SERVICE_IDS.AIRTIME.MTN;
+      }
+      if (normNet.includes('TELECEL') || normNet.includes('VODA')) {
+        return HUBTEL_COMMISSION_SERVICE_IDS.AIRTIME.TELECEL;
+      }
+      if (normNet.includes('AIRTEL') || normNet.includes('TIGO') || normNet === 'AT') {
+        return HUBTEL_COMMISSION_SERVICE_IDS.AIRTIME.AIRTELTIGO;
+      }
+      return null;
+    }
+
+    if (serviceType === 'data') {
+      if (normNet.includes('MTN') || normNet.includes('YELLO')) {
+        return HUBTEL_COMMISSION_SERVICE_IDS.DATA.MTN;
+      }
+      if (normNet.includes('TELECEL') || normNet.includes('VODA')) {
+        return HUBTEL_COMMISSION_SERVICE_IDS.DATA.TELECEL;
+      }
+      if (normNet.includes('AIRTEL') || normNet.includes('TIGO') || normNet === 'AT') {
+        return HUBTEL_COMMISSION_SERVICE_IDS.DATA.AIRTELTIGO;
+      }
+      return null;
+    }
+
+    if (serviceType === 'bill' || serviceType === 'bills' || serviceType === 'tv') {
+      if (normNet.includes('ECG')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.ECG;
+      if (normNet.includes('WATER') || normNet.includes('GWCL')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.GWCL;
+      if (normNet.includes('DSTV')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.DSTV;
+      if (normNet.includes('GOTV')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.GOTV;
+      if (normNet.includes('STARTIMES')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.STARTIMES;
+      if (normNet.includes('BROADBAND')) return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.TELECEL_BROADBAND;
+      return HUBTEL_COMMISSION_SERVICE_IDS.BILLS.ECG;
+    }
+
+    return null;
   }
 
   async recharge(request: RechargeRequest): Promise<RechargeResponse> {
     const targetPhone = this.formatPhoneNumber(request.recipient);
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://quicknetdata.com'}/api/hubtel/webhook`;
 
+    if (!targetPhone || targetPhone.length < 12) {
+      return {
+        success: false,
+        errorMessage: `Invalid Ghanaian recipient phone number: ${request.recipient}`,
+        status: 'failed',
+      };
+    }
+
+    const serviceId = this.resolveServiceId(request.serviceType, request.network);
+    if (!serviceId) {
+      return {
+        success: false,
+        errorMessage: `Unsupported network or service for Hubtel dispatch: ${request.network} (${request.serviceType})`,
+        status: 'failed',
+      };
+    }
+
     try {
-      if (request.serviceType === 'airtime') {
-        // NOTE: Hubtel's sendMoney API disburses cash to MoMo wallets — it does NOT top up airtime.
-        // Hubtel Commission Services API handles airtime but requires a separate licensed endpoint
-        // not available in the standard API plan. Return failure to let caller handle properly.
-        console.warn(`[HubtelProvider] Airtime dispatch not available — Hubtel Commission Services endpoint not configured.`);
-        return {
-          success: false,
-          errorMessage: 'Hubtel airtime Commission Services not configured. Cannot dispatch airtime via Hubtel.',
-          status: 'failed',
-        };
-      }
-
-      if (request.serviceType === 'bill') {
-        const result = await this.hubtel.sendMoney({
-          amount: request.amount,
-          recipientName: `${request.network} Bill Customer`,
-          recipientMsisdn: targetPhone,
-          description: `${request.network} bill payment for ${request.recipient}`,
-          clientReference: request.reference,
-          callbackUrl,
-        });
-
-        if (result.success) {
-          return {
-            success: true,
-            providerReference: result.transactionId || request.reference,
-            status: result.status === 'success' ? 'success' : 'processing',
-          };
-        }
-
-        return {
-          success: false,
-          errorMessage: result.errorMessage || `Hubtel bill payment declined`,
-          status: 'failed',
-        };
-      }
-
-      // For data bundles routed through Hubtel (if configured as money disbursement / commission service)
-      const dataResult = await this.hubtel.sendMoney({
+      const result = await this.hubtel.purchaseCommissionService({
+        destination: targetPhone,
         amount: request.amount,
-        recipientName: `${request.network} Data Customer`,
-        recipientMsisdn: targetPhone,
-        description: `${request.capacity || ''} ${request.network} data bundle for ${request.recipient}`,
-        clientReference: request.reference,
         callbackUrl,
+        clientReference: request.reference,
+        serviceId,
       });
 
-      if (dataResult.success) {
+      if (result.success) {
         return {
           success: true,
-          providerReference: dataResult.transactionId || request.reference,
-          status: dataResult.status === 'success' ? 'success' : 'processing',
+          providerReference: result.transactionId || request.reference,
+          status: 'processing',
         };
       }
 
       return {
         success: false,
-        errorMessage: dataResult.errorMessage || 'Hubtel data bundle delivery failed',
+        errorMessage: result.errorMessage || `Hubtel ${request.serviceType} delivery declined`,
         status: 'failed',
       };
     } catch (err: any) {

@@ -47,8 +47,13 @@ CREATE TABLE IF NOT EXISTS public.transaction_records (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'success', 'failed', 'reversed')),
   provider_reference TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT uq_transaction_records_provider_ref UNIQUE (provider_reference)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_transaction_records_provider_ref 
+  ON public.transaction_records(provider_reference) 
+  WHERE provider_reference IS NOT NULL;
 
 -- 6. Stored Procedure: Credit Wallet (Idempotent & Safe Ledger RPC)
 CREATE OR REPLACE FUNCTION public.credit_wallet(
