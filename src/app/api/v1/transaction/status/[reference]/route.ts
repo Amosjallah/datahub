@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { authenticateApiKey } from '@/lib/apiKeyAuth';
 import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProviderAdapter';
-import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
 
 const datamart = new DatamartGHProviderAdapter();
-const reseller = new ResellerXpressProviderAdapter();
 
 export async function GET(
   request: Request,
@@ -24,13 +22,10 @@ export async function GET(
   }
 
   try {
-    let result = await datamart.queryStatus(reference);
-    if (!result.success && result.status !== 'processing') {
-      result = await reseller.queryStatus(reference);
-    }
+    const result = await datamart.queryStatus(reference);
 
-    const finalStatus = result.status === 'success' 
-      ? 'SUCCESS' 
+    const finalStatus = result.status === 'success'
+      ? 'SUCCESS'
       : (result.status === 'failed' ? 'FAILED' : 'PENDING');
 
     return NextResponse.json({

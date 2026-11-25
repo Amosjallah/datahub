@@ -4,15 +4,20 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ProviderIcon from '@/components/ProviderIcon';
 import { Settings, Pencil, Check, X } from 'lucide-react';
+import { dataServices } from '@/lib/servicesData';
 
 export default function AdminPricing() {
-  const [plans, setPlans] = useState([
-    { id: '1', provider: 'MTN', name: 'MTN Data CG 5GB', wholesale: 16.50, agent: 18.00, retail: 20.00, status: 'Active' },
-    { id: '2', provider: 'MTN', name: 'MTN Data CG 10GB', wholesale: 33.00, agent: 36.50, retail: 40.00, status: 'Active' },
-    { id: '3', provider: 'Telecel', name: 'Telecel Airtime', wholesale: 9.20, agent: 9.50, retail: 10.00, status: 'Active' },
-    { id: '4', provider: 'Airtel', name: 'Airtel Data CG 2GB', wholesale: 8.50, agent: 9.50, retail: 11.00, status: 'Active' },
-    { id: '5', provider: 'Glo', name: 'Glo Data 5GB', wholesale: 18.00, agent: 20.00, retail: 22.00, status: 'Degraded' },
-  ]);
+  const [plans, setPlans] = useState(
+    dataServices.map((s) => ({
+      id: s.id,
+      provider: s.network,
+      name: s.name,
+      wholesale: s.supplier_price ?? s.api_price,
+      agent: s.agent_price,
+      retail: s.retail_price,
+      status: s.status === 'available' ? 'Active' : 'Degraded',
+    }))
+  );
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [wholesaleVal, setWholesaleVal] = useState(0);

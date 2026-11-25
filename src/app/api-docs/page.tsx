@@ -20,7 +20,7 @@ export default function ApiDocs() {
   -H "Authorization: Bearer fa_sec_live_your_api_key_here"`,
     servicesResponse: `{
   "status": "success",
-  "count": 22,
+  "count": 42,
   "data": [
     {
       "id": "MTN_5GB",
@@ -28,20 +28,22 @@ export default function ApiDocs() {
       "type": "data",
       "network": "MTN",
       "volume": "5GB",
-      "retail_price": 23.00,
-      "agent_price": 21.00,
-      "api_price": 20.20,
+      "retail_price": 24.00,
+      "agent_price": 22.00,
+      "api_price": 21.00,
       "validity": "Non-Expiry",
       "status": "available"
     },
     {
-      "id": "AIRTIME_MTN",
-      "name": "MTN Airtime Top-Up",
-      "type": "airtime",
+      "id": "MTN_10GB",
+      "name": "MTN Data 10GB",
+      "type": "data",
       "network": "MTN",
-      "retail_price": 1.00,
-      "agent_price": 0.97,
-      "api_price": 0.96,
+      "volume": "10GB",
+      "retail_price": 46.80,
+      "agent_price": 42.90,
+      "api_price": 40.95,
+      "validity": "Non-Expiry",
       "status": "available"
     }
   ]
@@ -94,7 +96,7 @@ export default function ApiDocs() {
     "service": "MTN Data 10GB",
     "network": "MTN",
     "recipient": "0241234567",
-    "amount_debited": 38.00,
+    "amount_debited": 40.95,
     "currency": "GHS",
     "transaction_status": "delivered",
     "message": "Data bundle dispatched successfully",
@@ -126,7 +128,7 @@ export default function ApiDocs() {
             Integrate all services with our <span className="text-gradient">REST API</span>
           </h1>
           <p style={{ color: '#9CA3AF', fontSize: '1.05rem', lineHeight: '1.6' }}>
-            Direct access to data bundles, airtime, ECG electricity, Ghana Water, and DStv/GOtv subscriptions. Dual carrier routing with 99.9% uptime.
+            Direct access to MTN, Telecel, and AirtelTigo data bundles powered exclusively by DatamartGH.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>

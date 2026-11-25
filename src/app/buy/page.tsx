@@ -2,73 +2,46 @@
 
 import React, { useState, useEffect } from 'react';
 import PublicLayout from '@/components/PublicLayout';
-import { Loader2, Database, PhoneCall, Receipt, Tv, CheckCircle2, Star, ShieldCheck, UserCheck, Users, Smartphone, CreditCard } from 'lucide-react';
+import { Loader2, Database, CheckCircle2, Star, ShieldCheck, UserCheck, Users, CreditCard } from 'lucide-react';
 import { broadcastTransaction } from '@/lib/liveTransactions';
+import { dataServices } from '@/lib/servicesData';
 
 interface Package {
   id: string;
-  network: 'YELLO' | 'TELECEL' | 'AT_PREMIUM';
+  network: 'YELLO' | 'TELECEL' | 'AT';
   capacity: string;
   price: number;
   displayName: string;
   inStock: boolean;
 }
 
-const initialPackages: Package[] = [
-  // MTN (Yello)
-  { id: 'yello-1', network: 'YELLO', capacity: '1 GB', price: 4.20, displayName: 'MTN 1GB (Non-Expiry)', inStock: true },
-  { id: 'yello-2', network: 'YELLO', capacity: '2 GB', price: 9.00, displayName: 'MTN 2GB (Non-Expiry)', inStock: true },
-  { id: 'yello-3', network: 'YELLO', capacity: '3 GB', price: 13.50, displayName: 'MTN 3GB (Non-Expiry)', inStock: true },
-  { id: 'yello-4', network: 'YELLO', capacity: '4 GB', price: 19.00, displayName: 'MTN 4GB (Non-Expiry)', inStock: true },
-  { id: 'yello-5', network: 'YELLO', capacity: '5 GB', price: 23.00, displayName: 'MTN 5GB (Non-Expiry)', inStock: true },
-  { id: 'yello-6', network: 'YELLO', capacity: '6 GB', price: 27.00, displayName: 'MTN 6GB (Non-Expiry)', inStock: true },
-  { id: 'yello-8', network: 'YELLO', capacity: '8 GB', price: 36.00, displayName: 'MTN 8GB (Non-Expiry)', inStock: true },
-  { id: 'yello-10', network: 'YELLO', capacity: '10 GB', price: 43.00, displayName: 'MTN 10GB (Non-Expiry)', inStock: true },
-  { id: 'yello-15', network: 'YELLO', capacity: '15 GB', price: 62.00, displayName: 'MTN 15GB (Non-Expiry)', inStock: true },
-  { id: 'yello-20', network: 'YELLO', capacity: '20 GB', price: 82.00, displayName: 'MTN 20GB (Non-Expiry)', inStock: true },
-  
-  // Telecel
-  { id: 'tel-1', network: 'TELECEL', capacity: '1 GB', price: 4.00, displayName: 'Telecel 1GB (Non-Expiry)', inStock: true },
-  { id: 'tel-2', network: 'TELECEL', capacity: '2 GB', price: 8.50, displayName: 'Telecel 2GB (Non-Expiry)', inStock: true },
-  { id: 'tel-5', network: 'TELECEL', capacity: '5 GB', price: 20.00, displayName: 'Telecel 5GB (Non-Expiry)', inStock: true },
-  { id: 'tel-10', network: 'TELECEL', capacity: '10 GB', price: 38.50, displayName: 'Telecel 10GB (Non-Expiry)', inStock: true },
-  { id: 'tel-15', network: 'TELECEL', capacity: '15 GB', price: 56.00, displayName: 'Telecel 15GB (Non-Expiry)', inStock: true },
-  { id: 'tel-20', network: 'TELECEL', capacity: '20 GB', price: 74.00, displayName: 'Telecel 20GB (Non-Expiry)', inStock: true },
-  
-  // AirtelTigo (AT_PREMIUM)
-  { id: 'at-1', network: 'AT_PREMIUM', capacity: '1 GB', price: 4.00, displayName: 'AT 1GB (Non-Expiry)', inStock: true },
-  { id: 'at-2', network: 'AT_PREMIUM', capacity: '2 GB', price: 8.50, displayName: 'AT 2GB (Non-Expiry)', inStock: true },
-  { id: 'at-5', network: 'AT_PREMIUM', capacity: '5 GB', price: 19.00, displayName: 'AT 5GB (Non-Expiry)', inStock: true },
-  { id: 'at-10', network: 'AT_PREMIUM', capacity: '10 GB', price: 36.00, displayName: 'AT 10GB (Non-Expiry)', inStock: true },
-  { id: 'at-15', network: 'AT_PREMIUM', capacity: '15 GB', price: 53.00, displayName: 'AT 15GB (Non-Expiry)', inStock: true },
-  { id: 'at-20', network: 'AT_PREMIUM', capacity: '20 GB', price: 70.00, displayName: 'AT 20GB (Non-Expiry)', inStock: true },
-];
+const initialPackages: Package[] = dataServices.map((s) => ({
+  id: s.id,
+  network: s.network === 'MTN' ? 'YELLO' : s.network === 'Telecel' ? 'TELECEL' : 'AT',
+  capacity: `${s.capacity || String(s.volume || '').replace(/\D/g, '')} GB`,
+  price: s.retail_price,
+  displayName: `${s.network === 'AirtelTigo' ? 'AT' : s.network} ${s.volume} (Non-Expiry)`,
+  inStock: s.status === 'available',
+}));
 
 export default function Buy() {
-  const [activeService, setActiveService] = useState<'data' | 'airtime' | 'bills' | 'tv' | 'bulk'>('data');
-  const [activeNetwork, setActiveNetwork] = useState<'YELLO' | 'TELECEL' | 'AT_PREMIUM'>('YELLO');
+  const [activeService, setActiveService] = useState<'data' | 'bulk'>('data');
+  const [activeNetwork, setActiveNetwork] = useState<'YELLO' | 'TELECEL' | 'AT'>('YELLO');
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentRef, setAgentRef] = useState<string | null>(null);
 
   // Purchase targets: 'self' vs 'others'
   const [dataBuyFor, setDataBuyFor] = useState<'self' | 'others'>('self');
-  const [airtimeBuyFor, setAirtimeBuyFor] = useState<'self' | 'others'>('self');
 
   // Form Fields: Payer MoMo number (where money is deducted from) & Recipient number (where service goes)
-  const [paymentGateway, setPaymentGateway] = useState<'paystack' | 'hubtel'>('paystack');
   const [payerPhone, setPayerPhone] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [billProvider, setBillProvider] = useState('ECG Prepaid');
-  const [tvProvider, setTvProvider] = useState('DSTV');
-  const [tvPlan, setTvPlan] = useState('DSTV Compact (GH₵ 220)');
 
   // Bulk Purchase Fields for customer/corporate ordering
   const [bulkNumbersInput, setBulkNumbersInput] = useState('');
   const [bulkPackage, setBulkPackage] = useState<Package | null>(null);
-  const [bulkNetwork, setBulkNetwork] = useState<'YELLO' | 'TELECEL' | 'AT_PREMIUM'>('YELLO');
+  const [bulkNetwork, setBulkNetwork] = useState<'YELLO' | 'TELECEL' | 'AT'>('YELLO');
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -98,34 +71,27 @@ export default function Buy() {
       if (stored) setAgentRef(stored);
     }
 
-    // 2. Check for Paystack or Hubtel callback return
+    // 2. Check for Paystack callback return
     const payRef = params.get('reference') || params.get('trxref') || (isPaymentRef ? refParam : null);
-    const gatewayParam = params.get('gateway');
-    
+
     if (payRef && payRef !== 'PAYSTACK_REF') {
       setLoading(true);
-      if (gatewayParam === 'hubtel' || payRef.startsWith('HCHK_') || payRef.startsWith('HMOMO_')) {
-        setLoading(false);
-        setSuccess(true);
-        setMessage(`Payment via Hubtel (Ref: ${payRef}) received! Your order is being fulfilled.`);
-      } else {
-        fetch(`/api/paystack/verify?reference=${encodeURIComponent(payRef)}`)
-          .then((res) => res.json())
-          .then((data) => {
-            setLoading(false);
-            if (data.success) {
-              setSuccess(true);
-              setMessage(data.message || `Payment of GH₵${Number(data.amount).toFixed(2)} confirmed! Your order has been placed and is being dispatched.`);
-            } else {
-              setMessage(data.message || 'Payment could not be verified.');
-            }
-          })
-          .catch(() => {
-            setLoading(false);
+      fetch(`/api/paystack/verify?reference=${encodeURIComponent(payRef)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.success) {
             setSuccess(true);
-            setMessage(`Payment verified (Ref: ${payRef}). Your order is being dispatched!`);
-          });
-      }
+            setMessage(data.message || `Payment of GH₵${Number(data.amount).toFixed(2)} confirmed! Your order has been placed and is being dispatched.`);
+          } else {
+            setMessage(data.message || 'Payment could not be verified.');
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+          setSuccess(true);
+          setMessage(`Payment verified (Ref: ${payRef}). Your order is being dispatched!`);
+        });
     }
   }, []);
 
@@ -154,47 +120,7 @@ export default function Buy() {
       const cleanRecipient = deliverToPhone.replace(/\D/g, '') || cleanPayer;
       const targetNet = activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
 
-      // ROUTE A: HUBTEL CHECKOUT
-      if (paymentGateway === 'hubtel') {
-        const response = await fetch('/api/hubtel/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: payAmount,
-            description: `${activeService.toUpperCase()} order for ${cleanRecipient}`,
-            phone: cleanPayer,
-            payer_phone: cleanPayer,
-            recipient_phone: cleanRecipient,
-            service: activeService,
-            network: targetNet,
-            planId: selectedPackage?.id,
-            capacity: selectedPackage?.capacity,
-            returnUrl: `${window.location.origin}/buy?gateway=hubtel`,
-          }),
-        });
-
-        const data = await response.json();
-        setLoading(false);
-
-        if (data.success && data.checkoutUrl) {
-          if (broadcastInfo) {
-            broadcastTransaction({
-              name: broadcastInfo.name.trim() || 'Customer',
-              network: broadcastInfo.network,
-              bundle: broadcastInfo.bundle,
-              amount: broadcastInfo.amountStr,
-            });
-          }
-          window.location.href = data.checkoutUrl;
-          return;
-        } else {
-          setLoading(false);
-          alert('Hubtel Checkout initialization failed: ' + (data.message || 'Please try again'));
-          return;
-        }
-      }
-
-      // ROUTE B: PAYSTACK CHECKOUT
+      // PAYSTACK CHECKOUT
       const customerEmail = `${cleanPayer}@quicknetdata.com`;
 
       const response = await fetch('/api/paystack/initialize', {
@@ -208,10 +134,10 @@ export default function Buy() {
           recipient_phone: cleanRecipient,
           account_number: accountNum,
           buy_for: buyFor,
-          service: activeService,
+          service: 'data',
           network: targetNet,
-          planId: selectedPackage?.id,
-          capacity: selectedPackage?.capacity,
+          planId: selectedPackage?.id || bulkPackage?.id,
+          capacity: selectedPackage?.capacity || bulkPackage?.capacity,
           referral_code: agentRef || undefined,
           callbackUrl: `${window.location.origin}/buy`,
         }),
@@ -275,101 +201,7 @@ export default function Buy() {
     });
   };
 
-  // 2. AIRTIME SUBMISSION
-  const handleAirtimeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const airtimeAmount = parseFloat(amount as string) || 0;
-    if (airtimeAmount < 1) {
-      alert('Please enter a valid amount (minimum GH₵ 1.00)');
-      return;
-    }
-
-    const payer = payerPhone.trim();
-    const recipient = airtimeBuyFor === 'self' ? payer : recipientPhone.trim();
-
-    if (!payer) {
-      alert('Please enter your Mobile Money phone number to deduct payment from.');
-      return;
-    }
-    if (airtimeBuyFor === 'others' && !recipient) {
-      alert('Please enter the recipient phone number to receive the airtime.');
-      return;
-    }
-
-    const net = activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo';
-    await processPayment({
-      payAmount: airtimeAmount,
-      deductFromPhone: payer,
-      deliverToPhone: recipient,
-      buyFor: airtimeBuyFor,
-      description: `Airtime order of GH₵ ${airtimeAmount.toFixed(2)} initialized. Payment deducted from ${payer}.`,
-      broadcastInfo: {
-        name: customerName || 'Customer',
-        network: net,
-        bundle: `Airtime GH₵ ${airtimeAmount.toFixed(2)}`,
-        amountStr: `GH₵ ${airtimeAmount.toFixed(2)}`,
-      },
-    });
-  };
-
-  // 3. UTILITY BILL SUBMISSION
-  const handleBillSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const billAmount = parseFloat(amount as string) || 0;
-    if (billAmount < 1) {
-      alert('Please enter a valid amount (minimum GH₵ 1.00)');
-      return;
-    }
-    const payer = payerPhone.trim();
-    const meter = accountNumber.trim();
-
-    if (!meter) {
-      alert('Please enter the meter or account number to credit.');
-      return;
-    }
-    if (!payer) {
-      alert('Please enter your Mobile Money phone number where money will be deducted from.');
-      return;
-    }
-
-    await processPayment({
-      payAmount: billAmount,
-      deductFromPhone: payer,
-      deliverToPhone: payer,
-      accountNum: meter,
-      buyFor: 'self',
-      description: `Utility bill payment of GH₵ ${billAmount.toFixed(2)} for ${billProvider} meter ${meter}. Deducted from ${payer}.`,
-    });
-  };
-
-  // 4. TV SUBMISSION
-  const handleTvSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const priceMatch = tvPlan.match(/GH₵\s*(\d+)/i);
-    const tvAmount = priceMatch ? parseFloat(priceMatch[1]) : 50;
-    const payer = payerPhone.trim();
-    const smartcard = accountNumber.trim();
-
-    if (!smartcard) {
-      alert('Please enter your Smartcard or IUC number.');
-      return;
-    }
-    if (!payer) {
-      alert('Please enter your Mobile Money phone number where payment will be deducted from.');
-      return;
-    }
-
-    await processPayment({
-      payAmount: tvAmount,
-      deductFromPhone: payer,
-      deliverToPhone: payer,
-      accountNum: smartcard,
-      buyFor: 'self',
-      description: `TV Subscription renewal for ${tvProvider} Smartcard ${smartcard}. Deducted from ${payer}.`,
-    });
-  };
-
-  // 5. BULK PURCHASE SUBMISSION (For customers / business clients ordering for multiple numbers)
+  // 2. BULK PURCHASE SUBMISSION (For customers / business clients ordering for multiple numbers)
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bulkPackage) {
@@ -456,18 +288,15 @@ export default function Buy() {
               DIRECT PURCHASE PORTAL
             </h1>
             <p style={{ color: '#9CA3AF', fontSize: '1.02rem', maxWidth: '640px', margin: '0 auto' }}>
-              Buy data, airtime, or pay utility bills. Enter your Mobile Money number and payment will be deducted directly from your MoMo wallet!
+              Buy MTN, Telecel, or AirtelTigo data bundles via Paystack MoMo or Card — delivered instantly via DatamartGH.
             </p>
           </div>
 
           {/* Service Tabs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.35rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', maxWidth: '460px', margin: '0 auto 2.5rem', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.35rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
             {[
-              { id: 'data', label: 'Buy Data', icon: Database },
-              { id: 'airtime', label: 'Buy Airtime', icon: PhoneCall },
-              { id: 'bills', label: 'Electricity & Water', icon: Receipt },
-              { id: 'tv', label: 'TV Subscription', icon: Tv },
-              { id: 'bulk', label: 'Bulk Purchase', icon: Users },
+              { id: 'data', label: 'Buy Data Bundles', icon: Database },
+              { id: 'bulk', label: 'Bulk Data Purchase', icon: Users },
             ].map((srv) => {
               const isActive = activeService === srv.id;
               const Icon = srv.icon;
@@ -570,12 +399,12 @@ export default function Buy() {
                       </button>
 
                       <button
-                        onClick={() => { setActiveNetwork('AT_PREMIUM'); setSelectedPackage(null); }}
+                        onClick={() => { setActiveNetwork('AT'); setSelectedPackage(null); }}
                         style={{
                           padding: '0.75rem',
                           borderRadius: '12px',
-                          border: activeNetwork === 'AT_PREMIUM' ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)',
-                          backgroundColor: activeNetwork === 'AT_PREMIUM' ? 'rgba(59, 130, 246, 0.1)' : '#0F172A',
+                          border: activeNetwork === 'AT' ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)',
+                          backgroundColor: activeNetwork === 'AT' ? 'rgba(59, 130, 246, 0.1)' : '#0F172A',
                           color: '#FFFFFF',
                           fontWeight: 700,
                           cursor: 'pointer',
@@ -763,53 +592,9 @@ export default function Buy() {
                           </>
                         )}
 
-                        {/* Payment Gateway Selector */}
-                        <div style={{ marginBottom: '1.25rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.45rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Payment Processing Gateway
-                          </label>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                            <button
-                              type="button"
-                              onClick={() => setPaymentGateway('paystack')}
-                              style={{
-                                padding: '0.65rem 0.5rem',
-                                borderRadius: '10px',
-                                border: paymentGateway === 'paystack' ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
-                                backgroundColor: paymentGateway === 'paystack' ? 'rgba(250,204,21,0.1)' : '#030712',
-                                color: paymentGateway === 'paystack' ? '#FACC15' : '#9CA3AF',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.35rem',
-                              }}
-                            >
-                              <span>⚡ Paystack (MoMo / Card)</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPaymentGateway('hubtel')}
-                              style={{
-                                padding: '0.65rem 0.5rem',
-                                borderRadius: '10px',
-                                border: paymentGateway === 'hubtel' ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
-                                backgroundColor: paymentGateway === 'hubtel' ? 'rgba(250,204,21,0.1)' : '#030712',
-                                color: paymentGateway === 'hubtel' ? '#FACC15' : '#9CA3AF',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.35rem',
-                              }}
-                            >
-                              <span>📱 Hubtel Ghana MoMo</span>
-                            </button>
-                          </div>
+                        {/* Payment Gateway Info */}
+                        <div style={{ marginBottom: '1.25rem', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(250,204,21,0.3)', backgroundColor: 'rgba(250,204,21,0.06)', color: '#FACC15', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          <span>⚡ Paystack Instant Checkout (MTN MoMo · Telecel Cash · AT Money · Card)</span>
                         </div>
 
                         <div style={{ marginBottom: '1.5rem' }}>
@@ -850,321 +635,7 @@ export default function Buy() {
                 </div>
               )}
 
-              {/* TAB 2: AIRTIME */}
-              {activeService === 'airtime' && (
-                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.25rem', textAlign: 'center' }}>
-                    Instant Airtime Top-Up
-                  </h3>
-                  
-                  {/* Carrier tabs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                    {(['YELLO', 'TELECEL', 'AT_PREMIUM'] as const).map((net) => (
-                      <button
-                        key={net}
-                        type="button"
-                        onClick={() => setActiveNetwork(net)}
-                        style={{
-                          padding: '0.7rem',
-                          borderRadius: '10px',
-                          border: activeNetwork === net ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
-                          backgroundColor: activeNetwork === net ? 'rgba(250, 204, 21, 0.1)' : 'transparent',
-                          color: '#FFFFFF',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        {net === 'YELLO' ? 'MTN' : net === 'TELECEL' ? 'Telecel' : 'AirtelTigo'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Toggle: Myself vs Others */}
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <button
-                        type="button"
-                        onClick={() => setAirtimeBuyFor('self')}
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem',
-                          borderRadius: '8px',
-                          border: 'none',
-                          backgroundColor: airtimeBuyFor === 'self' ? '#FACC15' : 'transparent',
-                          color: airtimeBuyFor === 'self' ? '#030712' : '#9CA3AF',
-                          fontWeight: 800,
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.4rem',
-                        }}
-                      >
-                        <UserCheck size={15} /> Top Up My Own Number
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAirtimeBuyFor('others')}
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem',
-                          borderRadius: '8px',
-                          border: 'none',
-                          backgroundColor: airtimeBuyFor === 'others' ? '#FACC15' : 'transparent',
-                          color: airtimeBuyFor === 'others' ? '#030712' : '#9CA3AF',
-                          fontWeight: 800,
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.4rem',
-                        }}
-                      >
-                        <Users size={15} /> Top Up For Someone Else
-                      </button>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleAirtimeSubmit}>
-                    
-                    {airtimeBuyFor === 'self' ? (
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
-                          Your Phone Number (MoMo Payment & Airtime)
-                        </label>
-                        <input
-                          type="tel"
-                          required
-                          placeholder="e.g. 0244123456"
-                          value={payerPhone}
-                          onChange={(e) => setPayerPhone(e.target.value)}
-                          style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.3)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <div style={{ marginBottom: '1rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.35rem' }}>
-                            Recipient Phone Number (To Receive Airtime)
-                          </label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="e.g. 0244123456"
-                            value={recipientPhone}
-                            onChange={(e) => setRecipientPhone(e.target.value)}
-                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                          />
-                        </div>
-
-                        <div style={{ marginBottom: '1rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
-                            Your Mobile Money Number (To Deduct Payment)
-                          </label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="e.g. 0502515547"
-                            value={payerPhone}
-                            onChange={(e) => setPayerPhone(e.target.value)}
-                            style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Airtime Amount (GH₵)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        required
-                        placeholder="Min GH₵ 1.00"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn btn-primary"
-                      style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                    >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '⚡ Deduct from MoMo & Recharge Airtime'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* TAB 3: BILLS (ELECTRICITY & WATER) */}
-              {activeService === 'bills' && (
-                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.5rem', textAlign: 'center' }}>
-                    Pay Electricity & Water Bills
-                  </h3>
-
-                  <form onSubmit={handleBillSubmit}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Utility Service
-                      </label>
-                      <select
-                        value={billProvider}
-                        onChange={(e) => setBillProvider(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      >
-                        <option value="ECG Prepaid">ECG Prepaid Electricity</option>
-                        <option value="GWCL Water">Ghana Water Company (GWCL)</option>
-                      </select>
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
-                        Meter / Customer Account Number
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter meter or account number to credit"
-                        value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
-                        Your Mobile Money Number (To Deduct Payment)
-                      </label>
-                      <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        A MoMo prompt will be sent to this number to authorize the bill payment deduction.
-                      </p>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="e.g. 0502515547"
-                        value={payerPhone}
-                        onChange={(e) => setPayerPhone(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Amount (GH₵)
-                      </label>
-                      <input
-                        type="number"
-                        min="5"
-                        required
-                        placeholder="e.g. 50"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn btn-primary"
-                      style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                    >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '💡 Deduct from MoMo & Pay Bill'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* TAB 4: TV */}
-              {activeService === 'tv' && (
-                <div style={{ maxWidth: '540px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.5rem', textAlign: 'center' }}>
-                    Cable TV Subscription Renewal
-                  </h3>
-
-                  <form onSubmit={handleTvSubmit}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        TV Provider
-                      </label>
-                      <select
-                        value={tvProvider}
-                        onChange={(e) => setTvProvider(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      >
-                        <option value="DSTV">DStv Ghana</option>
-                        <option value="GOTV">GOtv Ghana</option>
-                        <option value="STARTIMES">StarTimes</option>
-                      </select>
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
-                        Smartcard / IUC Number
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter smartcard number"
-                        value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
-                        Your Mobile Money Number (To Deduct Payment)
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="e.g. 0502515547"
-                        value={payerPhone}
-                        onChange={(e) => setPayerPhone(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                        Select Package
-                      </label>
-                      <select
-                        value={tvPlan}
-                        onChange={(e) => setTvPlan(e.target.value)}
-                        style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.9rem', outline: 'none' }}
-                      >
-                        <option value="DSTV Access (GH₵ 75)">DStv Access (GH₵ 75)</option>
-                        <option value="DSTV Compact (GH₵ 220)">DStv Compact (GH₵ 220)</option>
-                        <option value="DSTV Premium (GH₵ 490)">DStv Premium (GH₵ 490)</option>
-                        <option value="GOtv Plus (GH₵ 55)">GOtv Plus (GH₵ 55)</option>
-                        <option value="GOtv Max (GH₵ 85)">GOtv Max (GH₵ 85)</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn btn-primary"
-                      style={{ width: '100%', height: '48px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                    >
-                      {loading ? <Loader2 size={18} className="animate-spin" /> : '📺 Deduct from MoMo & Renew TV'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* TAB 5: BULK PURCHASE (FOR MULTIPLE RECIPIENTS / GROUPS) */}
+              {/* TAB 2: BULK PURCHASE (FOR MULTIPLE RECIPIENTS / GROUPS) */}
               {activeService === 'bulk' && (
                 <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem' }}>
                   <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
@@ -1186,7 +657,7 @@ export default function Buy() {
                         {[
                           { id: 'YELLO', label: 'MTN', color: '#FACC15' },
                           { id: 'TELECEL', label: 'Telecel', color: '#EF4444' },
-                          { id: 'AT_PREMIUM', label: 'AirtelTigo', color: '#3B82F6' },
+                          { id: 'AT', label: 'AirtelTigo', color: '#3B82F6' },
                         ].map((net) => (
                           <button
                             key={net.id}

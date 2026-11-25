@@ -160,7 +160,7 @@ export default function Contact() {
                     💬 Chat on WhatsApp (+233 50 251 5547) &rarr;
                   </a>
                   <a 
-                    href="https://whatsapp.com/channel/0029Vb6zDvaGzzKTwCWszC1Z" 
+                    href="https://whatsapp.com/channel/0029VbDOaIr6LwHnzdP4Rs0k" 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     style={{ fontSize: '0.82rem', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none' }}

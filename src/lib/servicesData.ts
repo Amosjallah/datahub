@@ -4,6 +4,8 @@ export interface ServiceItem {
   type: 'data' | 'airtime' | 'bill' | 'tv';
   network: string;
   volume?: string;
+  capacity?: string;
+  supplier_price?: number;
   retail_price: number;
   agent_price: number;
   api_price: number;
@@ -11,42 +13,98 @@ export interface ServiceItem {
   status: string;
 }
 
-export const allServices: ServiceItem[] = [
-  // MTN Data Bundles (Non-Expiry)
-  { id: 'MTN_1GB', name: 'MTN Data 1GB', type: 'data', network: 'MTN', volume: '1GB', retail_price: 4.20, agent_price: 3.80, api_price: 3.60, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_2GB', name: 'MTN Data 2GB', type: 'data', network: 'MTN', volume: '2GB', retail_price: 9.00, agent_price: 8.20, api_price: 7.90, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_3GB', name: 'MTN Data 3GB', type: 'data', network: 'MTN', volume: '3GB', retail_price: 13.50, agent_price: 12.30, api_price: 11.90, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_4GB', name: 'MTN Data 4GB', type: 'data', network: 'MTN', volume: '4GB', retail_price: 19.00, agent_price: 17.20, api_price: 16.80, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_5GB', name: 'MTN Data 5GB', type: 'data', network: 'MTN', volume: '5GB', retail_price: 23.00, agent_price: 21.00, api_price: 20.20, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_6GB', name: 'MTN Data 6GB', type: 'data', network: 'MTN', volume: '6GB', retail_price: 27.00, agent_price: 24.80, api_price: 24.00, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_8GB', name: 'MTN Data 8GB', type: 'data', network: 'MTN', volume: '8GB', retail_price: 36.00, agent_price: 33.00, api_price: 32.00, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_10GB', name: 'MTN Data 10GB', type: 'data', network: 'MTN', volume: '10GB', retail_price: 43.00, agent_price: 39.50, api_price: 38.00, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_15GB', name: 'MTN Data 15GB', type: 'data', network: 'MTN', volume: '15GB', retail_price: 62.00, agent_price: 57.00, api_price: 55.00, validity: 'Non-Expiry', status: 'available' },
-  { id: 'MTN_20GB', name: 'MTN Data 20GB', type: 'data', network: 'MTN', volume: '20GB', retail_price: 82.00, agent_price: 76.00, api_price: 73.50, validity: 'Non-Expiry', status: 'available' },
+const round2 = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
 
-  // Telecel Data Bundles
-  { id: 'TEL_1GB', name: 'Telecel Data 1GB', type: 'data', network: 'Telecel', volume: '1GB', retail_price: 4.00, agent_price: 3.60, api_price: 3.50, validity: 'Non-Expiry', status: 'available' },
-  { id: 'TEL_2GB', name: 'Telecel Data 2GB', type: 'data', network: 'Telecel', volume: '2GB', retail_price: 8.50, agent_price: 7.70, api_price: 7.40, validity: 'Non-Expiry', status: 'available' },
-  { id: 'TEL_5GB', name: 'Telecel Data 5GB', type: 'data', network: 'Telecel', volume: '5GB', retail_price: 20.00, agent_price: 18.00, api_price: 17.50, validity: 'Non-Expiry', status: 'available' },
-  { id: 'TEL_10GB', name: 'Telecel Data 10GB', type: 'data', network: 'Telecel', volume: '10GB', retail_price: 38.50, agent_price: 35.00, api_price: 34.00, validity: 'Non-Expiry', status: 'available' },
+export const PRICING_MARKUPS = {
+  api: 0.05,      // +5%
+  agent: 0.10,    // +10%
+  customer: 0.20, // +20%
+} as const;
 
-  // AirtelTigo Data Bundles
-  { id: 'AT_1GB', name: 'AirtelTigo Data 1GB', type: 'data', network: 'AirtelTigo', volume: '1GB', retail_price: 4.00, agent_price: 3.50, api_price: 3.40, validity: 'Non-Expiry', status: 'available' },
-  { id: 'AT_2GB', name: 'AirtelTigo Data 2GB', type: 'data', network: 'AirtelTigo', volume: '2GB', retail_price: 8.50, agent_price: 7.50, api_price: 7.20, validity: 'Non-Expiry', status: 'available' },
-  { id: 'AT_5GB', name: 'AirtelTigo Data 5GB', type: 'data', network: 'AirtelTigo', volume: '5GB', retail_price: 19.00, agent_price: 17.00, api_price: 16.50, validity: 'Non-Expiry', status: 'available' },
-  { id: 'AT_10GB', name: 'AirtelTigo Data 10GB', type: 'data', network: 'AirtelTigo', volume: '10GB', retail_price: 36.00, agent_price: 32.50, api_price: 31.50, validity: 'Non-Expiry', status: 'available' },
+export function calculateTierPrices(supplierPrice: number) {
+  return {
+    supplier_price: round2(supplierPrice),
+    api_price: round2(supplierPrice * (1 + PRICING_MARKUPS.api)),
+    agent_price: round2(supplierPrice * (1 + PRICING_MARKUPS.agent)),
+    retail_price: round2(supplierPrice * (1 + PRICING_MARKUPS.customer)),
+  };
+}
 
-  // Airtime Top-Up
-  { id: 'AIRTIME_MTN', name: 'MTN Airtime Top-Up', type: 'airtime', network: 'MTN', retail_price: 1.00, agent_price: 0.97, api_price: 0.96, status: 'available' },
-  { id: 'AIRTIME_TELECEL', name: 'Telecel Airtime Top-Up', type: 'airtime', network: 'Telecel', retail_price: 1.00, agent_price: 0.97, api_price: 0.96, status: 'available' },
-  { id: 'AIRTIME_AT', name: 'AirtelTigo Airtime Top-Up', type: 'airtime', network: 'AirtelTigo', retail_price: 1.00, agent_price: 0.97, api_price: 0.96, status: 'available' },
+function buildDataBundle(
+  id: string,
+  network: 'MTN' | 'Telecel' | 'AirtelTigo',
+  gb: number,
+  supplierPrice: number
+): ServiceItem {
+  const volume = `${gb}GB`;
+  return {
+    id,
+    name: `${network} Data ${volume}`,
+    type: 'data',
+    network,
+    volume,
+    capacity: String(gb),
+    ...calculateTierPrices(supplierPrice),
+    validity: 'Non-Expiry',
+    status: 'available',
+  };
+}
 
-  // Utility Bills
-  { id: 'BILL_ECG', name: 'ECG Prepaid Electricity', type: 'bill', network: 'ECG', retail_price: 0.50, agent_price: 0.30, api_price: 0.25, status: 'available' },
-  { id: 'BILL_GWCL', name: 'Ghana Water Company (GWCL)', type: 'bill', network: 'GWCL', retail_price: 0.50, agent_price: 0.30, api_price: 0.25, status: 'available' },
-
-  // Cable TV Subscriptions
-  { id: 'TV_DSTV', name: 'DStv Subscription & Renewal', type: 'tv', network: 'DSTV', retail_price: 1.00, agent_price: 0.50, api_price: 0.40, status: 'available' },
-  { id: 'TV_GOTV', name: 'GOtv Subscription & Renewal', type: 'tv', network: 'GOTV', retail_price: 1.00, agent_price: 0.50, api_price: 0.40, status: 'available' },
-  { id: 'TV_STARTIMES', name: 'StarTimes Subscription', type: 'tv', network: 'STARTIMES', retail_price: 1.00, agent_price: 0.50, api_price: 0.40, status: 'available' },
+const MTN_BUNDLES: Array<[number, number]> = [
+  [1, 4.00],
+  [2, 8.00],
+  [3, 12.00],
+  [4, 16.00],
+  [5, 20.00],
+  [6, 24.00],
+  [8, 32.00],
+  [10, 39.00],
+  [15, 57.00],
+  [20, 76.50],
+  [25, 96.00],
+  [30, 115.00],
+  [40, 157.00],
+  [50, 185.00],
+  [100, 407.00],
 ];
+
+const TELECEL_BUNDLES: Array<[number, number]> = [
+  [5, 19.50],
+  [8, 34.64],
+  [10, 36.50],
+  [12, 43.70],
+  [15, 52.85],
+  [20, 69.80],
+  [25, 86.75],
+  [30, 103.70],
+  [35, 120.65],
+  [40, 137.60],
+  [45, 154.55],
+  [50, 171.50],
+  [100, 341.00],
+];
+
+const AIRTELTIGO_BUNDLES: Array<[number, number]> = [
+  [1, 3.80],
+  [2, 7.60],
+  [3, 11.20],
+  [4, 15.00],
+  [5, 19.00],
+  [6, 23.50],
+  [8, 30.50],
+  [10, 36.50],
+  [12, 44.70],
+  [15, 55.80],
+  [25, 93.00],
+  [30, 112.00],
+  [40, 151.00],
+  [50, 190.00],
+];
+
+export const dataServices: ServiceItem[] = [
+  ...MTN_BUNDLES.map(([gb, price]) => buildDataBundle(`MTN_${gb}GB`, 'MTN', gb, price)),
+  ...TELECEL_BUNDLES.map(([gb, price]) => buildDataBundle(`TEL_${gb}GB`, 'Telecel', gb, price)),
+  ...AIRTELTIGO_BUNDLES.map(([gb, price]) => buildDataBundle(`AT_${gb}GB`, 'AirtelTigo', gb, price)),
+];
+
+export const allServices: ServiceItem[] = [...dataServices];

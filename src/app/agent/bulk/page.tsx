@@ -15,10 +15,10 @@ export default function AgentBulk() {
   const [batchCompleted, setBatchCompleted] = useState<string | null>(null);
 
   const [records, setRecords] = useState([
-    { phone: '0244 111 222', network: 'MTN', amount: 'GH₵21.00', numAmount: 21.00, plan: '5GB', status: 'Pending' },
-    { phone: '0559 998 887', network: 'MTN', amount: 'GH₵39.50', numAmount: 39.50, plan: '10GB', status: 'Pending' },
-    { phone: '0502 777 665', network: 'Telecel', amount: 'GH₵10.00', numAmount: 10.00, plan: 'Airtime', status: 'Pending' },
-    { phone: '0277 555 443', network: 'AirtelTigo', amount: 'GH₵12.00', numAmount: 12.00, plan: '3GB', status: 'Pending' },
+    { phone: '0244 111 222', network: 'MTN', amount: 'GH₵22.00', numAmount: 22.00, plan: '5GB', status: 'Pending' },
+    { phone: '0559 998 887', network: 'MTN', amount: 'GH₵42.90', numAmount: 42.90, plan: '10GB', status: 'Pending' },
+    { phone: '0502 777 665', network: 'Telecel', amount: 'GH₵40.15', numAmount: 40.15, plan: '10GB', status: 'Pending' },
+    { phone: '0277 555 443', network: 'AirtelTigo', amount: 'GH₵12.32', numAmount: 12.32, plan: '3GB', status: 'Pending' },
   ]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +48,7 @@ export default function AgentBulk() {
           const network = parts[0].toUpperCase().includes('TEL') ? 'Telecel' : parts[0].toUpperCase().includes('AIR') || parts[0].toUpperCase().includes('AT') ? 'AirtelTigo' : 'MTN';
           const phone = parts[1] || '';
           const plan = parts[3] || '5GB';
-          const amt = parseFloat(parts[4]) || 21.00;
+          const amt = parseFloat(parts[4]) || 22.00;
 
           parsedRecords.push({
             phone,

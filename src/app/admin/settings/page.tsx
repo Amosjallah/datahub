@@ -7,7 +7,7 @@ import { ToggleLeft, ToggleRight, Save, Database, Shield } from 'lucide-react';
 export default function AdminSettings() {
   const [maintenance, setMaintenance] = useState(false);
   const [autoRefund, setAutoRefund] = useState(true);
-  const [defaultMargin, setDefaultMargin] = useState(8.5);
+  const [defaultMargin, setDefaultMargin] = useState(10);
   const [gateway, setGateway] = useState('datamartgh');
 
   const handleSave = (e: React.FormEvent) => {
@@ -79,11 +79,8 @@ export default function AdminSettings() {
                 onChange={(e) => setGateway(e.target.value)}
                 style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
               >
-                <option value="datamartgh">DatamartGH VTU (Primary Data & Airtime)</option>
-                <option value="resellerxpress">ResellerXpress (VTU Fallback)</option>
-                <option value="hubtel">Hubtel Ghana (Direct MoMo & Bill Payment)</option>
-                <option value="paystack">Paystack Payment Rails (Cards & Collections)</option>
-                <option value="mtn-momo">MTN MoMo API Direct Connect</option>
+                <option value="datamartgh">DatamartGH VTU (Active Data Provider)</option>
+                <option value="paystack">Paystack Payment Rails (Cards & MoMo Collections)</option>
               </select>
             </div>
 

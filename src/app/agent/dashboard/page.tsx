@@ -11,6 +11,7 @@ import {
   AlertCircle, Loader2, Phone, Database, Receipt, Tv
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { dataServices } from '@/lib/servicesData';
 
 interface ManualRow {
   network: string;
@@ -45,8 +46,8 @@ export default function AgentDashboard() {
   const [singleNetwork, setSingleNetwork] = useState<'MTN' | 'Telecel' | 'AirtelTigo'>('MTN');
   const [singleRecipient, setSingleRecipient] = useState('');
   const [singlePackage, setSinglePackage] = useState<string>('MTN 10GB');
-  const [singleAmount, setSingleAmount] = useState<number>(39.50);
-  const [singleRetail, setSingleRetail] = useState<number>(43.00);
+  const [singleAmount, setSingleAmount] = useState<number>(42.90);
+  const [singleRetail, setSingleRetail] = useState<number>(46.80);
   const [singlePaymentMethod, setSinglePaymentMethod] = useState<'wallet' | 'momo'>('wallet');
   const [singleLoading, setSingleLoading] = useState(false);
   const [singleStatus, setSingleStatus] = useState<{ type: 'success' | 'error'; message: string; txId?: string } | null>(null);
@@ -63,10 +64,10 @@ export default function AgentDashboard() {
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [bulkSuccessSummary, setBulkSuccessSummary] = useState<string | null>(null);
   const [manualRows, setManualRows] = useState<ManualRow[]>([
-    { network: 'MTN', phone: '0244 123 456', type: 'Data', plan: '10GB', amount: 39.50, status: 'pending' },
-    { network: 'MTN', phone: '0558 345 678', type: 'Data', plan: '5GB', amount: 21.00, status: 'pending' },
-    { network: 'Telecel', phone: '0502 515 547', type: 'Data', plan: '10GB', amount: 35.00, status: 'pending' },
-    { network: 'AirtelTigo', phone: '0277 345 678', type: 'Airtime', plan: 'GH₵20.00', amount: 19.40, status: 'pending' },
+    { network: 'MTN', phone: '0244 123 456', type: 'Data', plan: '10GB', amount: 42.90, status: 'pending' },
+    { network: 'MTN', phone: '0558 345 678', type: 'Data', plan: '5GB', amount: 22.00, status: 'pending' },
+    { network: 'Telecel', phone: '0502 515 547', type: 'Data', plan: '10GB', amount: 40.15, status: 'pending' },
+    { network: 'AirtelTigo', phone: '0277 345 678', type: 'Data', plan: '5GB', amount: 20.90, status: 'pending' },
   ]);
 
   // Wallet and Sales State
@@ -137,28 +138,14 @@ export default function AgentDashboard() {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  // Package Catalog with Agent Wholesale Discount & Margins
-  const dataPackages = [
-    { network: 'MTN', name: 'MTN 1GB', capacity: '1GB', agentPrice: 3.80, retailPrice: 4.20 },
-    { network: 'MTN', name: 'MTN 2GB', capacity: '2GB', agentPrice: 8.20, retailPrice: 9.00 },
-    { network: 'MTN', name: 'MTN 3GB', capacity: '3GB', agentPrice: 12.00, retailPrice: 13.50 },
-    { network: 'MTN', name: 'MTN 5GB', capacity: '5GB', agentPrice: 21.00, retailPrice: 23.00 },
-    { network: 'MTN', name: 'MTN 10GB', capacity: '10GB', agentPrice: 39.50, retailPrice: 43.00 },
-    { network: 'MTN', name: 'MTN 15GB', capacity: '15GB', agentPrice: 57.00, retailPrice: 62.00 },
-    { network: 'MTN', name: 'MTN 20GB', capacity: '20GB', agentPrice: 75.00, retailPrice: 82.00 },
-
-    { network: 'Telecel', name: 'Telecel 1GB', capacity: '1GB', agentPrice: 3.60, retailPrice: 4.00 },
-    { network: 'Telecel', name: 'Telecel 2GB', capacity: '2GB', agentPrice: 7.80, retailPrice: 8.50 },
-    { network: 'Telecel', name: 'Telecel 5GB', capacity: '5GB', agentPrice: 18.00, retailPrice: 20.00 },
-    { network: 'Telecel', name: 'Telecel 10GB', capacity: '10GB', agentPrice: 35.00, retailPrice: 38.50 },
-    { network: 'Telecel', name: 'Telecel 20GB', capacity: '20GB', agentPrice: 68.00, retailPrice: 74.00 },
-
-    { network: 'AirtelTigo', name: 'AT 1GB', capacity: '1GB', agentPrice: 3.50, retailPrice: 4.00 },
-    { network: 'AirtelTigo', name: 'AT 2GB', capacity: '2GB', agentPrice: 7.80, retailPrice: 8.50 },
-    { network: 'AirtelTigo', name: 'AT 5GB', capacity: '5GB', agentPrice: 17.50, retailPrice: 19.00 },
-    { network: 'AirtelTigo', name: 'AT 10GB', capacity: '10GB', agentPrice: 33.00, retailPrice: 36.00 },
-    { network: 'AirtelTigo', name: 'AT 20GB', capacity: '20GB', agentPrice: 64.00, retailPrice: 70.00 },
-  ];
+  // Package Catalog with Agent Wholesale Discount & Margins (+10% Agent vs +20% Retail)
+  const dataPackages = dataServices.map((s) => ({
+    network: s.network,
+    name: `${s.network === 'AirtelTigo' ? 'AT' : s.network} ${s.volume}`,
+    capacity: s.volume || `${s.capacity}GB`,
+    agentPrice: s.agent_price,
+    retailPrice: s.retail_price,
+  }));
 
   const currentAvailablePackages = dataPackages.filter(p => p.network === singleNetwork);
 
@@ -311,13 +298,11 @@ export default function AgentDashboard() {
     if (field === 'plan' || field === 'network') {
       const net = updated[index].network;
       const plan = updated[index].plan;
-      let amt = 39.50;
-      if (plan.includes('1GB')) amt = net === 'MTN' ? 3.80 : 3.60;
-      else if (plan.includes('2GB')) amt = net === 'MTN' ? 8.20 : 7.80;
-      else if (plan.includes('5GB')) amt = net === 'MTN' ? 21.00 : 18.00;
-      else if (plan.includes('10GB')) amt = net === 'MTN' ? 39.50 : 35.00;
-      else if (plan.includes('20GB')) amt = net === 'MTN' ? 75.00 : 68.00;
-      else if (plan.includes('Airtime')) amt = 10.00;
+      const matched = dataServices.find(
+        (s) => s.network === net && s.volume?.toUpperCase() === plan.toUpperCase()
+      );
+      let amt = matched?.agent_price ?? 42.90;
+      if (!matched && plan.includes('Airtime')) amt = 10.00;
       updated[index].amount = amt;
     }
 
@@ -444,11 +429,11 @@ export default function AgentDashboard() {
   };
 
   const pricingTiers = [
-    { service: 'MTN 10GB', retail: 'GH₵43.00', agent: 'GH₵39.50', margin: 'GH₵3.50' },
-    { service: 'MTN 5GB', retail: 'GH₵23.00', agent: 'GH₵21.00', margin: 'GH₵2.00' },
-    { service: 'Telecel 10GB', retail: 'GH₵38.50', agent: 'GH₵35.00', margin: 'GH₵3.50' },
-    { service: 'Airtime GH₵100', retail: 'GH₵100.00', agent: 'GH₵97.00', margin: 'GH₵3.00' },
-    { service: 'Dstv Compact', retail: 'GH₵220.00', agent: 'GH₵215.00', margin: 'GH₵5.00' },
+    { service: 'MTN 10GB', retail: 'GH₵46.80', agent: 'GH₵42.90', margin: 'GH₵3.90' },
+    { service: 'MTN 5GB', retail: 'GH₵24.00', agent: 'GH₵22.00', margin: 'GH₵2.00' },
+    { service: 'Telecel 10GB', retail: 'GH₵43.80', agent: 'GH₵40.15', margin: 'GH₵3.65' },
+    { service: 'AirtelTigo 10GB', retail: 'GH₵43.80', agent: 'GH₵40.15', margin: 'GH₵3.65' },
+    { service: 'MTN 20GB', retail: 'GH₵91.80', agent: 'GH₵84.15', margin: 'GH₵7.65' },
   ];
 
   const commissionHistory = [
@@ -558,6 +543,16 @@ export default function AgentDashboard() {
               >
                 <Share2 size={13} /> Share on WhatsApp
               </button>
+
+              <a
+                href="https://whatsapp.com/channel/0029VbDOaIr6LwHnzdP4Rs0k"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-sm"
+                style={{ backgroundColor: 'rgba(37, 211, 102, 0.15)', color: '#25D366', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(37, 211, 102, 0.35)', fontWeight: 700, textDecoration: 'none' }}
+              >
+                Join Agents Channel
+              </a>
             </div>
           </div>
         </div>

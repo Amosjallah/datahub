@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { WalletService } from './WalletService';
 import { ProviderAdapterInterface } from './providers/ProviderAdapterInterface';
-import { ResellerXpressProviderAdapter } from './providers/ResellerXpressProviderAdapter';
+import { DatamartGHProviderAdapter } from './providers/DatamartGHProviderAdapter';
 
 interface CreateTransactionPayload {
   userId: string;
@@ -22,7 +22,7 @@ export class VtuTransactionService {
 
   constructor(provider?: ProviderAdapterInterface) {
     this.walletService = new WalletService();
-    this.provider = provider || new ResellerXpressProviderAdapter();
+    this.provider = provider || new DatamartGHProviderAdapter();
   }
 
   /**

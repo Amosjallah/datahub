@@ -1,4 +1,5 @@
 import { ProviderAdapterInterface, RechargeRequest, RechargeResponse } from './ProviderAdapterInterface';
+import { calculateTierPrices, dataServices } from '@/lib/servicesData';
 
 export interface DatamartGHPlan {
   id: string | number;
@@ -7,6 +8,10 @@ export interface DatamartGHPlan {
   volume: string;
   capacity: string;
   price: number;
+  supplierPrice: number;
+  retailPrice: number;
+  agentPrice: number;
+  apiPrice: number;
   type: 'data';
   inStock: boolean;
 }
@@ -68,7 +73,7 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
     const norm = (network || '').toUpperCase().trim();
     if (norm.includes('MTN') || norm.includes('YELLO')) return 'YELLO';
     if (norm.includes('TELECEL') || norm.includes('VODA')) return 'TELECEL';
-    if (norm.includes('AIRTEL') || norm.includes('TIGO') || norm === 'AT') return 'at';
+    if (norm.includes('AIRTEL') || norm.includes('TIGO') || norm === 'AT' || norm === 'AT_PREMIUM') return 'at';
     return norm;
   }
 
@@ -84,18 +89,32 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
   }
 
   /**
+   * Build plans from the authoritative DataMart service catalog.
+   */
+  private getCatalogFallbackPlans(): DatamartGHPlan[] {
+    return dataServices.map((s) => ({
+      id: s.id,
+      name: `${s.volume} ${s.network}`,
+      network: s.network,
+      volume: s.volume || `${s.capacity}GB`,
+      capacity: s.capacity || String(s.volume || '').replace(/\D/g, ''),
+      price: s.supplier_price ?? s.retail_price,
+      supplierPrice: s.supplier_price ?? s.retail_price,
+      retailPrice: s.retail_price,
+      agentPrice: s.agent_price,
+      apiPrice: s.api_price,
+      type: 'data',
+      inStock: true,
+    }));
+  }
+
+  /**
    * Fetch live data packages from DataMart API.
    * Endpoint: GET /data-packages
    */
   async getPlans(): Promise<DatamartGHPlan[]> {
     if (this.isMockMode()) {
-      return [
-        { id: 'DMG_MTN_1GB', name: '1GB MTN', network: 'MTN', volume: '1GB', capacity: '1', price: 4.20, type: 'data', inStock: true },
-        { id: 'DMG_MTN_2GB', name: '2GB MTN', network: 'MTN', volume: '2GB', capacity: '2', price: 9.00, type: 'data', inStock: true },
-        { id: 'DMG_MTN_5GB', name: '5GB MTN', network: 'MTN', volume: '5GB', capacity: '5', price: 23.00, type: 'data', inStock: true },
-        { id: 'DMG_TEL_5GB', name: '5GB Telecel', network: 'Telecel', volume: '5GB', capacity: '5', price: 20.00, type: 'data', inStock: true },
-        { id: 'DMG_AT_1GB', name: '1GB AirtelTigo', network: 'AirtelTigo', volume: '1GB', capacity: '1', price: 4.00, type: 'data', inStock: true },
-      ];
+      return this.getCatalogFallbackPlans();
     }
 
     // Cache plans for 60 seconds
@@ -117,20 +136,41 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
 
         for (const [netCode, items] of Object.entries(catalog)) {
           if (!Array.isArray(items)) continue;
+          const upperNet = netCode.toUpperCase();
+          // Only include standard YELLO (MTN), TELECEL, and at (AirtelTigo) bundles
+          if (upperNet !== 'YELLO' && upperNet !== 'TELECEL' && upperNet !== 'AT' && !upperNet.includes('MTN')) {
+            continue;
+          }
           const friendlyNet = this.mapNetworkToFriendly(netCode);
 
           for (const item of items) {
             const cap = String(item.capacity || item.cap || '').trim();
-            const price = parseFloat(item.price || item.cost || '0');
-            if (!cap || isNaN(price) || price <= 0) continue;
+            const rawSupplier = parseFloat(item.price || item.cost || '0');
+            if (!cap || isNaN(rawSupplier) || rawSupplier <= 0) continue;
+
+            const staticMatch = dataServices.find(
+              (s) => s.network.toUpperCase() === friendlyNet.toUpperCase() && s.capacity === cap
+            );
+            const tiers = staticMatch
+              ? {
+                  supplier_price: staticMatch.supplier_price ?? rawSupplier,
+                  retail_price: staticMatch.retail_price,
+                  agent_price: staticMatch.agent_price,
+                  api_price: staticMatch.api_price,
+                }
+              : calculateTierPrices(rawSupplier);
 
             plans.push({
-              id: `DMG_${netCode.toUpperCase()}_${cap}GB`,
+              id: staticMatch?.id || `DMG_${upperNet}_${cap}GB`,
               name: `${cap}GB ${friendlyNet}`,
               network: friendlyNet,
               volume: `${cap}GB`,
               capacity: cap,
-              price,
+              price: tiers.supplier_price,
+              supplierPrice: tiers.supplier_price,
+              retailPrice: tiers.retail_price,
+              agentPrice: tiers.agent_price,
+              apiPrice: tiers.api_price,
               type: 'data',
               inStock: item.inStock !== false,
             });
@@ -149,7 +189,7 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
       console.error('[DatamartGH] getPlans network failure:', err.message);
     }
 
-    return this.cachedPlans || [];
+    return this.cachedPlans || this.getCatalogFallbackPlans();
   }
 
   /**
@@ -163,27 +203,30 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
 
     if (planId) {
       const planStr = String(planId);
-      // If planId has pattern like DMG_YELLO_5GB or MTN_5GB
       const match = planStr.match(/(\d+(?:\.\d+)?)\s*(?:GB|mb)?/i);
       if (match && match[1]) {
         return match[1];
       }
     }
 
-    // Match best package from live catalog by price
+    // Match best package from catalog by closest tier price
     const plans = await this.getPlans();
     const friendlyNet = this.mapNetworkToFriendly(this.mapNetwork(network));
     const netPlans = plans
       .filter((p) => p.network.toUpperCase() === friendlyNet.toUpperCase() && p.inStock)
-      .sort((a, b) => a.price - b.price);
+      .sort((a, b) => a.retailPrice - b.retailPrice);
 
     if (netPlans.length === 0) {
       return null;
     }
 
     let matched = netPlans[0];
+    let smallestDiff = Number.POSITIVE_INFINITY;
     for (const p of netPlans) {
-      if (p.price <= amount) {
+      const candidatePrices = [p.retailPrice, p.agentPrice, p.apiPrice, p.supplierPrice];
+      const minDiff = Math.min(...candidatePrices.map((cp) => Math.abs(cp - amount)));
+      if (minDiff < smallestDiff) {
+        smallestDiff = minDiff;
         matched = p;
       }
     }
@@ -209,10 +252,10 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
       };
     }
 
-    if (request.serviceType === 'airtime') {
+    if (request.serviceType !== 'data') {
       return {
         success: false,
-        errorMessage: 'Direct airtime top-up is not supported by DataMart provider. Please choose a data bundle.',
+        errorMessage: 'Only data bundles are supported by DataMart provider.',
         status: 'failed',
       };
     }
@@ -255,7 +298,7 @@ export class DatamartGHProviderAdapter implements ProviderAdapterInterface {
         const orderData = data?.data || data || {};
         const orderRef = orderData.orderReference || orderData.reference || orderData.orderId || request.reference;
         const rawStatus = (orderData.orderStatus || data?.status || '').toLowerCase();
-        
+
         const isSuccess = rawStatus === 'completed' || rawStatus === 'success' || rawStatus === 'delivered';
         const isProcessing = rawStatus === 'processing' || rawStatus === 'pending' || !rawStatus;
 

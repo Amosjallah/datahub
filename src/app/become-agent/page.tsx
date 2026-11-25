@@ -63,11 +63,11 @@ export default function BecomeAgent() {
                 </thead>
                 <tbody>
                   {[
-                    { service: 'MTN SME Data 10GB', standard: '₵40.00', reseller: '₵37.00', margin: '₵3.00 (7.5%)' },
-                    { service: 'MTN CG Data 5GB', standard: '₵20.00', reseller: '₵18.50', margin: '₵1.50 (7.5%)' },
-                    { service: 'Telecel Data 10GB', standard: '₵35.00', reseller: '₵33.00', margin: '₵2.00 (5.7%)' },
-                    { service: 'Airtime VTU Top-Up (All Carriers)', standard: '₵100.00', reseller: '₵96.50', margin: '₵3.50 (3.5%)' },
-                    { service: 'ECG Prepaid Utility Bill Token', standard: '₵100.00', reseller: '₵100.00', margin: '₵1.50 (Flat fee commission)' }
+                    { service: 'MTN Data 5GB', standard: '₵24.00', reseller: '₵22.00', margin: '₵2.00 (8.3%)' },
+                    { service: 'MTN Data 10GB', standard: '₵46.80', reseller: '₵42.90', margin: '₵3.90 (8.3%)' },
+                    { service: 'MTN Data 20GB', standard: '₵91.80', reseller: '₵84.15', margin: '₵7.65 (8.3%)' },
+                    { service: 'Telecel Data 10GB', standard: '₵43.80', reseller: '₵40.15', margin: '₵3.65 (8.3%)' },
+                    { service: 'AirtelTigo Data 10GB', standard: '₵43.80', reseller: '₵40.15', margin: '₵3.65 (8.3%)' }
                   ].map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
                       <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700 }}>{row.service}</td>
@@ -124,9 +124,20 @@ export default function BecomeAgent() {
             <p style={{ color: '#94A3B8', maxWidth: '520px', margin: '0 auto 2.5rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
               No setup fees, application forms, or activation approvals required. Sign up and fund your wallet to begin sales.
             </p>
-            <a href="/register?role=agent" className="btn hover-scale" style={{ padding: '0.95rem 2.25rem', borderRadius: '16px', backgroundColor: '#FBBF24', color: '#0A192F', fontWeight: 800, fontSize: '1.05rem', boxShadow: '0 6px 20px rgba(251, 191, 36, 0.2)' }}>
-              Sign Up as Reseller <ChevronRight size={16} />
-            </a>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <a href="/register?role=agent" className="btn hover-scale" style={{ padding: '0.95rem 2.25rem', borderRadius: '16px', backgroundColor: '#FBBF24', color: '#0A192F', fontWeight: 800, fontSize: '1.05rem', boxShadow: '0 6px 20px rgba(251, 191, 36, 0.2)' }}>
+                Sign Up as Reseller <ChevronRight size={16} />
+              </a>
+              <a
+                href="https://whatsapp.com/channel/0029VbDOaIr6LwHnzdP4Rs0k"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn hover-scale"
+                style={{ padding: '0.95rem 2rem', borderRadius: '16px', backgroundColor: '#25D366', color: '#FFFFFF', fontWeight: 800, fontSize: '1.05rem', textDecoration: 'none' }}
+              >
+                Join Agents WhatsApp Channel
+              </a>
+            </div>
           </div>
         </div>
       </section>

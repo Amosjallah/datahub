@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { Loader2, AlertTriangle, CheckCircle2, Wallet, RefreshCw, CreditCard, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { dataServices } from '@/lib/servicesData';
 import Link from 'next/link';
 
 interface Plan {
@@ -124,14 +125,15 @@ export default function BuyData() {
         if (data.success && Array.isArray(data.plans) && data.plans.length > 0) {
           setApiPlans(data.plans);
         } else {
-          setApiPlans([
-            { id: 'DMG_MTN_1GB', name: '1GB MTN', network: 'MTN', price: 4.20, capacity: '1' },
-            { id: 'DMG_MTN_2GB', name: '2GB MTN', network: 'MTN', price: 9.00, capacity: '2' },
-            { id: 'DMG_MTN_5GB', name: '5GB MTN', network: 'MTN', price: 23.00, capacity: '5' },
-            { id: 'DMG_TEL_5GB', name: '5GB Telecel', network: 'Telecel', price: 19.50, capacity: '5' },
-            { id: 'DMG_AT_1GB', name: '1GB AirtelTigo', network: 'AirtelTigo', price: 3.80, capacity: '1' },
-            { id: 'DMG_AT_2GB', name: '2GB AirtelTigo', network: 'AirtelTigo', price: 7.60, capacity: '2' },
-          ]);
+          setApiPlans(
+            dataServices.map((s) => ({
+              id: s.id,
+              name: `${s.volume} ${s.network}`,
+              network: s.network,
+              price: s.retail_price,
+              capacity: s.capacity,
+            }))
+          );
         }
       } catch (err) {
         console.error('[BuyData] Failed to fetch plans:', err);

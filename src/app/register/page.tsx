@@ -230,6 +230,14 @@ function RegisterInner() {
                   <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>We handle carrier fulfillment and MoMo payments. You focus on sharing your link.</p>
                 </div>
               </div>
+
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '1.5rem' }}>💬</span>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Official Seller WhatsApp Channel</h3>
+                  <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Get instant rate updates, network alerts, and reseller support in our official WhatsApp channel after registering.</p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -389,6 +397,29 @@ function RegisterInner() {
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <a
+                  href="https://whatsapp.com/channel/0029VbDOaIr6LwHnzdP4Rs0k"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    backgroundColor: '#25D366',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
+                    fontSize: '0.92rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    textDecoration: 'none',
+                    borderRadius: '12px',
+                  }}
+                >
+                  <MessageCircle size={18} /> Join Agents & Sellers WhatsApp Channel
+                </a>
+
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(`🇬🇭 Buy cheap MTN, Telecel & AirtelTigo data bundles directly from my store!\n\nNon-expiry packages at the best wholesale rates.\n\nOrder now:\n${agentRegisteredData.referralLink}`)}`}
                   target="_blank"

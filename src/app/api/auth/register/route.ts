@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     const referralCode = generateReferralCode(name || email.split('@')[0]);
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://quicknetdata.com';
     const referralLink = `${siteUrl}/buy?ref=${referralCode}`;
+    const whatsappChannelUrl = 'https://whatsapp.com/channel/0029VbDOaIr6LwHnzdP4Rs0k';
 
     if (!isSupabaseConfigured()) {
       return NextResponse.json({
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
         },
         referralCode,
         referralLink,
+        whatsappChannelUrl: assignedRole === 'agent' ? whatsappChannelUrl : undefined,
         session: null,
         message: 'Agent registered in demo mode.',
       });
@@ -113,7 +115,7 @@ export async function POST(request: Request) {
 
       // 3. If registering as an agent, send referral link via SMS to agent's phone
       if (assignedRole === 'agent' && cleanPhone) {
-        const smsMessage = `Welcome to QuickNet Data! 🎉\nYour agent store link is:\n${referralLink}\n\nShare this link with your customers to earn commissions. Referral Code: ${referralCode}`;
+        const smsMessage = `Welcome to QuickNet Data! 🎉\nYour agent store link is:\n${referralLink}\n\nJoin our Agents WhatsApp Channel for updates:\n${whatsappChannelUrl}\n\nReferral Code: ${referralCode}`;
         
         try {
           smsResult = await sendSms({
@@ -144,6 +146,7 @@ export async function POST(request: Request) {
       session: data.session,
       referralCode,
       referralLink,
+      whatsappChannelUrl: assignedRole === 'agent' ? whatsappChannelUrl : undefined,
       smsSent: smsResult.success,
       message: assignedRole === 'agent'
         ? `Agent account created! Your referral link (${referralLink}) has been sent to ${cleanPhone}.`

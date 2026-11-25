@@ -4,43 +4,32 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicLayout from '@/components/PublicLayout';
 import { Calculator, ChevronRight } from 'lucide-react';
+import { dataServices } from '@/lib/servicesData';
 
 export default function Pricing() {
   const [selectedNetwork, setSelectedNetwork] = useState<'All' | 'MTN' | 'Telecel' | 'AirtelTigo'>('All');
   const [monthlySpend, setMonthlySpend] = useState<number>(2000);
 
-  const fallbackServices = [
-    // MTN Data
-    { network: 'MTN', name: 'MTN Data 1GB (Non-Expiry)', retail: 4.20, agent: 3.80, api: 3.60 },
-    { network: 'MTN', name: 'MTN Data 2GB (Non-Expiry)', retail: 9.00, agent: 8.20, api: 7.90 },
-    { network: 'MTN', name: 'MTN Data 3GB (Non-Expiry)', retail: 13.50, agent: 12.30, api: 11.90 },
-    { network: 'MTN', name: 'MTN Data 5GB (Non-Expiry)', retail: 23.00, agent: 21.00, api: 20.20 },
-    { network: 'MTN', name: 'MTN Data 10GB (Non-Expiry)', retail: 43.00, agent: 39.50, api: 38.00 },
-    { network: 'MTN', name: 'MTN Data 20GB (Non-Expiry)', retail: 82.00, agent: 76.00, api: 73.50 },
-    // Telecel Data
-    { network: 'Telecel', name: 'Telecel Data 1GB', retail: 4.00, agent: 3.60, api: 3.50 },
-    { network: 'Telecel', name: 'Telecel Data 2GB', retail: 8.50, agent: 7.70, api: 7.40 },
-    { network: 'Telecel', name: 'Telecel Data 5GB', retail: 20.00, agent: 18.00, api: 17.50 },
-    { network: 'Telecel', name: 'Telecel Data 10GB', retail: 38.50, agent: 35.00, api: 34.00 },
-    { network: 'Telecel', name: 'Telecel Data 20GB', retail: 74.00, agent: 68.00, api: 66.00 },
-    // AirtelTigo Data
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 1GB', retail: 4.00, agent: 3.50, api: 3.40 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 2GB', retail: 8.50, agent: 7.50, api: 7.20 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 5GB', retail: 19.00, agent: 17.00, api: 16.50 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 10GB', retail: 36.00, agent: 32.50, api: 31.50 },
-    { network: 'AirtelTigo', name: 'AirtelTigo Data 20GB', retail: 70.00, agent: 64.00, api: 62.00 },
-  ];
+  const fallbackServices = dataServices.map((s) => ({
+    network: s.network,
+    name: `${s.name} (${s.validity || 'Non-Expiry'})`,
+    retail: s.retail_price,
+    agent: s.agent_price,
+    api: s.api_price,
+  }));
 
   const filteredServices = selectedNetwork === 'All'
     ? fallbackServices
     : fallbackServices.filter(s => s.network === selectedNetwork);
 
   const calculateAgentSavings = (spend: number) => {
-    return (spend * 0.065).toFixed(2); // Avg 6.5% discount
+    // Retail is +20% (1.20x), Agent is +10% (1.10x) -> ~8.33% discount off retail
+    return (spend * ((1.20 - 1.10) / 1.20)).toFixed(2);
   };
 
   const calculateApiSavings = (spend: number) => {
-    return (spend * 0.10).toFixed(2); // Avg 10% discount
+    // Retail is +20% (1.20x), API is +5% (1.05x) -> 12.5% discount off retail
+    return (spend * ((1.20 - 1.05) / 1.20)).toFixed(2);
   };
 
   return (

@@ -1,62 +1,10 @@
 import { NextResponse } from 'next/server';
 import { VtuTransactionService } from '@/services/VtuTransactionService';
 import { DatamartGHProviderAdapter } from '@/services/providers/DatamartGHProviderAdapter';
-import { ResellerXpressProviderAdapter } from '@/services/providers/ResellerXpressProviderAdapter';
-import { ProviderAdapterInterface, RechargeRequest, RechargeResponse } from '@/services/providers/ProviderAdapterInterface';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-/**
- * Dual VTU Provider — tries DatamartGH first, falls back to ResellerXpress.
- * This ensures maximum uptime for airtime and data recharges.
- */
-class DualVtuProvider implements ProviderAdapterInterface {
-  private primary: DatamartGHProviderAdapter;
-  private fallback: ResellerXpressProviderAdapter;
-
-  constructor() {
-    this.primary = new DatamartGHProviderAdapter();
-    this.fallback = new ResellerXpressProviderAdapter();
-  }
-
-  async recharge(request: RechargeRequest): Promise<RechargeResponse> {
-    // Try DatamartGH first
-    try {
-      const result = await this.primary.recharge(request);
-      if (result.success || result.status === 'processing') {
-        return result;
-      }
-      console.warn('[DualVtuProvider] DatamartGH failed, falling back to ResellerXpress. Reason:', result.errorMessage);
-    } catch (err: any) {
-      console.warn('[DualVtuProvider] DatamartGH threw error, falling back. Error:', err.message);
-    }
-
-    // Fallback to ResellerXpress (data bundles only — airtime not supported)
-    if (request.serviceType === 'data') {
-      return this.fallback.recharge(request);
-    }
-
-    // Airtime fallback: ResellerXpress doesn't support airtime — return clean error
-    return {
-      success: false,
-      errorMessage: 'Airtime service temporarily unavailable. Please try again shortly.',
-      status: 'failed',
-    };
-  }
-
-  async queryStatus(providerReference: string): Promise<RechargeResponse> {
-    // Try DatamartGH first, then ResellerXpress
-    try {
-      const result = await this.primary.queryStatus(providerReference);
-      if (result.status !== 'processing') return result;
-    } catch (_) {}
-
-    return this.fallback.queryStatus(providerReference);
-  }
-}
-
-const dualProvider = new DualVtuProvider();
 const datamartProvider = new DatamartGHProviderAdapter();
-const vtuService = new VtuTransactionService(dualProvider);
+const vtuService = new VtuTransactionService(datamartProvider);
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +14,13 @@ export async function POST(request: Request) {
     if (!amount || !recipient || !network || !serviceType) {
       return NextResponse.json(
         { success: false, message: 'Missing required recharge parameters: amount, recipient, network, serviceType.' },
+        { status: 400 }
+      );
+    }
+
+    if (String(serviceType).toLowerCase() !== 'data') {
+      return NextResponse.json(
+        { success: false, message: 'Only DatamartGH data bundles are currently active.' },
         { status: 400 }
       );
     }
@@ -98,10 +53,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const maskedPhone = recipient.length > 5 
+    const maskedPhone = recipient.length > 5
       ? `${recipient.substring(0, 3)}****${recipient.substring(recipient.length - 3)}`
       : '***';
-    console.log(`[VTU Recharge Route] Processing recharge for ${maskedPhone} network=${network} type=${serviceType} amount=${amount}`);
+    console.log(`[VTU Recharge Route] Processing DatamartGH recharge for ${maskedPhone} network=${network} type=${serviceType} amount=${amount}`);
 
     const result = await vtuService.processTransaction({
       userId,
@@ -123,7 +78,7 @@ export async function POST(request: Request) {
         status: result.status || 'processing',
         provider: 'DatamartGH',
         message: isProcessing
-          ? `${network} ${serviceType.toUpperCase()} order for ${recipient} placed and is being dispatched!`
+          ? `${network} ${serviceType.toUpperCase()} order for ${recipient} placed via DatamartGH and is being dispatched!`
           : `${network} ${serviceType.toUpperCase()} recharge completed successfully!`,
         transactionId: result.transactionId,
       });
@@ -147,30 +102,24 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const [datamartPlans, rxPlans, datamartBalance, rxBalance] = await Promise.allSettled([
+    const [datamartPlans, datamartBalance] = await Promise.allSettled([
       datamartProvider.getPlans(),
-      new ResellerXpressProviderAdapter().getPlans(),
       datamartProvider.getWalletBalance(),
-      new ResellerXpressProviderAdapter().getWalletBalance(),
     ]);
 
     const dmPlansList = datamartPlans.status === 'fulfilled' ? datamartPlans.value : [];
-    const rxPlansList = rxPlans.status === 'fulfilled' ? rxPlans.value : [];
-
-    // Prioritize active DataMart plans, fallback to ResellerXpress
-    const activePlans = dmPlansList.length > 0 ? dmPlansList : rxPlansList;
+    const activePlans = dmPlansList.map((p) => ({
+      ...p,
+      price: p.retailPrice, // Customer retail price (+20%)
+    }));
 
     return NextResponse.json({
       success: true,
       plans: activePlans,
       providers: {
         datamartGH: {
-          plans: dmPlansList,
+          plans: activePlans,
           balance: datamartBalance.status === 'fulfilled' ? datamartBalance.value : null,
-        },
-        resellerXpress: {
-          plans: rxPlansList,
-          balance: rxBalance.status === 'fulfilled' ? rxBalance.value : null,
         },
       },
     });
