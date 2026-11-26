@@ -156,29 +156,28 @@ export default function Login() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#030712', color: '#F9FAFB' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#030712', color: '#F9FAFB' }}>
       
-      {/* Left Column - Branding (Hidden on mobile) */}
+      {/* Top Section - Branding Above */}
       <aside 
         style={{ 
-          flex: 1, 
           display: 'flex', 
           flexDirection: 'column', 
-          justifyContent: 'space-between', 
-          padding: '3rem', 
-          background: 'linear-gradient(135deg, #0F172A 0%, #030712 100%)', 
-          borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+          alignItems: 'center',
+          textAlign: 'center',
+          padding: '2.5rem 1.5rem 2rem', 
+          background: 'linear-gradient(180deg, #0F172A 0%, #030712 100%)', 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           position: 'relative'
         }}
-        className="hide-mobile"
       >
-        <div style={{ zIndex: 2 }}>
+        <div style={{ zIndex: 2, marginBottom: '1.5rem' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <Logo size={40} />
           </Link>
         </div>
 
-        <div style={{ zIndex: 2, maxWidth: '460px', margin: 'auto 0' }}>
+        <div style={{ zIndex: 2, maxWidth: '680px', margin: '0 auto' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -197,40 +196,35 @@ export default function Login() {
             <ShieldCheck size={14} /> Agent & Admin Workspace
           </div>
 
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: '1.2', marginBottom: '1rem', color: '#FFFFFF', letterSpacing: '-0.02em' }}>
-            Ghana's #1 Automated VTU Gateway
+          <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, lineHeight: '1.2', marginBottom: '0.85rem', color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+            Ghana&apos;s #1 Automated VTU Gateway
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '2.5rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.98rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
             Authorized portal for reseller agents and platform administrators to manage sales, wholesale bundles, wallet funding, and transaction rails.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', textAlign: 'left' }}>
+            <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start', padding: '0.9rem 1rem', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ fontSize: '1.35rem' }}>🛡️</span>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Safe & Encrypted Session</h3>
-                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Agent credentials and administrative privileges are protected with bank-grade encryption.</p>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#FFFFFF' }}>Safe &amp; Encrypted Session</h3>
+                <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Agent credentials and administrative privileges are protected with bank-grade encryption.</p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.5rem' }}>⚡</span>
+            <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start', padding: '0.9rem 1rem', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ fontSize: '1.35rem' }}>⚡</span>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF' }}>Wholesale Margins & Fast Rails</h3>
-                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Access discounted bulk data, check realtime profit margins, and manage your private store.</p>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#FFFFFF' }}>Wholesale Margins &amp; Fast Rails</h3>
+                <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginTop: '0.15rem' }}>Access discounted bulk data, check realtime profit margins, and manage your private store.</p>
               </div>
             </div>
           </div>
         </div>
-
-        <div style={{ zIndex: 2, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF', fontSize: '0.875rem' }}>
-          <span>🔒</span>
-          <span>Authorized agent & admin access active</span>
-        </div>
       </aside>
 
-      {/* Right Column - Sign In Form */}
-      <section style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      {/* Bottom Section - Sign In Form Below */}
+      <section style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '2.5rem 1.5rem 4rem' }}>
         <div style={{ width: '100%', maxWidth: '440px' }} className="animate-fade-up">
           
           {/* Customer Notice Banner */}
