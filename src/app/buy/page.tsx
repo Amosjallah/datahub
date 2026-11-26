@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PublicLayout from '@/components/PublicLayout';
-import { Loader2, Database, CheckCircle2, Star, ShieldCheck, UserCheck, Users, CreditCard } from 'lucide-react';
+import { Loader2, Database, CheckCircle2, Star, ShieldCheck, UserCheck, Users, CreditCard, X } from 'lucide-react';
 import { broadcastTransaction } from '@/lib/liveTransactions';
 import { dataServices } from '@/lib/servicesData';
 
@@ -372,24 +372,24 @@ export default function Buy() {
             <div>
               {/* TAB 1: DATA BUNDLES */}
               {activeService === 'data' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: '2.5rem' }} className="buy-grid">
-                  
-                  {/* Left: Package Selection */}
+                <div>
+                  {/* Full-Width Zoomed Package Selection */}
                   <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '1rem' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1rem' }}>
                       1. Choose Telecom Network
                     </h3>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '2rem', maxWidth: '640px' }}>
                       <button
                         onClick={() => { setActiveNetwork('YELLO'); setSelectedPackage(null); }}
                         style={{
-                          padding: '0.75rem',
-                          borderRadius: '12px',
+                          padding: '0.9rem',
+                          borderRadius: '14px',
                           border: activeNetwork === 'YELLO' ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.1)',
-                          backgroundColor: activeNetwork === 'YELLO' ? 'rgba(250, 204, 21, 0.1)' : '#0F172A',
+                          backgroundColor: activeNetwork === 'YELLO' ? 'rgba(250, 204, 21, 0.12)' : '#0F172A',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -404,12 +404,13 @@ export default function Buy() {
                       <button
                         onClick={() => { setActiveNetwork('TELECEL'); setSelectedPackage(null); }}
                         style={{
-                          padding: '0.75rem',
-                          borderRadius: '12px',
+                          padding: '0.9rem',
+                          borderRadius: '14px',
                           border: activeNetwork === 'TELECEL' ? '2px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
-                          backgroundColor: activeNetwork === 'TELECEL' ? 'rgba(239, 68, 68, 0.1)' : '#0F172A',
+                          backgroundColor: activeNetwork === 'TELECEL' ? 'rgba(239, 68, 68, 0.12)' : '#0F172A',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -424,12 +425,13 @@ export default function Buy() {
                       <button
                         onClick={() => { setActiveNetwork('AT'); setSelectedPackage(null); }}
                         style={{
-                          padding: '0.75rem',
-                          borderRadius: '12px',
+                          padding: '0.9rem',
+                          borderRadius: '14px',
                           border: activeNetwork === 'AT' ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)',
-                          backgroundColor: activeNetwork === 'AT' ? 'rgba(59, 130, 246, 0.1)' : '#0F172A',
+                          backgroundColor: activeNetwork === 'AT' ? 'rgba(59, 130, 246, 0.12)' : '#0F172A',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -442,11 +444,16 @@ export default function Buy() {
                       </button>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '1rem' }}>
-                      2. Select Bundle Package
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+                        2. Select Bundle Package
+                      </h3>
+                      <span style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>
+                        Tap any bundle to enter your phone number &amp; pay
+                      </span>
+                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: '1rem' }}>
                       {filteredPackages.map((pkg) => {
                         const isSelected = selectedPackage?.id === pkg.id;
                         return (
@@ -454,23 +461,24 @@ export default function Buy() {
                             key={pkg.id}
                             onClick={() => setSelectedPackage(pkg)}
                             style={{
-                              padding: '1rem 0.75rem',
-                              borderRadius: '14px',
-                              backgroundColor: isSelected ? 'rgba(250, 204, 21, 0.12)' : '#0F172A',
-                              border: isSelected ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.06)',
+                              padding: '1.4rem 1rem',
+                              borderRadius: '16px',
+                              backgroundColor: isSelected ? 'rgba(250, 204, 21, 0.14)' : '#0F172A',
+                              border: isSelected ? '2px solid #FACC15' : '1px solid rgba(255,255,255,0.08)',
                               cursor: 'pointer',
                               textAlign: 'center',
                               transition: 'all 0.2s',
+                              boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
                             }}
                             className="hover-scale"
                           >
-                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', display: 'block', marginBottom: '0.25rem' }}>
+                            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', display: 'block', marginBottom: '0.35rem' }}>
                               {pkg.capacity}
                             </span>
-                            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FACC15', display: 'block', marginBottom: '0.25rem' }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FACC15', display: 'block', marginBottom: '0.35rem' }}>
                               GH₵ {pkg.price.toFixed(2)}
                             </span>
-                            <span style={{ fontSize: '0.65rem', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                               Non-Expiry
                             </span>
                           </div>
@@ -479,181 +487,232 @@ export default function Buy() {
                     </div>
                   </div>
 
-                  {/* Right: Checkout Form with "Myself" vs "Others" */}
-                  <div>
-                    <div style={{ backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '1.75rem' }}>
-                      
-                      {/* Who are you buying for toggle */}
-                      <div style={{ marginBottom: '1.25rem' }}>
-                        <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Who are you buying for?
-                        </span>
-                        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <button
-                            type="button"
-                            onClick={() => setDataBuyFor('self')}
-                            style={{
-                              flex: 1,
-                              padding: '0.55rem',
-                              borderRadius: '8px',
-                              border: 'none',
-                              backgroundColor: dataBuyFor === 'self' ? '#FACC15' : 'transparent',
-                              color: dataBuyFor === 'self' ? '#030712' : '#9CA3AF',
-                              fontWeight: 800,
-                              fontSize: '0.82rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.4rem',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <UserCheck size={15} /> Buying for Myself
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDataBuyFor('others')}
-                            style={{
-                              flex: 1,
-                              padding: '0.55rem',
-                              borderRadius: '8px',
-                              border: 'none',
-                              backgroundColor: dataBuyFor === 'others' ? '#FACC15' : 'transparent',
-                              color: dataBuyFor === 'others' ? '#030712' : '#9CA3AF',
-                              fontWeight: 800,
-                              fontSize: '0.82rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.4rem',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <Users size={15} /> Buying for Others
-                          </button>
-                        </div>
-                      </div>
+                  {/* Popup Modal Checkout Form (only shown when a package is selected) */}
+                  {selectedPackage && (
+                    <div
+                      onClick={() => !loading && setSelectedPackage(null)}
+                      style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 60,
+                        backgroundColor: 'rgba(3, 7, 18, 0.82)',
+                        backdropFilter: 'blur(6px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          width: '100%',
+                          maxWidth: '480px',
+                          backgroundColor: '#0F172A',
+                          border: '1.5px solid rgba(250, 204, 21, 0.35)',
+                          borderRadius: '22px',
+                          padding: '1.75rem',
+                          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65)',
+                          position: 'relative',
+                          animation: 'fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both',
+                          maxHeight: '92vh',
+                          overflowY: 'auto',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPackage(null)}
+                          disabled={loading}
+                          aria-label="Close checkout"
+                          style={{
+                            position: 'absolute',
+                            top: '1rem',
+                            right: '1rem',
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(255,255,255,0.08)',
+                            border: 'none',
+                            color: '#FFFFFF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <X size={18} />
+                        </button>
 
-                      {selectedPackage ? (
-                        <div style={{ padding: '0.85rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {/* Selected Package Summary */}
+                        <div style={{ padding: '0.9rem 1rem', backgroundColor: 'rgba(250, 204, 21, 0.08)', border: '1px solid rgba(250, 204, 21, 0.25)', borderRadius: '14px', marginBottom: '1.25rem', marginRight: '2.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
                           <div>
-                            <span style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'block' }}>Package Selected:</span>
-                            <strong style={{ color: '#FFFFFF', fontSize: '0.95rem' }}>{selectedPackage.displayName}</strong>
+                            <span style={{ fontSize: '0.72rem', color: '#9CA3AF', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Package Selected</span>
+                            <strong style={{ color: '#FFFFFF', fontSize: '1rem' }}>{selectedPackage.displayName}</strong>
                           </div>
-                          <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FACC15' }}>
+                          <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FACC15', flexShrink: 0 }}>
                             GH₵ {selectedPackage.price.toFixed(2)}
                           </span>
                         </div>
-                      ) : (
-                        <div style={{ padding: '0.85rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: '12px', marginBottom: '1.5rem', color: '#EF4444', fontSize: '0.85rem', textAlign: 'center' }}>
-                          👈 Please choose a bundle package on the left.
-                        </div>
-                      )}
 
-                      <form onSubmit={handleDataSubmit}>
-                        
-                        {/* CASE 1: BUYING FOR MYSELF */}
-                        {dataBuyFor === 'self' && (
-                          <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
-                              Your Phone Number (MoMo Payment & Data Delivery)
-                            </label>
-                            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginBottom: '0.5rem', lineHeight: '1.4' }}>
-                              Payment prompt will be sent to this number, and data will be loaded directly onto it.
-                            </p>
-                            <input
-                              type="tel"
-                              required
-                              placeholder="e.g. 0244123456 or 0502515547"
-                              value={payerPhone}
-                              onChange={(e) => setPayerPhone(e.target.value)}
-                              style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.3)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                            />
+                        {/* Who are you buying for toggle */}
+                        <div style={{ marginBottom: '1.25rem' }}>
+                          <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#9CA3AF', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Who are you buying for?
+                          </span>
+                          <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#030712', padding: '0.3rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <button
+                              type="button"
+                              onClick={() => setDataBuyFor('self')}
+                              style={{
+                                flex: 1,
+                                padding: '0.55rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: dataBuyFor === 'self' ? '#FACC15' : 'transparent',
+                                color: dataBuyFor === 'self' ? '#030712' : '#9CA3AF',
+                                fontWeight: 800,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <UserCheck size={15} /> Buying for Myself
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDataBuyFor('others')}
+                              style={{
+                                flex: 1,
+                                padding: '0.55rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: dataBuyFor === 'others' ? '#FACC15' : 'transparent',
+                                color: dataBuyFor === 'others' ? '#030712' : '#9CA3AF',
+                                fontWeight: 800,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Users size={15} /> Buying for Others
+                            </button>
                           </div>
-                        )}
+                        </div>
 
-                        {/* CASE 2: BUYING FOR SOMEONE ELSE */}
-                        {dataBuyFor === 'others' && (
-                          <>
-                            {/* Field 1: Recipient Phone Number */}
-                            <div style={{ marginBottom: '1.1rem' }}>
-                              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.35rem' }}>
-                                Recipient Phone Number (Who Receives Data)
-                              </label>
-                              <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                                Enter the number that should receive the {activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo'} bundle.
-                              </p>
-                              <input
-                                type="tel"
-                                required
-                                placeholder="e.g. 0244123456"
-                                value={recipientPhone}
-                                onChange={(e) => setRecipientPhone(e.target.value)}
-                                style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
-                              />
-                            </div>
-
-                            {/* Field 2: Payer MoMo Phone Number */}
+                        <form onSubmit={handleDataSubmit}>
+                          
+                          {/* CASE 1: BUYING FOR MYSELF */}
+                          {dataBuyFor === 'self' && (
                             <div style={{ marginBottom: '1.25rem' }}>
-                              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
-                                Your Mobile Money Number (Payment Deduction)
+                              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.4rem' }}>
+                                Your Phone Number (MoMo Payment & Data Delivery)
                               </label>
-                              <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
-                                Enter your number where the money will be deducted from via MoMo prompt.
+                              <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginBottom: '0.5rem', lineHeight: '1.4' }}>
+                                Payment prompt will be sent to this number, and data will be loaded directly onto it.
                               </p>
                               <input
                                 type="tel"
                                 required
-                                placeholder="e.g. 0502515547"
+                                autoFocus
+                                placeholder="e.g. 0244123456 or 0502515547"
                                 value={payerPhone}
                                 onChange={(e) => setPayerPhone(e.target.value)}
-                                style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                                style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.3)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
                               />
                             </div>
-                          </>
-                        )}
+                          )}
 
-                        {/* Payment Gateway Info */}
-                        <div style={{ marginBottom: '1.25rem', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(250,204,21,0.3)', backgroundColor: 'rgba(250,204,21,0.06)', color: '#FACC15', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
-                          <span>⚡ Paystack Instant Checkout (MTN MoMo · Telecel Cash · AT Money · Card)</span>
-                        </div>
-
-                        <div style={{ marginBottom: '1.5rem' }}>
-                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.35rem' }}>
-                            Your Name (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Kwame Mensah"
-                            value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
-                            style={{ width: '100%', height: '42px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.85rem', outline: 'none' }}
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={loading || !selectedPackage}
-                          className="btn btn-primary"
-                          style={{ width: '100%', height: '50px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (!selectedPackage || loading) ? 0.6 : 1 }}
-                        >
-                          {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                          {/* CASE 2: BUYING FOR SOMEONE ELSE */}
+                          {dataBuyFor === 'others' && (
                             <>
-                              <CreditCard size={18} />
-                              Deduct GH₵ {selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} from MoMo
+                              {/* Field 1: Recipient Phone Number */}
+                              <div style={{ marginBottom: '1.1rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.35rem' }}>
+                                  Recipient Phone Number (Who Receives Data)
+                                </label>
+                                <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                                  Enter the number that should receive the {activeNetwork === 'YELLO' ? 'MTN' : activeNetwork === 'TELECEL' ? 'Telecel' : 'AirtelTigo'} bundle.
+                                </p>
+                                <input
+                                  type="tel"
+                                  required
+                                  autoFocus
+                                  placeholder="e.g. 0244123456"
+                                  value={recipientPhone}
+                                  onChange={(e) => setRecipientPhone(e.target.value)}
+                                  style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                                />
+                              </div>
+
+                              {/* Field 2: Payer MoMo Phone Number */}
+                              <div style={{ marginBottom: '1.25rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#FACC15', marginBottom: '0.35rem' }}>
+                                  Your Mobile Money Number (Payment Deduction)
+                                </label>
+                                <p style={{ fontSize: '0.74rem', color: '#9CA3AF', marginBottom: '0.4rem' }}>
+                                  Enter your number where the money will be deducted from via MoMo prompt.
+                                </p>
+                                <input
+                                  type="tel"
+                                  required
+                                  placeholder="e.g. 0502515547"
+                                  value={payerPhone}
+                                  onChange={(e) => setPayerPhone(e.target.value)}
+                                  style={{ width: '100%', height: '46px', backgroundColor: '#030712', border: '1.5px solid rgba(250,204,21,0.4)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.95rem', outline: 'none' }}
+                                />
+                              </div>
                             </>
                           )}
-                        </button>
-                      </form>
 
-                      <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#9CA3AF', fontSize: '0.75rem' }}>
-                        <ShieldCheck size={14} color="#10B981" />
-                        <span>Prompt sent directly to your phone · BoG regulated rails</span>
+                          {/* Payment Gateway Info */}
+                          <div style={{ marginBottom: '1.25rem', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(250,204,21,0.3)', backgroundColor: 'rgba(250,204,21,0.06)', color: '#FACC15', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                            <span>⚡ Paystack Instant Checkout (MTN MoMo · Telecel Cash · AT Money · Card)</span>
+                          </div>
+
+                          <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.35rem' }}>
+                              Your Name (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Kwame Mensah"
+                              value={customerName}
+                              onChange={(e) => setCustomerName(e.target.value)}
+                              style={{ width: '100%', height: '42px', backgroundColor: '#030712', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '0 1rem', color: '#FFFFFF', fontSize: '0.85rem', outline: 'none' }}
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn btn-primary"
+                            style={{ width: '100%', height: '50px', color: '#030712', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: loading ? 0.6 : 1 }}
+                          >
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                              <>
+                                <CreditCard size={18} />
+                                Deduct GH₵ {selectedPackage.price.toFixed(2)} from MoMo
+                              </>
+                            )}
+                          </button>
+                        </form>
+
+                        <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#9CA3AF', fontSize: '0.75rem' }}>
+                          <ShieldCheck size={14} color="#10B981" />
+                          <span>Prompt sent directly to your phone · BoG regulated rails</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                 </div>
               )}
