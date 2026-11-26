@@ -12,6 +12,7 @@ function RegisterInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -60,9 +61,14 @@ function RegisterInner() {
     setSuccessMsg(null);
     setShowDemoRegister(false);
 
-    // Agent must provide phone number
+    // Agent must provide phone number and business name
     if (isAgentMode && !phone.trim()) {
       setErrorMsg('Phone number is required for agent registration. Your customer store referral link will be sent to this number.');
+      setLoading(false);
+      return;
+    }
+    if (isAgentMode && !businessName.trim()) {
+      setErrorMsg('Store/Business name is required for agents. This name appears on your customer referral store page.');
       setLoading(false);
       return;
     }
@@ -96,6 +102,7 @@ function RegisterInner() {
           email: email.trim(),
           password,
           phone: phone.trim(),
+          business_name: isAgentMode ? businessName.trim() : undefined,
           role: isAgentMode ? 'agent' : 'customer',
           referred_by: referredBy,
         }),
@@ -552,6 +559,30 @@ function RegisterInner() {
                     />
                   </div>
                 </div>
+
+                {/* Business / Store Name — agents only */}
+                {isAgentMode && (
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ color: '#E5E7EB' }}>
+                      Store / Business Name <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <p style={{ fontSize: '0.75rem', color: '#FACC15', marginBottom: '0.4rem' }}>
+                      🏪 This name is displayed to customers who open your referral link
+                    </p>
+                    <div style={{ position: 'relative' }}>
+                      <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#6B7280' }} />
+                      <input
+                        type="text"
+                        required={isAgentMode}
+                        placeholder="e.g. Amos Data Shop"
+                        className="form-input"
+                        style={{ paddingLeft: '2.75rem', backgroundColor: '#0F172A', borderColor: 'rgba(250,204,21,0.4)' }}
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Phone number — mandatory for agents with custom notice */}
                 <div className="form-group" style={{ marginBottom: 0 }}>

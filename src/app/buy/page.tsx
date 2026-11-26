@@ -29,6 +29,8 @@ export default function Buy() {
   const [activeNetwork, setActiveNetwork] = useState<'YELLO' | 'TELECEL' | 'AT'>('YELLO');
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentRef, setAgentRef] = useState<string | null>(null);
+  const [agentStoreName, setAgentStoreName] = useState<string | null>(null);
+  const [agentCustomPrices, setAgentCustomPrices] = useState<Record<string, number>>({});
 
   // Purchase targets: 'self' vs 'others'
   const [dataBuyFor, setDataBuyFor] = useState<'self' | 'others'>('self');
@@ -66,9 +68,25 @@ export default function Buy() {
       setAgentRef(refParam);
       sessionStorage.setItem('referral_ref', refParam);
       localStorage.setItem('referral_ref', refParam);
+      fetch(`/api/agent/store-info?ref=${encodeURIComponent(refParam)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.agent?.business_name) setAgentStoreName(d.agent.business_name);
+          if (d?.custom_prices) setAgentCustomPrices(d.custom_prices);
+        })
+        .catch(() => {});
     } else {
       const stored = sessionStorage.getItem('referral_ref') || localStorage.getItem('referral_ref');
-      if (stored) setAgentRef(stored);
+      if (stored) {
+        setAgentRef(stored);
+        fetch(`/api/agent/store-info?ref=${encodeURIComponent(stored)}`)
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.agent?.business_name) setAgentStoreName(d.agent.business_name);
+            if (d?.custom_prices) setAgentCustomPrices(d.custom_prices);
+          })
+          .catch(() => {});
+      }
     }
 
     // 2. Check for Paystack callback return
@@ -244,8 +262,12 @@ export default function Buy() {
     });
   };
 
-  const filteredPackages = initialPackages.filter(p => p.network === activeNetwork);
-  const filteredBulkPackages = initialPackages.filter(p => p.network === bulkNetwork);
+  const effectivePackages = initialPackages.map((p) => ({
+    ...p,
+    price: agentCustomPrices[p.id] ?? p.price,
+  }));
+  const filteredPackages = effectivePackages.filter(p => p.network === activeNetwork);
+  const filteredBulkPackages = effectivePackages.filter(p => p.network === bulkNetwork);
 
   return (
     <PublicLayout>
@@ -271,7 +293,8 @@ export default function Buy() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <Star size={18} color="#FACC15" fill="#FACC15" />
                 <span style={{ fontSize: '0.9rem', color: '#FFFFFF', fontWeight: 600 }}>
-                  You are shopping via Agent Store: <strong style={{ color: '#FACC15' }}>{agentRef}</strong>
+                  You are shopping via Agent Store: <strong style={{ color: '#FACC15' }}>{agentStoreName || agentRef}</strong>
+                  {agentStoreName && <span style={{ fontSize: '0.78rem', color: '#9CA3AF', marginLeft: '0.45rem' }}>({agentRef})</span>}
                 </span>
               </div>
               <span style={{ fontSize: '0.78rem', color: '#9CA3AF', background: 'rgba(0,0,0,0.3)', padding: '0.2rem 0.6rem', borderRadius: '8px' }}>
@@ -688,7 +711,7 @@ export default function Buy() {
                       <select
                         value={bulkPackage?.id || ''}
                         onChange={(e) => {
-                          const pkg = initialPackages.find(p => p.id === e.target.value);
+                          const pkg = effectivePackages.find(p => p.id === e.target.value);
                           setBulkPackage(pkg || null);
                         }}
                         required

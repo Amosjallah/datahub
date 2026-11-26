@@ -1,15 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import ProviderIcon from '@/components/ProviderIcon';
 import { 
   Users, UserCheck, Wallet, AlertTriangle, TrendingUp, TrendingDown, 
-  ChevronDown 
+  ChevronDown, Key, Bell 
 } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const [pendingApiCount, setPendingApiCount] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/admin/api-requests?status=pending')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data?.requests)) {
+          setPendingApiCount(data.requests.length);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const recentTransactions = [
     { id: 'TRX-2024-0001', user: '0803 123 4567', type: 'Data (MTN 10GB)', provider: 'MTN', amount: 'GH₵4,500.00', status: 'success', date: 'May 20, 2024 10:45 AM', action: 'none' },
     { id: 'TRX-2024-0002', user: '0701 234 5678', type: 'Airtime (Airtel ₦1,000)', provider: 'Airtel', amount: 'GH₵1,000.00', status: 'success', date: 'May 20, 2024 10:42 AM', action: 'none' },
@@ -65,6 +77,36 @@ export default function AdminDashboard() {
   return (
     <AppLayout userName="Admin User" userRole="admin">
       <div className="animate-fade-up">
+        {/* Pending API Key Approval Notification Banner */}
+        {pendingApiCount > 0 && (
+          <div style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', borderRadius: '14px', backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Bell size={20} style={{ color: '#F59E0B', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--color-text-primary)' }}>
+                  {pendingApiCount} Pending API Key KYC {pendingApiCount === 1 ? 'Application' : 'Applications'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                  Review submitted Ghana Card &amp; business documents so approved developers can generate API keys.
+                </div>
+              </div>
+            </div>
+            <Link href="/admin/api-users" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Key size={14} /> Review API Requests
+            </Link>
+          </div>
+        )}
+
+        {/* Quick Separation Links: Reseller Agents vs API Key Users */}
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <Link href="/admin/agents" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', fontWeight: 700 }}>
+            <UserCheck size={15} /> Reseller Agents Directory
+          </Link>
+          <Link href="/admin/api-users" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', fontWeight: 700 }}>
+            <Key size={15} /> API Key Users &amp; Approvals {pendingApiCount > 0 ? `(${pendingApiCount})` : ''}
+          </Link>
+        </div>
+
         {/* Top 4 Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
           

@@ -16,7 +16,7 @@ function generateReferralCode(name: string): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password, phone, role, referred_by } = body;
+    const { name, email, password, phone, role, referred_by, business_name } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
     const assignedRole = role === 'agent' ? 'agent' : 'customer';
     const cleanPhone = (phone || '').trim();
+    const cleanBusinessName = (business_name || name || '').trim();
 
     if (assignedRole === 'agent' && !cleanPhone) {
       return NextResponse.json(
@@ -110,6 +111,7 @@ export async function POST(request: Request) {
           role: assignedRole,
           referral_code: referralCode,
           referred_by: referred_by || null,
+          business_name: cleanBusinessName || null,
         }, { onConflict: 'id' });
       } catch (_) {}
 

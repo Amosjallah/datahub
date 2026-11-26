@@ -142,6 +142,16 @@ export default function ApiDocs() {
               Cable TV (DStv, GOtv, StarTimes)
             </span>
           </div>
+
+          <div style={{ marginTop: '2rem' }}>
+            <Link
+              href="/api-access"
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', fontWeight: 800, color: '#030712' }}
+            >
+              Apply for API Key / Manage Keys <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
       </section>
 

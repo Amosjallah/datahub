@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Globe, FileText, History, Users, User, LifeBuoy, TrendingUp, Menu, Bell, Wallet,
-  UserCheck, MessageSquare, FileCode, Settings, ChevronDown, Database
+  UserCheck, MessageSquare, FileCode, Settings, ChevronDown, Database, Key, DollarSign
 } from 'lucide-react';
 import Logo from './Logo';
 import LiveChatWidget from './LiveChatWidget';
@@ -33,6 +33,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
     { href: '/transactions', label: 'Transactions', icon: History },
     { href: '/beneficiaries', label: 'Beneficiaries', icon: Users },
     { href: '/profile#referrals', label: 'Referrals', icon: TrendingUp },
+    { href: '/api-access', label: 'Developer API Access', icon: Key },
     { href: '/become-agent', label: 'Become an agent', icon: User },
     { href: '/support', label: 'Support', icon: LifeBuoy },
     { href: '/support/chat', label: 'Live Chat', icon: MessageSquare },
@@ -44,6 +45,7 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
     { href: '/agent/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/buy/data', label: 'Buy Data & Airtime', icon: Globe },
     { href: '/agent/bulk', label: 'Bulk purchase', icon: Database },
+    { href: '/agent/pricing', label: 'My Custom Pricing', icon: DollarSign },
     { href: '/buy/bills', label: 'Pay Bills & TV', icon: FileText },
     { href: '/agent/sales', label: 'Sales reports', icon: History },
     { href: '/agent/commissions', label: 'Commission & earnings', icon: TrendingUp },
@@ -57,7 +59,8 @@ export default function AppLayout({ children, userRole = 'customer', userName = 
   const adminLinks = [
     { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
     { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/agents', label: 'Agents', icon: UserCheck },
+    { href: '/admin/agents', label: 'Reseller Agents', icon: UserCheck },
+    { href: '/admin/api-users', label: 'API Access Requests', icon: Key },
     { href: '/admin/transactions', label: 'Transactions', icon: History },
     { href: '/admin/wallets', label: 'Wallets', icon: Wallet },
     { href: '/admin/pricing', label: 'Services & pricing', icon: FileText },
